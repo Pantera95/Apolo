@@ -1,65 +1,87 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { EstadoVacio } from "@/components/ui/estado-vacio";
+import { Insignia } from "@/components/ui/insignia";
+import { Tarjeta, TarjetaKpi } from "@/components/ui/tarjeta";
+import { usePreferencias } from "@/lib/preferencias";
+
+/**
+ * Panel de operación.
+ *
+ * Composición tipo bento con un bloque protagonista, no una fila de cuatro
+ * tarjetas iguales: en esta empresa los indicadores NO valen lo mismo. El
+ * material inmovilizado en obra y la herramienta que no volvió son el problema
+ * que trajo al cliente; el resto es contexto, y la jerarquía visual lo dice.
+ *
+ * Los indicadores están en cero porque todavía no hay datos cargados, y eso se
+ * declara en pantalla en vez de disfrazarlo con cifras de ejemplo.
+ */
+export default function Panel() {
+  const { t, listo } = usePreferencias();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4 pt-4">
+        <div className="min-w-0">
+          <Insignia tono="luz">Demo</Insignia>
+          <h1 className="mt-3 text-4xl leading-[0.95] tracking-[-0.035em] sm:text-5xl">
+            {t("panel.titulo")}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-3 max-w-xl text-base text-texto-2">
+            {t("panel.subtitulo")}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.enObra")}
+          valor="$0"
+          pie={t("panel.kpi.pieEnObra")}
+          variante="marca"
+          destacada
+          listo={listo}
+          className="md:col-span-2 xl:row-span-2"
+        />
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.herramientaFuera")}
+          valor="0"
+          pie={t("panel.kpi.pieHerramienta")}
+          variante="luz"
+          listo={listo}
+        />
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.porAprobar")}
+          valor="0"
+          pie={t("panel.kpi.piePorAprobar")}
+          variante="contorno"
+          listo={listo}
+        />
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.disponible")}
+          valor="$0"
+          pie={t("panel.kpi.pieDisponible")}
+          variante="contorno"
+          listo={listo}
+          className="md:col-span-2"
+        />
+      </div>
+
+      <p className="mb-6 text-sm font-semibold text-texto-3">{t("demo.aviso")}</p>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <Tarjeta titulo={t("panel.actividad")} className="xl:col-span-2">
+          <EstadoVacio
+            icono="inventario"
+            titulo={t("panel.sinDatos.titulo")}
+            detalle={t("panel.sinDatos.detalle")}
+          />
+        </Tarjeta>
+
+        <Tarjeta titulo={t("panel.alertas")}>
+          <EstadoVacio icono="alerta" titulo={t("panel.sinDatos.titulo")} />
+        </Tarjeta>
+      </div>
+    </>
   );
 }

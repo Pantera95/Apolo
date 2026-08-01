@@ -1,0 +1,41 @@
+/**
+ * MARCA DE APOLO — archivo aislado a propósito.
+ *
+ * Cambiar la identidad visual del producto es cambiar SOLO este archivo.
+ * Ningún componente usa estos valores directamente: los consume globals.css
+ * y los reexpone como tokens semánticos. Si mañana el cliente quiere otra
+ * paleta, no se toca una sola pantalla.
+ *
+ * Concepto: Apolo es el dios de la LUZ. El producto existe para que una empresa
+ * vea lo que hoy no ve de su propio almacén. Por eso el lima no es decoración:
+ * es "aquí está lo que tienes que mirar". Se usa con disciplina — solo como
+ * fondo bajo texto oscuro, nunca como texto — porque sobre blanco tiene un
+ * contraste de 1.4:1 y sería ilegible.
+ */
+
+:root {
+  /* Violeta: la marca. La oscuridad sobre la que Apolo alumbra. */
+  --apolo-violeta: #812eff;
+  --apolo-violeta-texto: #6a1fe0; /* variante legible como texto sobre claro */
+  --apolo-violeta-fondo: #5a17c4; /* variante válida como fondo bajo texto blanco */
+  --apolo-violeta-claro: #a97cff; /* variante para tema oscuro */
+  --apolo-violeta-tenue: #ecc7ff;
+
+  /* Luz: el acento propio de Apolo. SOLO como fondo bajo texto casi negro. */
+  --apolo-luz: #9dff00;
+  --apolo-luz-oscura: #b4ff3d;
+
+  /* Acentos de apoyo heredados de la dirección visual aprobada. */
+  --apolo-azul: #2657e8;
+  --apolo-coral: #f9675d;
+
+  /* Tinta y grises */
+  --apolo-tinta: #1c1c22;
+  --apolo-humo: #f5f6fa;
+
+  /* Forma: radios generosos y sombra dura, la firma de la referencia. */
+  --apolo-radio-tarjeta: 20px;
+  --apolo-radio-control: 10px;
+  --apolo-radio-pildora: 999px;
+  --apolo-sombra-dura: 4px;
+}

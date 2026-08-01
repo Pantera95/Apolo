@@ -1,26 +1,214 @@
 @import "tailwindcss";
+@import "./marca.css";
 
+/* El tema se conmuta por clase, no por preferencia del sistema: en un almacén
+   el operario decide, y la elección tiene que sobrevivir a la recarga. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/**
+ * TOKENS SEMÁNTICOS
+ *
+ * Los componentes usan estos nombres, nunca un color suelto ni un valor de
+ * marca. Ningún tono único mantiene 4.5:1 sobre fondo claro Y oscuro a la vez,
+ * así que los valores CAMBIAN entre temas — no se reutiliza el mismo hex.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --fondo: var(--apolo-humo);
+  --superficie: #ffffff;
+  --superficie-2: #edf0f7;
+  --superficie-hover: #e4e8f2;
+
+  --texto: var(--apolo-tinta);
+  --texto-2: #4f4f4f;
+  --texto-3: #6b7280;
+  --texto-invertido: #ffffff;
+
+  --borde: #e0e0e0;
+  /* 3:1 mínimo: un campo de formulario que no se distingue del fondo es un bug,
+     no una decisión estética. */
+  --borde-fuerte: #868d9e;
+
+  --marca: var(--apolo-violeta-texto);
+  --marca-fondo: var(--apolo-violeta-fondo);
+  --marca-tenue: #f0e7ff;
+
+  /* La "luz": fondo de atención. El texto encima va en --texto. */
+  --luz: var(--apolo-luz);
+  --luz-tenue: #eaffc4;
+
+  --ok: #10763a;
+  --ok-tenue: #e2f6e9;
+  --advertencia: #92540a;
+  --advertencia-tenue: #fdf0dc;
+  --peligro: #c8362c;
+  --peligro-tenue: #fdeae8;
+  --info: var(--apolo-azul);
+  --info-tenue: #e7edfd;
+
+  --sombra: 0 1px 2px rgb(28 28 34 / 0.06), 0 4px 16px rgb(28 28 34 / 0.05);
+  /* Sombra dura desplazada: la firma de la dirección visual aprobada. No es
+     una sombra realista, es un bloque sólido corrido 4px. */
+  --sombra-dura: 4px 4px 0 0 #1c1c22;
+}
+
+.dark {
+  --fondo: #101016;
+  --superficie: #1a1a22;
+  --superficie-2: #23232e;
+  --superficie-hover: #2c2c3a;
+
+  --texto: #f3f3f7;
+  --texto-2: #b9b9c6;
+  --texto-3: #8e8e9e;
+  --texto-invertido: #101016;
+
+  --borde: #2e2e3b;
+  --borde-fuerte: #6a6a80;
+
+  --marca: var(--apolo-violeta-claro);
+  --marca-fondo: var(--apolo-violeta);
+  --marca-tenue: #2a1a4d;
+
+  --luz: var(--apolo-luz-oscura);
+  --luz-tenue: #26340d;
+
+  --ok: #4ad07e;
+  --ok-tenue: #16301f;
+  --advertencia: #f0ad3f;
+  --advertencia-tenue: #3a2a0e;
+  --peligro: #ff8b83;
+  --peligro-tenue: #3d1d1b;
+  --info: #7ea3ff;
+  --info-tenue: #17244a;
+
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 20px rgb(0 0 0 / 0.35);
+  --sombra-dura: 4px 4px 0 0 #4a4a5c;
+}
+
+/**
+ * La navegación es SIEMPRE oscura, en los dos temas. Es una decisión
+ * deliberada: le da al producto una silueta reconocible al instante y separa
+ * visualmente el chasis (que no cambia) del contenido (que sí).
+ */
+:root,
+.dark {
+  /* Bloque de marca: violeta profundo FIJO en los dos temas.
+     Con el violeta claro del tema oscuro, el texto secundario al 70% caía a
+     3.43:1 (medido). Fijarlo mantiene 5.01:1 y además hace que el bloque
+     protagonista se vea igual en ambos temas, como la navegación. */
+  --bloque-marca: #5a17c4;
+
+  --nav-fondo: #15151c;
+  --nav-texto: #a2a2b4;
+  --nav-texto-activo: #ffffff;
+  --nav-activo: #2a2036;
+  --nav-borde: #26262f;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-superficie-2: var(--superficie-2);
+  --color-superficie-hover: var(--superficie-hover);
+
+  --color-texto: var(--texto);
+  --color-texto-2: var(--texto-2);
+  --color-texto-3: var(--texto-3);
+  --color-texto-invertido: var(--texto-invertido);
+
+  --color-borde: var(--borde);
+  --color-borde-fuerte: var(--borde-fuerte);
+
+  --color-marca: var(--marca);
+  --color-marca-fondo: var(--marca-fondo);
+  --color-marca-tenue: var(--marca-tenue);
+
+  --color-luz: var(--luz);
+  --color-luz-tenue: var(--luz-tenue);
+
+  --color-ok: var(--ok);
+  --color-ok-tenue: var(--ok-tenue);
+  --color-advertencia: var(--advertencia);
+  --color-advertencia-tenue: var(--advertencia-tenue);
+  --color-peligro: var(--peligro);
+  --color-peligro-tenue: var(--peligro-tenue);
+  --color-info: var(--info);
+  --color-info-tenue: var(--info-tenue);
+
+  --color-bloque-marca: var(--bloque-marca);
+  --color-nav-fondo: var(--nav-fondo);
+  --color-nav-texto: var(--nav-texto);
+  --color-nav-texto-activo: var(--nav-texto-activo);
+  --color-nav-activo: var(--nav-activo);
+  --color-nav-borde: var(--nav-borde);
+
+  --font-sans: var(--fuente-sans);
+  --font-mono: var(--fuente-mono);
+
+  --radius-tarjeta: var(--apolo-radio-tarjeta);
+  --radius-control: var(--apolo-radio-control);
+  --radius-pildora: var(--apolo-radio-pildora);
+
+  --shadow-apolo: var(--sombra);
+  --shadow-dura: var(--sombra-dura);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--fondo);
+    color: var(--texto);
+    font-family: var(--fuente-sans), system-ui, sans-serif;
+    /* La referencia usa peso 600 en todo. En una herramienta densa eso aplana
+       la jerarquía, así que el cuerpo baja a 500 y los títulos suben a 800:
+       se conserva el carácter y se recupera la lectura. */
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* Las columnas de cantidades y dinero "bailan" al cambiar de fila si las
+     cifras no son de ancho fijo. */
+  .cifra {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Códigos, series y coladas: monoespaciada, que es donde se distingue
+     un 0 de una O. */
+  .codigo {
+    font-family: var(--fuente-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--marca);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--luz);
+    color: var(--apolo-tinta);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
