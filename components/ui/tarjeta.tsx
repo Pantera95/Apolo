@@ -111,8 +111,10 @@ export function TarjetaKpi({
 
       {listo ? (
         <p
-          className={`cifra mt-6 font-extrabold leading-[0.85] tracking-[-0.04em] ${
-            destacada ? "text-6xl sm:text-7xl" : "text-4xl sm:text-5xl"
+          // min-w-0 + break-words: una cifra larga se parte antes que
+          // desbordar la tarjeta o cortarse a media palabra.
+          className={`cifra mt-6 min-w-0 break-words font-extrabold leading-[0.85] tracking-[-0.04em] ${
+            destacada ? "text-5xl sm:text-7xl" : "text-4xl sm:text-5xl"
           }`}
         >
           {valor}

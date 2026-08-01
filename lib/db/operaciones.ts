@@ -30,6 +30,7 @@ import {
   type PruebaEntrega,
   type TipoTransporte,
 } from "@/lib/dominio/entrega";
+import { puedeRetornar } from "@/lib/datos/obras";
 import { getEstado, setEstado, type EstadoApolo } from "./almacen";
 
 export function ejecutar(op: Operacion): Resultado<Asiento> {
@@ -72,6 +73,53 @@ export function ejecutarTransferencia(
 
   setEstado({ ...estado, inventario: r.valor.estado });
   return { ok: true, valor: r.valor.asientos };
+}
+
+// ---------------------------------------------------------------------------
+// Retorno de herramienta
+// ---------------------------------------------------------------------------
+
+/**
+ * Devolver herramienta desde una obra.
+ *
+ * Añade una barrera que el motor de inventario por sí solo no puede poner: el
+ * saldo `enObra` está agregado por ubicación, no por obra, así que el dominio
+ * aceptaría que OBR-2401 devolviera herramienta que en realidad tiene
+ * OBR-2402. Aquí se comprueba contra el kardex de ESA obra.
+ */
+export function registrarRetornoObra(
+  obraId: string,
+  articuloId: string,
+  almacenId: string,
+  ubicacionId: string,
+  cantidad: number,
+  condicion: "bueno" | "averiado",
+): Resultado<Asiento> {
+  const estado = getEstado();
+
+  const disponibleParaRetorno = puedeRetornar(
+    estado,
+    obraId,
+    articuloId,
+    Date.now(),
+  );
+  if (cantidad > disponibleParaRetorno) {
+    return fallo(
+      "STOCK_INSUFICIENTE",
+      `Esa obra tiene ${disponibleParaRetorno} sin devolver, no ${cantidad}`,
+    );
+  }
+
+  return ejecutar({
+    tipo: "retorno",
+    obraId,
+    condicion,
+    cantidad,
+    articuloId,
+    almacenId,
+    ubicacionId,
+    usuarioId: USUARIO,
+  });
 }
 
 // ---------------------------------------------------------------------------

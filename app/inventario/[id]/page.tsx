@@ -214,7 +214,7 @@ export default function DetalleArticulo() {
         </Boton>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <TarjetaKpi
           etiqueta={t("inv.disponible")}
           valor={num(disponible(total))}
