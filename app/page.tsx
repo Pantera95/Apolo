@@ -2,13 +2,30 @@
 
 import { ControlesDemo } from "@/components/shell/controles-demo";
 import { Alerta } from "@/components/ui/alerta";
+import { Boton } from "@/components/ui/boton";
 import { EstadoVacio } from "@/components/ui/estado-vacio";
+import {
+  GraficoAntiguedad,
+  GraficoClases,
+  GraficoMovimiento,
+  GraficoObras,
+} from "@/components/ui/graficos";
 import { Insignia } from "@/components/ui/insignia";
 import { Tabla, type Columna } from "@/components/ui/tabla";
 import { Tarjeta, TarjetaKpi } from "@/components/ui/tarjeta";
 import {
+  antiguedadHerramienta,
+  distribucionPorClase,
+  formatear,
+  insights,
+  serieMovimientos,
+  valorPorObra,
+  type Insight,
+} from "@/lib/datos/analitica";
+import {
   bajoMinimo,
   dinero,
+  dineroCompacto,
   herramientaAveriada,
   herramientaSinRetornar,
   movimientosRecientes,
@@ -20,16 +37,18 @@ import {
 import { construirSemilla } from "@/lib/datos/semilla";
 import { setEstado, useEstado, useListo } from "@/lib/db/almacen";
 import type { Asiento } from "@/lib/dominio/tipos";
+import type { ClaveTexto } from "@/lib/i18n/textos";
 import { usePreferencias } from "@/lib/preferencias";
-import { Boton } from "@/components/ui/boton";
 
 /**
  * Panel de operación.
  *
- * Composición tipo bento con un bloque protagonista, no una fila de tarjetas
- * iguales: en esta empresa los indicadores NO valen lo mismo. El material
- * inmovilizado en obra y la herramienta que no volvió son el problema que trajo
- * al cliente; el resto es contexto, y la jerarquía visual lo dice.
+ * Bento con bloque protagonista: en esta empresa los indicadores NO valen lo
+ * mismo. El material inmovilizado en obra y la herramienta que no volvió son el
+ * problema que trajo al cliente; el resto es contexto.
+ *
+ * Cada cifra y cada gráfico salen del kardex. Si un dato no se puede derivar de
+ * los asientos, no aparece.
  */
 export default function Panel() {
   const { t, idioma } = usePreferencias();
@@ -41,8 +60,248 @@ export default function Panel() {
   const averiada = herramientaAveriada(estado);
   const porAprobar = solicitudesPorAprobar(estado);
   const escasos = bajoMinimo(estado);
-  const movimientos = movimientosRecientes(estado, 12);
 
+  const serie = serieMovimientos(estado, 45);
+  const obras = valorPorObra(estado);
+  const clases = distribucionPorClase(estado);
+  const tramos = antiguedadHerramienta(estado);
+  const observaciones = insights(estado);
+
+  const usd = (v: number) => dinero(v, idioma);
+  const num = (v: number) => numero(v, idioma);
+
+  return (
+    <>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4 pt-4">
+        <div className="min-w-0">
+          <Insignia tono="luz">Demo</Insignia>
+          <h1 className="mt-3 text-4xl leading-[0.95] tracking-[-0.035em] sm:text-5xl">
+            {t("panel.titulo")}
+          </h1>
+          <p className="mt-3 max-w-xl text-base text-texto-2">
+            {t("panel.subtitulo")}
+          </p>
+        </div>
+        <ControlesDemo />
+      </div>
+
+      {/* Indicadores */}
+      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.enObra")}
+          valor={usd(valorEnObra(estado))}
+          pie={t("panel.kpi.pieEnObra")}
+          variante="marca"
+          destacada
+          listo={listo}
+          className="md:col-span-2 xl:row-span-2"
+        />
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.herramientaFuera")}
+          valor={num(deuda.unidades)}
+          pie={t("panel.kpi.pieHerramienta")}
+          variante="luz"
+          listo={listo}
+        />
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.porAprobar")}
+          valor={num(porAprobar.length)}
+          pie={t("panel.kpi.piePorAprobar")}
+          variante="contorno"
+          listo={listo}
+        />
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.disponible")}
+          valor={usd(valorDisponible(estado))}
+          pie={t("panel.kpi.pieDisponible")}
+          variante="contorno"
+          listo={listo}
+          className="md:col-span-2"
+        />
+      </div>
+
+      <p className="mb-6 text-sm font-semibold text-texto-3">{t("demo.aviso")}</p>
+
+      {!hayDatos ? (
+        <Tarjeta>
+          <EstadoVacio
+            icono="inventario"
+            titulo={t("panel.sinDatos.titulo")}
+            detalle={t("panel.sinDatos.detalle")}
+            accion={
+              <Boton variante="luz" onClick={() => setEstado(construirSemilla())}>
+                {t("panel.sinDatos.accion")}
+              </Boton>
+            }
+          />
+        </Tarjeta>
+      ) : (
+        <>
+          {/* Lecturas de los datos */}
+          {observaciones.length > 0 && (
+            <Tarjeta titulo={t("bi.insights")} className="mb-4">
+              <ul className="flex flex-col gap-3">
+                {observaciones.map((o) => (
+                  <ListaInsight key={o.id} insight={o} />
+                ))}
+              </ul>
+            </Tarjeta>
+          )}
+
+          {/* Gráficos */}
+          <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <Tarjeta
+              titulo={t("bi.movimiento")}
+              descripcion={t("bi.movimientoPie")}
+              className="xl:col-span-2"
+              accion={
+                <div className="flex items-center gap-3 text-xs font-bold">
+                  <Leyenda color="var(--luz)">{t("bi.entradas")}</Leyenda>
+                  <Leyenda color="var(--marca)">{t("bi.salidas")}</Leyenda>
+                </div>
+              }
+            >
+              <GraficoMovimiento
+                datos={serie}
+                formato={usd}
+                formatoEje={(v) => dineroCompacto(v, idioma)}
+                etiquetas={{ entradas: t("bi.entradas"), salidas: t("bi.salidas") }}
+              />
+            </Tarjeta>
+
+            <Tarjeta titulo={t("bi.porClase")}>
+              <GraficoClases
+                datos={clases}
+                formato={usd}
+                etiqueta={(c) => t(`clase.${c}` as ClaveTexto)}
+              />
+              <ul className="mt-3 flex flex-col gap-1.5">
+                {clases.map((c) => (
+                  <li
+                    key={c.clase}
+                    className="flex items-center gap-2 text-xs font-bold"
+                  >
+                    <Leyenda color={colorClase(c.clase)}>
+                      {t(`clase.${c.clase}` as ClaveTexto)}
+                    </Leyenda>
+                    <span className="cifra ml-auto text-texto-2">
+                      {Math.round(c.porcentaje)}%
+                    </span>
+                    <span className="cifra w-24 text-right">{usd(c.valorUsd)}</span>
+                  </li>
+                ))}
+              </ul>
+            </Tarjeta>
+
+            <Tarjeta titulo={t("bi.porObra")}>
+              <GraficoObras datos={obras} formato={usd} />
+            </Tarjeta>
+
+            <Tarjeta
+              titulo={t("bi.antiguedad")}
+              descripcion={t("bi.antiguedadPie")}
+              className="xl:col-span-2"
+            >
+              <GraficoAntiguedad datos={tramos} formato={num} />
+            </Tarjeta>
+          </div>
+
+          {/* Actividad y alertas */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <Tarjeta titulo={t("panel.actividad")} className="xl:col-span-2">
+              <TablaMovimientos estado={estado} />
+            </Tarjeta>
+
+            <Tarjeta titulo={t("panel.alertas")}>
+              <div className="flex flex-col gap-3">
+                {deuda.unidades > 0 && (
+                  <Alerta tono="advertencia" titulo={t("panel.kpi.herramientaFuera")}>
+                    {num(deuda.unidades)} {t("panel.unidades")} · {usd(deuda.valorUsd)}
+                  </Alerta>
+                )}
+                {averiada.unidades > 0 && (
+                  <Alerta tono="peligro" titulo={t("panel.averiada")}>
+                    {num(averiada.unidades)} {t("panel.unidades")} ·{" "}
+                    {usd(averiada.valorUsd)}
+                  </Alerta>
+                )}
+                {escasos.slice(0, 4).map((e) => (
+                  <Alerta key={e.articulo.id} tono="info" titulo={e.articulo.codigo}>
+                    {num(e.disponible)} {t("panel.disponibleDe")} {num(e.recibido)}
+                  </Alerta>
+                ))}
+              </div>
+            </Tarjeta>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+function colorClase(clase: string): string {
+  if (clase === "consumible") return "var(--marca)";
+  if (clase === "retornable") return "var(--luz)";
+  return "var(--info)";
+}
+
+function Leyenda({ color, children }: { color: string; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        aria-hidden="true"
+        className="h-2.5 w-2.5 shrink-0 rounded-full"
+        style={{ background: color }}
+      />
+      {children}
+    </span>
+  );
+}
+
+const TONO_PUNTO: Record<Insight["tono"], string> = {
+  ok: "bg-ok",
+  info: "bg-info",
+  advertencia: "bg-advertencia",
+  peligro: "bg-peligro",
+};
+
+function ListaInsight({ insight }: { insight: Insight }) {
+  const { t, idioma } = usePreferencias();
+
+  // Los montos se formatean aquí: la analítica no sabe de idioma ni de moneda.
+  const valores: Record<string, string | number> = {};
+  for (const [clave, valor] of Object.entries(insight.valores)) {
+    valores[clave] =
+      typeof valor === "number" && insight.moneda?.includes(clave)
+        ? dinero(valor, idioma).replace(/^(USD|\$)\s*/, "")
+        : typeof valor === "number"
+          ? numero(valor, idioma)
+          : valor;
+  }
+
+  return (
+    <li className="flex items-start gap-3">
+      <span
+        aria-hidden="true"
+        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${TONO_PUNTO[insight.tono]}`}
+      />
+      <p className="text-sm leading-relaxed text-texto-2">
+        {formatear(t(insight.clave as ClaveTexto), valores)}
+      </p>
+    </li>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+function TablaMovimientos({
+  estado,
+}: {
+  estado: ReturnType<typeof useEstado>;
+}) {
+  const { t, idioma } = usePreferencias();
   const articulos = new Map(estado.articulos.map((a) => [a.id, a]));
   const obras = new Map(estado.obras.map((o) => [o.id, o]));
 
@@ -54,7 +313,7 @@ export default function Panel() {
       valorOrden: (a) => a.tipo,
       render: (a) => (
         <Insignia tono={tonoMovimiento(a.tipo)} punto>
-          {t(`mov.${a.tipo}` as never)}
+          {t(`mov.${a.tipo}` as ClaveTexto)}
         </Insignia>
       ),
     },
@@ -91,15 +350,14 @@ export default function Panel() {
       numerica: true,
       ordenable: true,
       valorOrden: (a) => cantidadDe(a),
-      render: (a) => {
-        const art = articulos.get(a.articuloId);
-        return (
-          <span className="whitespace-nowrap text-sm font-bold">
-            {numero(cantidadDe(a), idioma)}{" "}
-            <span className="font-semibold text-texto-3">{art?.unidadBase}</span>
+      render: (a) => (
+        <span className="whitespace-nowrap text-sm font-bold">
+          {numero(cantidadDe(a), idioma)}{" "}
+          <span className="font-semibold text-texto-3">
+            {articulos.get(a.articuloId)?.unidadBase}
           </span>
-        );
-      },
+        </span>
+      ),
     },
     {
       clave: "fecha",
@@ -116,115 +374,27 @@ export default function Panel() {
   ];
 
   return (
-    <>
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4 pt-4">
-        <div className="min-w-0">
-          <Insignia tono="luz">Demo</Insignia>
-          <h1 className="mt-3 text-4xl leading-[0.95] tracking-[-0.035em] sm:text-5xl">
-            {t("panel.titulo")}
-          </h1>
-          <p className="mt-3 max-w-xl text-base text-texto-2">
-            {t("panel.subtitulo")}
-          </p>
-        </div>
-        <ControlesDemo />
-      </div>
-
-      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <TarjetaKpi
-          etiqueta={t("panel.kpi.enObra")}
-          valor={dinero(valorEnObra(estado), idioma)}
-          pie={t("panel.kpi.pieEnObra")}
-          variante="marca"
-          destacada
-          listo={listo}
-          className="md:col-span-2 xl:row-span-2"
-        />
-        <TarjetaKpi
-          etiqueta={t("panel.kpi.herramientaFuera")}
-          valor={numero(deuda.unidades, idioma)}
-          pie={t("panel.kpi.pieHerramienta")}
-          variante="luz"
-          listo={listo}
-        />
-        <TarjetaKpi
-          etiqueta={t("panel.kpi.porAprobar")}
-          valor={numero(porAprobar.length, idioma)}
-          pie={t("panel.kpi.piePorAprobar")}
-          variante="contorno"
-          listo={listo}
-        />
-        <TarjetaKpi
-          etiqueta={t("panel.kpi.disponible")}
-          valor={dinero(valorDisponible(estado), idioma)}
-          pie={t("panel.kpi.pieDisponible")}
-          variante="contorno"
-          listo={listo}
-          className="md:col-span-2"
-        />
-      </div>
-
-      <p className="mb-6 text-sm font-semibold text-texto-3">{t("demo.aviso")}</p>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Tarjeta titulo={t("panel.actividad")} className="xl:col-span-2">
-          {hayDatos ? (
-            <Tabla
-              columnas={columnas}
-              filas={movimientos}
-              claveFila={(a) => a.id}
-              porPagina={6}
-            />
-          ) : (
-            <EstadoVacio
-              icono="inventario"
-              titulo={t("panel.sinDatos.titulo")}
-              detalle={t("panel.sinDatos.detalle")}
-              accion={
-                <Boton variante="luz" onClick={() => setEstado(construirSemilla())}>
-                  {t("panel.sinDatos.accion")}
-                </Boton>
-              }
-            />
-          )}
-        </Tarjeta>
-
-        <Tarjeta titulo={t("panel.alertas")}>
-          {hayDatos ? (
-            <div className="flex flex-col gap-3">
-              {deuda.unidades > 0 && (
-                <Alerta tono="advertencia" titulo={t("panel.kpi.herramientaFuera")}>
-                  {numero(deuda.unidades, idioma)} {t("panel.unidades")} ·{" "}
-                  {dinero(deuda.valorUsd, idioma)}
-                </Alerta>
-              )}
-              {averiada.unidades > 0 && (
-                <Alerta tono="peligro" titulo={t("panel.averiada")}>
-                  {numero(averiada.unidades, idioma)} {t("panel.unidades")} ·{" "}
-                  {dinero(averiada.valorUsd, idioma)}
-                </Alerta>
-              )}
-              {escasos.slice(0, 4).map((e) => (
-                <Alerta key={e.articulo.id} tono="info" titulo={e.articulo.codigo}>
-                  {numero(e.disponible, idioma)} {t("panel.disponibleDe")}{" "}
-                  {numero(e.recibido, idioma)}
-                </Alerta>
-              ))}
-            </div>
-          ) : (
-            <EstadoVacio icono="alerta" titulo={t("panel.sinAlertas")} />
-          )}
-        </Tarjeta>
-      </div>
-    </>
+    <Tabla
+      columnas={columnas}
+      filas={movimientosRecientes(estado, 24)}
+      claveFila={(a) => a.id}
+      porPagina={6}
+    />
   );
 }
 
 /** Cantidad significativa del asiento: el campo que realmente se movió. */
 function cantidadDe(a: Asiento): number {
-  const campos = [a.delta.fisico, a.delta.enObra, a.delta.reservado, a.delta.enTransito, a.delta.averiado];
-  const mayor = campos.reduce((max, v) => (Math.abs(v) > Math.abs(max) ? v : max), 0);
-  return Math.abs(mayor);
+  const campos = [
+    a.delta.fisico,
+    a.delta.enObra,
+    a.delta.reservado,
+    a.delta.enTransito,
+    a.delta.averiado,
+  ];
+  return Math.abs(
+    campos.reduce((max, v) => (Math.abs(v) > Math.abs(max) ? v : max), 0),
+  );
 }
 
 function tonoMovimiento(tipo: Asiento["tipo"]) {

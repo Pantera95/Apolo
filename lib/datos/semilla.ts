@@ -204,15 +204,25 @@ export function construirSemilla(ahora: Date = new Date()): EstadoApolo {
   GUION.forEach(([articuloId, ubiId, recibido, despachado, obraId, retornado, mermado], i) => {
     const clave = { ...ubicacion(ubiId), articuloId };
     const base = { ...clave, usuarioId: USUARIO };
+    const esRetornable = PORID.get(articuloId)?.clase === "retornable";
 
+    // Las herramientas salen a obra mucho antes y llevan meses fuera: eso es
+    // precisamente el problema del cliente. Si todas hubieran salido el mes
+    // pasado, el gráfico de antigüedad no mostraría nada y la deuda parecería
+    // sana. Los consumibles sí rotan rápido.
     inv = paso(
       inv,
-      { tipo: "recepcion", cantidad: recibido, fecha: diasAtras(ahora, 45 - (i % 12)), ...base },
+      {
+        tipo: "recepcion",
+        cantidad: recibido,
+        fecha: diasAtras(ahora, esRetornable ? 150 - i * 3 : 45 - (i % 12)),
+        ...base,
+      },
       articuloId,
     );
 
     if (despachado && obraId) {
-      const f = 30 - (i % 20);
+      const f = esRetornable ? 118 - (i - 12) * 17 : 30 - (i % 20);
       inv = paso(inv, { tipo: "reserva", cantidad: despachado, obraId, fecha: diasAtras(ahora, f + 2), ...base }, articuloId);
       inv = paso(inv, { tipo: "despacho", cantidad: despachado, obraId, fecha: diasAtras(ahora, f + 1), ...base }, articuloId);
       inv = paso(inv, { tipo: "entrega", cantidad: despachado, obraId, fecha: diasAtras(ahora, f), ...base }, articuloId);

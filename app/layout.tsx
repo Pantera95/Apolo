@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Manrope } from "next/font/google";
+import Script from "next/script";
 
 import { AppShell } from "@/components/shell/app-shell";
 import { ProveedorPreferencias } from "@/lib/preferencias";
@@ -49,10 +50,14 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className="h-full" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: SIN_PARPADEO }} />
-      </head>
       <body className={`${manrope.variable} ${jetbrains.variable} min-h-full`}>
+        {/* beforeInteractive lo inyecta el servidor en el HTML inicial, así que
+            corre antes de la hidratación. Un <script> suelto también acaba en
+            el HTML, pero React 19 avisa de que nunca se ejecutaría en un
+            render de cliente. */}
+        <Script id="apolo-tema" strategy="beforeInteractive">
+          {SIN_PARPADEO}
+        </Script>
         <ProveedorPreferencias>
           <AppShell>{children}</AppShell>
         </ProveedorPreferencias>

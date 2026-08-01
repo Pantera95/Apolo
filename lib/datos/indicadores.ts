@@ -137,6 +137,18 @@ export function dinero(usd: number, idioma: "es" | "en" = "es"): string {
   }).format(usd);
 }
 
+/**
+ * Versión compacta para ejes de gráfico: "60 mil" en vez de "USD 60.000".
+ * En un eje no hay sitio para la cifra completa, y el valor exacto ya lo da
+ * el tooltip al pasar por encima.
+ */
+export function dineroCompacto(usd: number, idioma: "es" | "en" = "es"): string {
+  return new Intl.NumberFormat(idioma === "es" ? "es-VE" : "en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(usd);
+}
+
 export function numero(n: number, idioma: "es" | "en" = "es"): string {
   return new Intl.NumberFormat(idioma === "es" ? "es-VE" : "en-US", {
     maximumFractionDigits: 2,

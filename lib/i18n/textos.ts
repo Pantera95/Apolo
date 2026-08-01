@@ -63,6 +63,28 @@ export const textos = {
     "panel.sinAlertas": "Nada requiere tu atención",
     "panel.unidades": "unidades",
 
+    "bi.movimiento": "Movimiento del almacén",
+    "bi.movimientoPie": "Valor que entró y salió físicamente, últimos 45 días",
+    "bi.entradas": "Entradas",
+    "bi.salidas": "Salidas",
+    "bi.porObra": "Capital inmovilizado por obra",
+    "bi.porClase": "Existencia por clase de artículo",
+    "bi.antiguedad": "Antigüedad de la herramienta fuera",
+    "bi.antiguedadPie": "Días desde la entrega, descontando retornos por antigüedad",
+    "bi.dias": "días",
+    "bi.insights": "Lo que dicen los datos",
+
+    "insight.concentracion":
+      "{pct}% del material en obra está concentrado en {obra} — {nombre}.",
+    "insight.herramientaVieja":
+      "{unidades} unidades de herramienta llevan más de 30 días fuera; la más antigua, {dias} días. Son USD {valor} sin volver.",
+    "insight.aprobaciones":
+      "{n} solicitudes están bloqueadas esperando autorización; la más vieja lleva {dias} días.",
+    "insight.certificado":
+      "El {pct}% del inventario disponible es material certificado (USD {valor}): exige trazabilidad de colada.",
+    "insight.ritmo":
+      "En 30 días salieron USD {salidas} y entraron USD {entradas}.",
+
     "mov.recepcion": "Recepción",
     "mov.ajuste": "Ajuste",
     "mov.reserva": "Reserva",
@@ -153,6 +175,28 @@ export const textos = {
     "panel.disponibleDe": "available of",
     "panel.sinAlertas": "Nothing needs your attention",
     "panel.unidades": "units",
+
+    "bi.movimiento": "Warehouse movement",
+    "bi.movimientoPie": "Value physically in and out, last 45 days",
+    "bi.entradas": "In",
+    "bi.salidas": "Out",
+    "bi.porObra": "Capital tied up per project",
+    "bi.porClase": "Stock by item class",
+    "bi.antiguedad": "Age of tools still out",
+    "bi.antiguedadPie": "Days since delivery, returns netted oldest-first",
+    "bi.dias": "days",
+    "bi.insights": "What the data says",
+
+    "insight.concentracion":
+      "{pct}% of material on site is concentrated in {obra} — {nombre}.",
+    "insight.herramientaVieja":
+      "{unidades} tool units have been out for over 30 days; the oldest, {dias} days. That is USD {valor} not back.",
+    "insight.aprobaciones":
+      "{n} requests are blocked awaiting approval; the oldest is {dias} days old.",
+    "insight.certificado":
+      "{pct}% of available stock is certified material (USD {valor}): it requires heat traceability.",
+    "insight.ritmo":
+      "Over 30 days, USD {salidas} went out and USD {entradas} came in.",
 
     "mov.recepcion": "Receipt",
     "mov.ajuste": "Adjustment",
