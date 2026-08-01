@@ -151,42 +151,41 @@ export function AppShell({ children }: { children: ReactNode }) {
             type="button"
             onClick={() => setMenuAbierto(true)}
             aria-label={t("acc.abrirMenu")}
-            className="flex h-11 w-11 items-center justify-center rounded-pildora bg-superficie text-texto-2 lg:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-pildora bg-superficie text-texto-2 lg:hidden"
           >
             <Icono nombre="menu" tam={22} />
           </button>
 
-          <div className="lg:hidden">
+          <div className="shrink-0 lg:hidden">
             <MarcaApolo tam={26} />
           </div>
 
-          {/* Los controles van agrupados en una píldora, no sueltos: es la
-              forma que define esta dirección visual. */}
           {/* Vive en el chasis, no en el panel: durante la presentación hay que
-              poder cargar o vaciar los datos desde cualquier pantalla. */}
-          <div className="ml-auto">
+              poder cargar o vaciar los datos desde cualquier pantalla.
+              Es lo ÚNICO que cede ancho; los controles fijos de la derecha no. */}
+          <div className="ml-auto min-w-0">
             <ControlesDemo />
           </div>
 
-          {/* Los controles van agrupados en una píldora, pero cada botón
-              conserva sus 44px reales de área táctil: el grupo no puede
-              comerse el objetivo del dedo. */}
-          <div className="flex items-center overflow-hidden rounded-pildora border-2 border-borde bg-superficie">
+          {/* Agrupados en una píldora, pero cada botón conserva sus 44px reales
+              de área táctil: ni el grupo ni el flex pueden comerse el objetivo
+              del dedo, de ahí el shrink-0. */}
+          <div className="flex shrink-0 items-center overflow-hidden rounded-pildora border-2 border-borde bg-superficie">
             <button
               type="button"
               onClick={alternarIdioma}
               aria-label={t("acc.idioma")}
-              className="flex h-11 items-center gap-1.5 px-4 text-xs font-extrabold uppercase text-texto-2 hover:bg-superficie-2 hover:text-texto"
+              className="flex h-11 shrink-0 items-center gap-1.5 px-4 text-xs font-extrabold uppercase text-texto-2 hover:bg-superficie-2 hover:text-texto"
             >
               <Icono nombre="idioma" tam={16} />
               {idioma}
             </button>
-            <span aria-hidden="true" className="h-6 w-px bg-borde" />
+            <span aria-hidden="true" className="h-6 w-px shrink-0 bg-borde" />
             <button
               type="button"
               onClick={alternarTema}
               aria-label={tema === "claro" ? t("acc.temaOscuro") : t("acc.temaClaro")}
-              className="flex h-11 w-12 items-center justify-center text-texto-2 hover:bg-superficie-2 hover:text-texto"
+              className="flex h-11 w-12 shrink-0 items-center justify-center text-texto-2 hover:bg-superficie-2 hover:text-texto"
             >
               <Icono nombre={tema === "claro" ? "luna" : "sol"} tam={17} />
             </button>

@@ -24,10 +24,12 @@ export function ControlesDemo() {
   if (!listo) return <div className="h-11" aria-hidden="true" />;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex min-w-0 items-center justify-end gap-2">
       {conDatos ? (
         <>
-          <span className="text-xs font-semibold text-texto-3">
+          {/* El recordatorio de que son datos ficticios cede primero: en
+              pantalla estrecha vale más el botón que el texto. */}
+          <span className="hidden text-xs font-semibold text-texto-3 xl:inline">
             {t("demo.ficticios")}
           </span>
           <Boton compacto variante="suave" onClick={() => reiniciarACero()}>
