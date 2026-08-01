@@ -7,6 +7,7 @@ import { useState, type ReactNode } from "react";
 import { usePreferencias } from "@/lib/preferencias";
 import type { ClaveTexto } from "@/lib/i18n/textos";
 import { Icono, MarcaApolo, type NombreIcono } from "@/components/ui/icono";
+import { ControlesDemo } from "./controles-demo";
 
 interface Enlace {
   href: string;
@@ -161,10 +162,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           {/* Los controles van agrupados en una píldora, no sueltos: es la
               forma que define esta dirección visual. */}
+          {/* Vive en el chasis, no en el panel: durante la presentación hay que
+              poder cargar o vaciar los datos desde cualquier pantalla. */}
+          <div className="ml-auto">
+            <ControlesDemo />
+          </div>
+
           {/* Los controles van agrupados en una píldora, pero cada botón
               conserva sus 44px reales de área táctil: el grupo no puede
               comerse el objetivo del dedo. */}
-          <div className="ml-auto flex items-center overflow-hidden rounded-pildora border-2 border-borde bg-superficie">
+          <div className="flex items-center overflow-hidden rounded-pildora border-2 border-borde bg-superficie">
             <button
               type="button"
               onClick={alternarIdioma}

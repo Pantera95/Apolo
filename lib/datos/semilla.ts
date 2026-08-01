@@ -22,6 +22,15 @@ import type {
   Ubicacion,
 } from "@/lib/dominio/tipos";
 import type { Solicitud } from "@/lib/dominio/despacho";
+import {
+  ponerEnRuta,
+  registrarEntrega,
+  registrarPreparacion,
+  type Chofer,
+  type Despacho,
+  type TipoTransporte,
+  type Vehiculo,
+} from "@/lib/dominio/entrega";
 
 // ---------------------------------------------------------------------------
 // Catálogos ficticios
@@ -264,14 +273,250 @@ export function construirSemilla(ahora: Date = new Date()): EstadoApolo {
     "art-13",
   );
 
+  // Despachos en todas las etapas, con sus movimientos de inventario aplicados
+  // por el dominio para que las existencias sigan cuadrando.
+  const despachos: Despacho[] = [];
+  for (const plan of PLAN_DESPACHOS) {
+    const construido = construirDespacho(inv, plan, ahora);
+    inv = construido.inventario;
+    despachos.push(construido.despacho);
+  }
+
   return {
     articulos: ARTICULOS,
     almacenes: ALMACENES,
     ubicaciones: UBICACIONES,
     obras: OBRAS,
     solicitudes: solicitudes(ahora),
+    choferes: CHOFERES,
+    vehiculos: VEHICULOS,
+    despachos,
     inventario: inv,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Flota y despachos
+// ---------------------------------------------------------------------------
+
+const CHOFERES: Chofer[] = [
+  { id: "cho-1", nombre: "Ramón Belisario", telefono: "0414-1234567" },
+  { id: "cho-2", nombre: "Yajaira Montilla", telefono: "0424-7654321" },
+  { id: "cho-3", nombre: "Eleazar Quintana", telefono: "0416-5558899" },
+];
+
+const VEHICULOS: Vehiculo[] = [
+  { id: "veh-1", placa: "A72BC1D", descripcion: "Camión 750, estacas" },
+  { id: "veh-2", placa: "A18XK9F", descripcion: "Ford 350 plataforma" },
+  { id: "veh-3", placa: "A55PL3M", descripcion: "Lowboy 20 t" },
+];
+
+interface PlanDespacho {
+  codigo: string;
+  solicitudId: string;
+  obraId: string;
+  /** Hasta dónde avanza este despacho en la semilla. */
+  hasta: "en_preparacion" | "listo" | "en_ruta" | "entregado" | "con_discrepancia";
+  transporte: TipoTransporte;
+  choferId?: string;
+  vehiculoId?: string;
+  transportistaExterno?: string;
+  guiaExterna?: string;
+  diasAtras: number;
+  lineas: [articuloId: string, ubicacionId: string, cantidad: number][];
+  receptor?: string;
+  /** Lo que trae el receptor en la mano; si no cuadra, queda la discrepancia. */
+  ordenReceptor?: string;
+}
+
+const PLAN_DESPACHOS: PlanDespacho[] = [
+  {
+    codigo: "DES-0101",
+    solicitudId: "sol-SOL-0151",
+    obraId: "obr-2401",
+    hasta: "en_preparacion",
+    transporte: "flota",
+    choferId: "cho-1",
+    vehiculoId: "veh-1",
+    diasAtras: 1,
+    lineas: [["art-01", "ubi-a1", 80], ["art-02", "ubi-a1", 40]],
+  },
+  {
+    codigo: "DES-0102",
+    solicitudId: "sol-SOL-0152",
+    obraId: "obr-2402",
+    hasta: "listo",
+    transporte: "flota",
+    choferId: "cho-2",
+    vehiculoId: "veh-2",
+    diasAtras: 2,
+    lineas: [["art-11", "ubi-b2", 240]],
+  },
+  {
+    codigo: "DES-0103",
+    solicitudId: "sol-SOL-0149",
+    obraId: "obr-2402",
+    hasta: "en_ruta",
+    transporte: "externo",
+    transportistaExterno: "Transporte Oriente C.A.",
+    guiaExterna: "TO-99120",
+    diasAtras: 3,
+    lineas: [["art-22", "ubi-b2", 16], ["art-23", "ubi-o1", 12]],
+  },
+  {
+    codigo: "DES-0104",
+    solicitudId: "sol-SOL-0153",
+    obraId: "obr-2403",
+    hasta: "entregado",
+    transporte: "flota",
+    choferId: "cho-3",
+    vehiculoId: "veh-3",
+    diasAtras: 6,
+    lineas: [["art-05", "ubi-a2", 90]],
+    receptor: "Ing. Carmen Rondón",
+    ordenReceptor: "des 0104",
+  },
+  {
+    codigo: "DES-0105",
+    solicitudId: "sol-SOL-0148",
+    obraId: "obr-2401",
+    hasta: "con_discrepancia",
+    transporte: "flota",
+    choferId: "cho-1",
+    vehiculoId: "veh-1",
+    diasAtras: 8,
+    lineas: [["art-07", "ubi-a2", 120]],
+    receptor: "Sr. Douglas Marcano",
+    // El receptor firmó con otra orden: así se ve la discrepancia en pantalla.
+    ordenReceptor: "DES-0099",
+  },
+];
+
+/**
+ * Construye un despacho avanzándolo por sus etapas reales y aplicando en cada
+ * una el movimiento de inventario correspondiente. Si el dominio rechaza algo,
+ * la semilla revienta en vez de dejar existencias imposibles.
+ */
+function construirDespacho(
+  inventario: EstadoInventario,
+  plan: PlanDespacho,
+  ahora: Date,
+): { inventario: EstadoInventario; despacho: Despacho } {
+  const almacenDe = (ubicacionId: string) =>
+    UBICACIONES.find((u) => u.id === ubicacionId)!.almacenId;
+
+  let despacho: Despacho = {
+    id: `des-${plan.codigo}`,
+    codigo: plan.codigo,
+    solicitudId: plan.solicitudId,
+    obraId: plan.obraId,
+    estado: "en_preparacion",
+    transporte: plan.transporte,
+    choferId: plan.choferId,
+    vehiculoId: plan.vehiculoId,
+    transportistaExterno: plan.transportistaExterno,
+    guiaExterna: plan.guiaExterna,
+    creadoEn: diasAtras(ahora, plan.diasAtras),
+    lineas: plan.lineas.map(([articuloId, ubicacionId, cantidad]) => ({
+      articuloId,
+      ubicacionId,
+      almacenId: almacenDe(ubicacionId),
+      cantidad,
+      preparado: 0,
+    })),
+  };
+
+  let inv = inventario;
+
+  // Reservar: el material queda apartado desde que se crea el despacho.
+  for (const linea of despacho.lineas) {
+    inv = paso(
+      inv,
+      {
+        tipo: "reserva",
+        cantidad: linea.cantidad,
+        obraId: plan.obraId,
+        fecha: diasAtras(ahora, plan.diasAtras),
+        usuarioId: USUARIO,
+        articuloId: linea.articuloId,
+        almacenId: linea.almacenId,
+        ubicacionId: linea.ubicacionId,
+      },
+      linea.articuloId,
+    );
+  }
+
+  if (plan.hasta === "en_preparacion") return { inventario: inv, despacho };
+
+  // Preparar todo
+  for (const linea of despacho.lineas) {
+    const r = registrarPreparacion(
+      despacho,
+      linea.articuloId,
+      linea.ubicacionId,
+      linea.cantidad,
+    );
+    if (!r.ok) throw new Error(`Semilla: preparación de ${plan.codigo}: ${r.error.detalle}`);
+    despacho = r.valor;
+  }
+
+  if (plan.hasta === "listo") return { inventario: inv, despacho };
+
+  // Salir a ruta: sale del estante y entra en tránsito.
+  const enRuta = ponerEnRuta(despacho, diasAtras(ahora, plan.diasAtras - 0.5));
+  if (!enRuta.ok) throw new Error(`Semilla: ruta de ${plan.codigo}: ${enRuta.error.detalle}`);
+  despacho = enRuta.valor;
+
+  for (const linea of despacho.lineas) {
+    inv = paso(
+      inv,
+      {
+        tipo: "despacho",
+        cantidad: linea.cantidad,
+        obraId: plan.obraId,
+        fecha: despacho.salidaEn,
+        usuarioId: USUARIO,
+        articuloId: linea.articuloId,
+        almacenId: linea.almacenId,
+        ubicacionId: linea.ubicacionId,
+      },
+      linea.articuloId,
+    );
+  }
+
+  if (plan.hasta === "en_ruta") return { inventario: inv, despacho };
+
+  // Entregar: de tránsito a obra.
+  const fechaEntrega = diasAtras(ahora, plan.diasAtras - 1);
+  const entregado = registrarEntrega(despacho, {
+    receptor: plan.receptor ?? "—",
+    ordenReceptor: plan.ordenReceptor ?? plan.codigo,
+    fecha: fechaEntrega,
+    evidencia: "firma",
+  });
+  if (!entregado.ok) {
+    throw new Error(`Semilla: entrega de ${plan.codigo}: ${entregado.error.detalle}`);
+  }
+  despacho = entregado.valor;
+
+  for (const linea of despacho.lineas) {
+    inv = paso(
+      inv,
+      {
+        tipo: "entrega",
+        cantidad: linea.cantidad,
+        obraId: plan.obraId,
+        fecha: fechaEntrega,
+        usuarioId: USUARIO,
+        articuloId: linea.articuloId,
+        almacenId: linea.almacenId,
+        ubicacionId: linea.ubicacionId,
+      },
+      linea.articuloId,
+    );
+  }
+
+  return { inventario: inv, despacho };
 }
 
 function solicitudes(ahora: Date): Solicitud[] {

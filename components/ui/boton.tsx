@@ -49,7 +49,9 @@ export function Boton({
         "inline-flex items-center justify-center gap-2 rounded-control font-semibold",
         "transition-[filter,background-color,border-color] duration-150",
         "disabled:opacity-45 disabled:pointer-events-none",
-        compacto ? "min-h-9 px-3 text-sm" : "min-h-11 px-4 text-sm",
+        // "compacto" reduce el ancho, NUNCA el alto: ningún control de Apolo
+        // baja de 44px, porque todos se tocan con guantes.
+        compacto ? "min-h-11 px-3 text-sm" : "min-h-11 px-4 text-sm",
         VARIANTES[variante],
         className,
       ].join(" ")}

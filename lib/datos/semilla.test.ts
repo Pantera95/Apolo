@@ -48,6 +48,31 @@ describe("semilla de demostración", () => {
     expect(estado.inventario.asientos.length).toBeGreaterThan(50);
   });
 
+  it("trae despachos en todas las etapas para poder recorrer el flujo", () => {
+    const estados = new Set(construirSemilla(AHORA).despachos.map((d) => d.estado));
+    expect(estados).toEqual(
+      new Set(["en_preparacion", "listo", "en_ruta", "entregado", "con_discrepancia"]),
+    );
+  });
+
+  it("la entrega con orden distinta queda marcada, no oculta", () => {
+    const conProblema = construirSemilla(AHORA).despachos.find(
+      (d) => d.estado === "con_discrepancia",
+    );
+    expect(conProblema?.pod?.coincide).toBe(false);
+    expect(conProblema?.pod?.receptor).toBeTruthy();
+  });
+
+  it("la flota y los vehículos referenciados existen", () => {
+    const estado = construirSemilla(AHORA);
+    const choferes = new Set(estado.choferes.map((c) => c.id));
+    const vehiculos = new Set(estado.vehiculos.map((v) => v.id));
+    for (const d of estado.despachos) {
+      if (d.choferId) expect(choferes.has(d.choferId)).toBe(true);
+      if (d.vehiculoId) expect(vehiculos.has(d.vehiculoId)).toBe(true);
+    }
+  });
+
   it("incluye las tres clases de artículo", () => {
     const clases = new Set(construirSemilla(AHORA).articulos.map((a) => a.clase));
     expect(clases).toEqual(new Set(["consumible", "retornable", "certificado"]));

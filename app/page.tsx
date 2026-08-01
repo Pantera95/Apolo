@@ -1,6 +1,5 @@
 "use client";
 
-import { ControlesDemo } from "@/components/shell/controles-demo";
 import { Alerta } from "@/components/ui/alerta";
 import { Boton } from "@/components/ui/boton";
 import { EstadoVacio } from "@/components/ui/estado-vacio";
@@ -82,7 +81,6 @@ export default function Panel() {
             {t("panel.subtitulo")}
           </p>
         </div>
-        <ControlesDemo />
       </div>
 
       {/* Indicadores */}

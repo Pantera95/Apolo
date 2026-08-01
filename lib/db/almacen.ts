@@ -26,11 +26,12 @@ import type {
 import type { EstadoInventario } from "@/lib/dominio/inventario";
 import { ESTADO_VACIO } from "@/lib/dominio/inventario";
 import type { Solicitud } from "@/lib/dominio/despacho";
+import type { Chofer, Despacho, Vehiculo } from "@/lib/dominio/entrega";
 
 export const CLAVE_ESTADO = "apolo:estado";
 const EVENTO = "apolo:datos";
 /** Sube al cambiar la forma de los datos guardados: descarta lo viejo. */
-const VERSION = 1;
+const VERSION = 2;
 
 export interface EstadoApolo {
   articulos: Articulo[];
@@ -38,6 +39,9 @@ export interface EstadoApolo {
   ubicaciones: Ubicacion[];
   obras: Obra[];
   solicitudes: Solicitud[];
+  choferes: Chofer[];
+  vehiculos: Vehiculo[];
+  despachos: Despacho[];
   inventario: EstadoInventario;
 }
 
@@ -47,6 +51,9 @@ export const ESTADO_APOLO_VACIO: EstadoApolo = {
   ubicaciones: [],
   obras: [],
   solicitudes: [],
+  choferes: [],
+  vehiculos: [],
+  despachos: [],
   inventario: ESTADO_VACIO,
 };
 
@@ -61,6 +68,9 @@ interface Persistido {
   ubicaciones: Ubicacion[];
   obras: Obra[];
   solicitudes: Solicitud[];
+  choferes: Chofer[];
+  vehiculos: Vehiculo[];
+  despachos: Despacho[];
   asientos: Asiento[];
   saldos: Record<string, Saldo>;
 }
@@ -73,6 +83,9 @@ function serializar(estado: EstadoApolo): string {
     ubicaciones: estado.ubicaciones,
     obras: estado.obras,
     solicitudes: estado.solicitudes,
+    choferes: estado.choferes,
+    vehiculos: estado.vehiculos,
+    despachos: estado.despachos,
     asientos: [...estado.inventario.asientos],
     saldos: Object.fromEntries(estado.inventario.saldos),
   };
@@ -89,6 +102,9 @@ function deserializar(crudo: string): EstadoApolo | null {
       ubicaciones: p.ubicaciones ?? [],
       obras: p.obras ?? [],
       solicitudes: p.solicitudes ?? [],
+      choferes: p.choferes ?? [],
+      vehiculos: p.vehiculos ?? [],
+      despachos: p.despachos ?? [],
       inventario: {
         saldos: new Map(Object.entries(p.saldos ?? {})),
         asientos: p.asientos ?? [],
