@@ -83,13 +83,13 @@ export function TarjetaKpi({
 }) {
   const estilos: Record<VarianteKpi, string> = {
     marca: "bg-bloque-marca text-white border-transparent",
-    luz: "bg-luz text-[var(--apolo-tinta)] border-transparent",
+    luz: "bg-bloque-luz text-white border-transparent",
     contorno: "bg-superficie text-texto border-borde shadow-dura",
   };
 
   const tenue: Record<VarianteKpi, string> = {
     marca: "text-white/70",
-    luz: "text-[var(--apolo-tinta)]/70",
+    luz: "text-white/70",
     contorno: "text-texto-3",
   };
 

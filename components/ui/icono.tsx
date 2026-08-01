@@ -152,9 +152,11 @@ export function MarcaApolo({ tam = 28 }: { tam?: number }) {
       aria-hidden="true"
       focusable="false"
     >
-      <circle cx="16" cy="16" r="13" fill="var(--marca-fondo)" />
-      <path d="M16 3a13 13 0 0 1 0 26z" fill="var(--luz)" />
-      <path d="M16 9.5 22.5 22h-13z" fill="var(--marca-fondo)" />
+      {/* Usa los tokens FIJOS, no los del tema: la marca tiene que verse igual
+          sobre el panel oscuro de la nav y sobre el lienzo claro. */}
+      <circle cx="16" cy="16" r="13" fill="var(--bloque-marca)" />
+      <path d="M16 3a13 13 0 0 1 0 26z" fill="var(--nav-acento)" />
+      <path d="M16 9.5 22.5 22h-13z" fill="var(--bloque-marca)" />
     </svg>
   );
 }

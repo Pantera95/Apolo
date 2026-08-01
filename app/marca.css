@@ -3,29 +3,35 @@
  *
  * Cambiar la identidad visual del producto es cambiar SOLO este archivo.
  * Ningún componente usa estos valores directamente: los consume globals.css
- * y los reexpone como tokens semánticos. Si mañana el cliente quiere otra
- * paleta, no se toca una sola pantalla.
+ * y los reexpone como tokens semánticos.
  *
  * Concepto: Apolo es el dios de la LUZ. El producto existe para que una empresa
- * vea lo que hoy no ve de su propio almacén. Por eso el lima no es decoración:
- * es "aquí está lo que tienes que mirar". Se usa con disciplina — solo como
- * fondo bajo texto oscuro, nunca como texto — porque sobre blanco tiene un
- * contraste de 1.4:1 y sería ilegible.
+ * vea lo que hoy no ve de su propio almacén.
+ *
+ * DECISIÓN DE TONO — importante, no tocar sin entender el porqué:
+ * la dirección visual de referencia usa violeta #812eff y lima #9dff00 a plena
+ * saturación. Eso funciona en una web de marketing que se mira treinta
+ * segundos. Apolo es un panel que el almacén tiene abierto toda la jornada, y a
+ * ese ritmo el lima neón en bloques grandes produce fatiga visual real.
+ * Se conservan los MISMOS colores, bajados en luminosidad y saturación:
+ * el violeta pasa a un morado profundo y el lima a un verde oliva sereno.
+ * El neón queda descartado como área grande.
  */
 
 :root {
   /* Violeta: la marca. La oscuridad sobre la que Apolo alumbra. */
-  --apolo-violeta: #812eff;
-  --apolo-violeta-texto: #6a1fe0; /* variante legible como texto sobre claro */
-  --apolo-violeta-fondo: #5a17c4; /* variante válida como fondo bajo texto blanco */
-  --apolo-violeta-claro: #a97cff; /* variante para tema oscuro */
-  --apolo-violeta-tenue: #ecc7ff;
+  --apolo-violeta-bloque: #4c2f85; /* bloques grandes, bajo texto blanco */
+  --apolo-violeta-texto: #5b3ba8; /* legible como texto sobre fondo claro */
+  --apolo-violeta-boton: #5f42a3; /* relleno de botón en tema oscuro */
+  --apolo-violeta-claro: #a892e0; /* texto de marca en tema oscuro */
 
-  /* Luz: el acento propio de Apolo. SOLO como fondo bajo texto casi negro. */
-  --apolo-luz: #9dff00;
-  --apolo-luz-oscura: #b4ff3d;
+  /* Verde: el acento de "luz" de Apolo, ya apagado a oliva.
+     Marca lo que hay que mirar sin gritarlo. */
+  --apolo-verde-bloque: #455c21; /* bloques grandes, bajo texto blanco */
+  --apolo-verde-texto: #4f6b26; /* legible como texto sobre fondo claro */
+  --apolo-verde-claro: #a3c465; /* texto y acentos en tema oscuro y en la nav */
 
-  /* Acentos de apoyo heredados de la dirección visual aprobada. */
+  /* Acentos de apoyo */
   --apolo-azul: #2657e8;
   --apolo-coral: #f9675d;
 
@@ -37,5 +43,4 @@
   --apolo-radio-tarjeta: 20px;
   --apolo-radio-control: 10px;
   --apolo-radio-pildora: 999px;
-  --apolo-sombra-dura: 4px;
 }

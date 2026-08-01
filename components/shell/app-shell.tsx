@@ -110,7 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {activo && (
                         <span
                           aria-hidden="true"
-                          className="ml-auto h-2 w-2 rounded-full bg-luz"
+                          className="ml-auto h-2 w-2 rounded-full bg-nav-acento"
                         />
                       )}
                     </Link>
