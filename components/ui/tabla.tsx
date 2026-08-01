@@ -107,7 +107,7 @@ export function Tabla<T>({
                       <button
                         type="button"
                         onClick={() => alternar(col.clave)}
-                        className={`inline-flex min-h-9 items-center gap-1 rounded-control px-1 hover:text-texto ${
+                        className={`inline-flex min-h-11 items-center gap-1 rounded-control px-1 hover:text-texto ${
                           activa ? "text-marca" : ""
                         }`}
                       >
@@ -152,8 +152,9 @@ export function Tabla<T>({
           {t("tabla.registros")}
         </p>
         <div className="flex items-center gap-2">
+          {/* Sin `compacto`: el paginador es el control que más se toca en un
+              almacén y necesita sus 44px reales. */}
           <Boton
-            compacto
             variante="suave"
             disabled={paginaActual === 0}
             onClick={() => setPagina((p) => Math.max(0, p - 1))}
@@ -164,7 +165,6 @@ export function Tabla<T>({
             {t("tabla.pagina")} {paginaActual + 1} {t("tabla.de")} {totalPaginas}
           </span>
           <Boton
-            compacto
             variante="suave"
             disabled={paginaActual >= totalPaginas - 1}
             onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
