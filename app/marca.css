@@ -25,11 +25,12 @@
   --apolo-violeta-boton: #5f42a3; /* relleno de botón en tema oscuro */
   --apolo-violeta-claro: #a892e0; /* texto de marca en tema oscuro */
 
-  /* Verde: el acento de "luz" de Apolo, ya apagado a oliva.
-     Marca lo que hay que mirar sin gritarlo. */
-  --apolo-verde-bloque: #455c21; /* bloques grandes, bajo texto blanco */
-  --apolo-verde-texto: #4f6b26; /* legible como texto sobre fondo claro */
-  --apolo-verde-claro: #a3c465; /* texto y acentos en tema oscuro y en la nav */
+  /* Verde: el acento de "luz" de Apolo. Tono elegido por el cliente.
+     Al ser un verde medio, el bloque grande lleva texto OSCURO encima
+     (6.74:1 medido); con texto blanco daría 2.52:1 y sería ilegible. */
+  --apolo-verde-bloque: #48b956; /* bloques grandes, bajo texto tinta */
+  --apolo-verde-texto: #2f7c39; /* legible como texto sobre fondo claro */
+  --apolo-verde-claro: #48b956; /* texto sobre oscuro y acento de la nav */
 
   /* Acentos de apoyo */
   --apolo-azul: #2657e8;

@@ -82,14 +82,16 @@ export function TarjetaKpi({
   className?: string;
 }) {
   const estilos: Record<VarianteKpi, string> = {
-    marca: "bg-bloque-marca text-white border-transparent",
-    luz: "bg-bloque-luz text-white border-transparent",
+    marca: "bg-bloque-marca text-bloque-marca-texto border-transparent",
+    luz: "bg-bloque-luz text-bloque-luz-texto border-transparent",
     contorno: "bg-superficie text-texto border-borde shadow-dura",
   };
 
+  // El texto secundario del bloque verde NO baja de opacidad: al 70% caería a
+  // 3.89:1. Se diferencia por peso y tamaño, que es más accesible que el alfa.
   const tenue: Record<VarianteKpi, string> = {
-    marca: "text-white/70",
-    luz: "text-white/70",
+    marca: "text-bloque-marca-texto/70",
+    luz: "text-bloque-luz-texto/85",
     contorno: "text-texto-3",
   };
 

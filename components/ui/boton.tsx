@@ -24,7 +24,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 const VARIANTES: Record<Variante, string> = {
   primario:
     "bg-marca-fondo text-white hover:brightness-110 active:brightness-95 border border-transparent",
-  luz: "bg-bloque-luz text-white hover:brightness-110 active:brightness-95 border border-transparent",
+  luz: "bg-bloque-luz text-bloque-luz-texto hover:brightness-105 active:brightness-95 border border-transparent",
   suave:
     "bg-superficie text-texto border border-borde hover:bg-superficie-hover hover:border-borde-fuerte",
   fantasma:
