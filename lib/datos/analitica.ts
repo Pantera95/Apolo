@@ -11,6 +11,11 @@
 import type { EstadoApolo } from "@/lib/db/almacen";
 import type { Articulo, Asiento, ClaseArticulo } from "@/lib/dominio/tipos";
 import { disponible } from "@/lib/dominio/tipos";
+import {
+  diasDeAtraso,
+  estaAbierta,
+  pendientePorRecibir,
+} from "@/lib/dominio/compras";
 
 const DIA_MS = 86_400_000;
 
@@ -369,17 +374,167 @@ export function insights(
     });
   }
 
+  // 6. Compras que debieron llegar y no llegaron
+  const enMilis = ahora.getTime();
+  const atrasadas = estado.ordenes.filter(
+    (o) => estaAbierta(o) && diasDeAtraso(o, enMilis) > 0,
+  );
+  if (atrasadas.length > 0) {
+    const valor = atrasadas.reduce(
+      (s, o) =>
+        s +
+        o.lineas.reduce(
+          (x, l) => x + pendientePorRecibir(l) * l.costoUnitarioUsd,
+          0,
+        ),
+      0,
+    );
+    const peor = atrasadas.reduce((m, o) => Math.max(m, diasDeAtraso(o, enMilis)), 0);
+    salida.push({
+      id: "compras-atrasadas",
+      clave: "insight.comprasAtrasadas",
+      tono: peor > 15 ? "peligro" : "advertencia",
+      valores: { n: atrasadas.length, dias: peor, valor: Math.round(valor) },
+      moneda: ["valor"],
+    });
+  }
+
+  // 7. Entregas firmadas con una orden que no cuadra
+  const conDiscrepancia = estado.despachos.filter(
+    (d) => d.estado === "con_discrepancia",
+  );
+  if (conDiscrepancia.length > 0) {
+    salida.push({
+      id: "discrepancias",
+      clave: "insight.discrepancias",
+      tono: "peligro",
+      valores: {
+        n: conDiscrepancia.length,
+        codigos: conDiscrepancia.map((d) => d.codigo).join(", "),
+      },
+    });
+  }
+
+  // 8. Herramienta que volvió rota
+  const averiada = acumularAveriado(estado);
+  if (averiada.unidades > 0) {
+    salida.push({
+      id: "averiada",
+      clave: "insight.averiada",
+      tono: "advertencia",
+      valores: {
+        unidades: Math.round(averiada.unidades),
+        valor: Math.round(averiada.valorUsd),
+      },
+      moneda: ["valor"],
+    });
+  }
+
+  // 9. Capital dormido: existencia que nadie ha tocado
+  const dormidos = articulosDormidos(estado, enMilis);
+  if (dormidos.articulos > 0) {
+    salida.push({
+      id: "dormidos",
+      clave: "insight.dormidos",
+      tono: dormidos.valorUsd > 10_000 ? "advertencia" : "info",
+      valores: {
+        n: dormidos.articulos,
+        dias: DIAS_DORMIDO,
+        valor: Math.round(dormidos.valorUsd),
+      },
+      moneda: ["valor"],
+    });
+  }
+
   return salida;
 }
 
-/** Sustituye {marcadores} en una plantilla de traducción. */
+/** PROVISIONAL: 45 días sin movimiento para considerar la existencia dormida. */
+export const DIAS_DORMIDO = 45;
+
+function acumularAveriado(estado: EstadoApolo): {
+  unidades: number;
+  valorUsd: number;
+} {
+  const articulos = indice(estado);
+  let unidades = 0;
+  let valorUsd = 0;
+
+  for (const [clave, saldo] of estado.inventario.saldos) {
+    if (saldo.averiado <= 0) continue;
+    const articulo = articulos.get(clave.split("|")[0]);
+    if (!articulo) continue;
+    unidades += saldo.averiado;
+    valorUsd += saldo.averiado * articulo.costoPromedioUsd;
+  }
+
+  return { unidades, valorUsd };
+}
+
+/**
+ * Existencia que nadie ha tocado en mucho tiempo.
+ *
+ * No es un dato bonito: es capital parado. En una constructora que compra
+ * material para una obra concreta, lo que lleva meses quieto suele ser sobrante
+ * de un contrato que ya cerró.
+ */
+export function articulosDormidos(
+  estado: EstadoApolo,
+  ahora: number,
+): { articulos: number; valorUsd: number } {
+  if (ahora === 0) return { articulos: 0, valorUsd: 0 };
+
+  const articulos = indice(estado);
+  const ultimoMovimiento = new Map<string, string>();
+  for (const a of estado.inventario.asientos) {
+    const previo = ultimoMovimiento.get(a.articuloId);
+    if (!previo || a.fecha > previo) ultimoMovimiento.set(a.articuloId, a.fecha);
+  }
+
+  const existencia = new Map<string, number>();
+  for (const [clave, saldo] of estado.inventario.saldos) {
+    const id = clave.split("|")[0];
+    existencia.set(id, (existencia.get(id) ?? 0) + disponible(saldo));
+  }
+
+  let cuantos = 0;
+  let valorUsd = 0;
+  for (const [id, cantidad] of existencia) {
+    if (cantidad <= 0) continue;
+    const articulo = articulos.get(id);
+    const ultimo = ultimoMovimiento.get(id);
+    if (!articulo || !ultimo) continue;
+
+    const dias = Math.floor((ahora - Date.parse(ultimo)) / DIA_MS);
+    if (dias < DIAS_DORMIDO) continue;
+
+    cuantos++;
+    valorUsd += cantidad * articulo.costoPromedioUsd;
+  }
+
+  return { articulos: cuantos, valorUsd };
+}
+
+/**
+ * Sustituye marcadores en una plantilla de traducción.
+ *
+ * Soporta concordancia de número con `{clave:p|singular|plural}`, porque sin
+ * ella salen frases como "1 entregas se firmaron" delante del cliente. La
+ * decisión se toma con el valor de `clave`: 1 → singular, el resto → plural.
+ */
 export function formatear(
   plantilla: string,
   valores: Record<string, string | number>,
 ): string {
-  return plantilla.replace(/\{(\w+)\}/g, (_, clave: string) =>
-    clave in valores ? String(valores[clave]) : `{${clave}}`,
-  );
+  return plantilla
+    .replace(
+      /\{(\w+):p\|([^|}]*)\|([^}]*)\}/g,
+      (_, clave: string, singular: string, plural: string) =>
+        Number(valores[clave]) === 1 ? singular : plural,
+    )
+    .replace(/\{(\w+)\}/g, (_, clave: string) =>
+      clave in valores ? String(valores[clave]) : `{${clave}}`,
+    );
 }
 
 /** Movimientos con los que se alimenta la tabla de actividad. */

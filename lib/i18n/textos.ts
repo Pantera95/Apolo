@@ -40,6 +40,14 @@ export const textos = {
     "panel.kpi.pieEnObra": "Despachado y aún no consumido",
     "panel.kpi.pieHerramienta": "Deuda abierta contra obras",
     "panel.kpi.piePorAprobar": "Bloqueadas hasta que alguien apruebe",
+    "panel.kpi.porLlegar": "Por llegar",
+    "panel.kpi.piePorLlegar": "Comprado y aún no recibido",
+    "panel.kpi.enRuta": "En ruta",
+    "panel.kpi.pieEnRuta": "Despachos con el camión afuera",
+    "panel.kpi.averiada": "Herramienta averiada",
+    "panel.kpi.pieAveriada": "Volvió rota, no es disponible",
+    "panel.kpi.obrasActivas": "Obras activas",
+    "panel.kpi.pieObrasActivas": "Reciben material ahora mismo",
     "panel.actividad": "Movimientos recientes",
     "panel.alertas": "Requiere tu atención",
     "panel.sinDatos.titulo": "Todavía no hay movimientos",
@@ -376,13 +384,21 @@ export const textos = {
     "insight.concentracion":
       "{pct}% del material en obra está concentrado en {obra} — {nombre}.",
     "insight.herramientaVieja":
-      "{unidades} unidades de herramienta llevan más de 30 días fuera; la más antigua, {dias} días. Son USD {valor} sin volver.",
+      "{unidades} {unidades:p|unidad|unidades} de herramienta {unidades:p|lleva|llevan} más de 30 días fuera; la más antigua, {dias} días. Son USD {valor} sin volver.",
     "insight.aprobaciones":
-      "{n} solicitudes están bloqueadas esperando autorización; la más vieja lleva {dias} días.",
+      "{n} {n:p|solicitud está bloqueada|solicitudes están bloqueadas} esperando autorización; la más vieja lleva {dias} días.",
     "insight.certificado":
       "El {pct}% del inventario disponible es material certificado (USD {valor}): exige trazabilidad de colada.",
     "insight.ritmo":
       "En 30 días salieron USD {salidas} y entraron USD {entradas}.",
+    "insight.comprasAtrasadas":
+      "{n} {n:p|orden de compra está vencida|órdenes de compra están vencidas}; la peor lleva {dias} días. Son USD {valor} que no {n:p|ha|han} llegado.",
+    "insight.discrepancias":
+      "{n} {n:p|entrega se firmó|entregas se firmaron} con una orden que no coincide ({codigos}). Revisar antes de cerrar el mes.",
+    "insight.averiada":
+      "{unidades} {unidades:p|unidad de herramienta volvió averiada|unidades de herramienta volvieron averiadas}: USD {valor} que no {unidades:p|cuenta|cuentan} como disponible.",
+    "insight.dormidos":
+      "{n} {n:p|artículo lleva|artículos llevan} más de {dias} días sin moverse y {n:p|suma|suman} USD {valor} de capital parado.",
 
     "mov.recepcion": "Recepción",
     "mov.ajuste": "Ajuste",
@@ -452,6 +468,14 @@ export const textos = {
     "panel.kpi.pieEnObra": "Dispatched and not yet consumed",
     "panel.kpi.pieHerramienta": "Open debt against projects",
     "panel.kpi.piePorAprobar": "Blocked until someone approves",
+    "panel.kpi.porLlegar": "Inbound",
+    "panel.kpi.piePorLlegar": "Purchased and not yet received",
+    "panel.kpi.enRuta": "In transit",
+    "panel.kpi.pieEnRuta": "Dispatches out on the truck",
+    "panel.kpi.averiada": "Damaged tools",
+    "panel.kpi.pieAveriada": "Came back broken, not available",
+    "panel.kpi.obrasActivas": "Active projects",
+    "panel.kpi.pieObrasActivas": "Receiving material right now",
     "panel.actividad": "Recent movements",
     "panel.alertas": "Needs your attention",
     "panel.sinDatos.titulo": "No movements yet",
@@ -788,13 +812,21 @@ export const textos = {
     "insight.concentracion":
       "{pct}% of material on site is concentrated in {obra} — {nombre}.",
     "insight.herramientaVieja":
-      "{unidades} tool units have been out for over 30 days; the oldest, {dias} days. That is USD {valor} not back.",
+      "{unidades} tool {unidades:p|unit has|units have} been out for over 30 days; the oldest, {dias} days. That is USD {valor} not back.",
     "insight.aprobaciones":
-      "{n} requests are blocked awaiting approval; the oldest is {dias} days old.",
+      "{n} {n:p|request is|requests are} blocked awaiting approval; the oldest is {dias} days old.",
     "insight.certificado":
       "{pct}% of available stock is certified material (USD {valor}): it requires heat traceability.",
     "insight.ritmo":
       "Over 30 days, USD {salidas} went out and USD {entradas} came in.",
+    "insight.comprasAtrasadas":
+      "{n} purchase {n:p|order is|orders are} overdue; the worst by {dias} days. That is USD {valor} that has not arrived.",
+    "insight.discrepancias":
+      "{n} {n:p|delivery was|deliveries were} signed against a mismatching order ({codigos}). Review before closing the month.",
+    "insight.averiada":
+      "{unidades} tool {unidades:p|unit|units} came back damaged: USD {valor} that does not count as available.",
+    "insight.dormidos":
+      "{n} {n:p|item has|items have} not moved in over {dias} days, tying up USD {valor}.",
 
     "mov.recepcion": "Receipt",
     "mov.ajuste": "Adjustment",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   antiguedadHerramienta,
+  articulosDormidos,
   distribucionPorClase,
   formatear,
   insights,
@@ -14,6 +15,8 @@ import { valorEnObra } from "./indicadores";
 import { ESTADO_APOLO_VACIO } from "@/lib/db/almacen";
 
 const AHORA = new Date("2026-08-01T12:00:00.000Z");
+/** `articulosDormidos` trabaja en milisegundos, no en Date. */
+const AHORA_MS = AHORA.getTime();
 const estado = construirSemilla(AHORA);
 
 describe("serie de movimiento", () => {
@@ -133,11 +136,78 @@ describe("insights", () => {
   });
 });
 
+describe("insights ampliados", () => {
+  const obs = insights(estado, AHORA);
+  const porId = new Map(obs.map((o) => [o.id, o]));
+
+  it("avisa de las compras vencidas con su peor atraso", () => {
+    const compras = porId.get("compras-atrasadas");
+    expect(compras).toBeDefined();
+    expect(Number(compras?.valores.n)).toBeGreaterThan(0);
+    expect(Number(compras?.valores.dias)).toBeGreaterThan(0);
+    expect(compras?.moneda).toContain("valor");
+  });
+
+  it("señala las entregas firmadas con orden que no cuadra", () => {
+    const disc = porId.get("discrepancias");
+    expect(disc).toBeDefined();
+    expect(disc?.tono).toBe("peligro");
+    // Nombra los despachos: sin el código, nadie sabe cuál revisar.
+    expect(String(disc?.valores.codigos)).toMatch(/DES-/);
+  });
+
+  it("reporta la herramienta que volvió rota", () => {
+    const averiada = porId.get("averiada");
+    expect(averiada).toBeDefined();
+    expect(Number(averiada?.valores.unidades)).toBeGreaterThan(0);
+  });
+
+  it("no repite identificadores entre observaciones", () => {
+    expect(new Set(obs.map((o) => o.id)).size).toBe(obs.length);
+  });
+});
+
+describe("capital dormido", () => {
+  it("cuenta solo lo que lleva más del umbral sin moverse", () => {
+    const conUmbralAlto = articulosDormidos(estado, AHORA_MS);
+    // Con un "ahora" muy posterior, todo el catálogo queda dormido.
+    const muyDespues = articulosDormidos(estado, AHORA_MS + 400 * 86_400_000);
+    expect(muyDespues.articulos).toBeGreaterThan(conUmbralAlto.articulos);
+  });
+
+  it("sin reloj no adivina", () => {
+    expect(articulosDormidos(estado, 0)).toEqual({ articulos: 0, valorUsd: 0 });
+  });
+
+  it("no cuenta artículos sin existencia disponible", () => {
+    const dormidos = articulosDormidos(estado, AHORA_MS + 400 * 86_400_000);
+    expect(dormidos.articulos).toBeLessThanOrEqual(estado.articulos.length);
+    expect(dormidos.valorUsd).toBeGreaterThan(0);
+  });
+});
+
 describe("formateo de plantillas", () => {
   it("sustituye los marcadores", () => {
     expect(formatear("{pct}% está en {obra}.", { pct: 62, obra: "OBR-2402" })).toBe(
       "62% está en OBR-2402.",
     );
+  });
+
+  it("concuerda el número: uno va en singular", () => {
+    // Sin esto salía "1 entregas se firmaron" delante del cliente.
+    const plantilla = "{n} {n:p|entrega se firmó|entregas se firmaron} mal.";
+    expect(formatear(plantilla, { n: 1 })).toBe("1 entrega se firmó mal.");
+    expect(formatear(plantilla, { n: 3 })).toBe("3 entregas se firmaron mal.");
+  });
+
+  it("el cero va en plural, como en español", () => {
+    expect(formatear("{n:p|día|días}", { n: 0 })).toBe("días");
+  });
+
+  it("admite varios plurales en la misma frase", () => {
+    const plantilla = "{n} {n:p|orden|órdenes} que no {n:p|ha|han} llegado";
+    expect(formatear(plantilla, { n: 1 })).toBe("1 orden que no ha llegado");
+    expect(formatear(plantilla, { n: 2 })).toBe("2 órdenes que no han llegado");
   });
 
   it("deja visible el marcador que no recibió valor", () => {

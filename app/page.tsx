@@ -37,6 +37,7 @@ import { construirSemilla } from "@/lib/datos/semilla";
 import { setEstado, useEstado, useListo } from "@/lib/db/almacen";
 import type { Asiento } from "@/lib/dominio/tipos";
 import type { ClaveTexto } from "@/lib/i18n/textos";
+import { estaAbierta, pendientePorRecibir } from "@/lib/dominio/compras";
 import { usePreferencias } from "@/lib/preferencias";
 
 /**
@@ -59,6 +60,21 @@ export default function Panel() {
   const averiada = herramientaAveriada(estado);
   const porAprobar = solicitudesPorAprobar(estado);
   const escasos = bajoMinimo(estado);
+
+  // Derivados de compras y despacho: no viven en el saldo, se calculan de las
+  // órdenes abiertas y de los despachos que están en la calle.
+  const porLlegar = estado.ordenes
+    .filter(estaAbierta)
+    .reduce(
+      (s, o) =>
+        s +
+        o.lineas.reduce(
+          (x, l) => x + pendientePorRecibir(l) * l.costoUnitarioUsd,
+          0,
+        ),
+      0,
+    );
+  const enRuta = estado.despachos.filter((d) => d.estado === "en_ruta").length;
 
   const serie = serieMovimientos(estado, 45);
   const obras = valorPorObra(estado);
@@ -83,8 +99,13 @@ export default function Panel() {
         </div>
       </div>
 
-      {/* Indicadores */}
-      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/*
+        Dos filas de igual altura.
+        El bloque protagonista ocupa dos columnas pero UNA sola fila: con
+        `row-span-2` quedaba el doble de alto que sus vecinas y se abría un
+        hueco muerto entre la cifra y su pie.
+      */}
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <TarjetaKpi
           etiqueta={t("panel.kpi.enObra")}
           valor={usd(valorEnObra(estado))}
@@ -92,7 +113,7 @@ export default function Panel() {
           variante="marca"
           destacada
           listo={listo}
-          className="md:col-span-2 xl:row-span-2"
+          className="sm:col-span-2"
         />
         <TarjetaKpi
           etiqueta={t("panel.kpi.herramientaFuera")}
@@ -108,13 +129,36 @@ export default function Panel() {
           variante="contorno"
           listo={listo}
         />
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <TarjetaKpi
           etiqueta={t("panel.kpi.disponible")}
           valor={usd(valorDisponible(estado))}
           pie={t("panel.kpi.pieDisponible")}
           variante="contorno"
           listo={listo}
-          className="md:col-span-2"
+        />
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.porLlegar")}
+          valor={usd(porLlegar)}
+          pie={t("panel.kpi.piePorLlegar")}
+          variante="contorno"
+          listo={listo}
+        />
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.enRuta")}
+          valor={num(enRuta)}
+          pie={t("panel.kpi.pieEnRuta")}
+          variante="contorno"
+          listo={listo}
+        />
+        <TarjetaKpi
+          etiqueta={t("panel.kpi.averiada")}
+          valor={num(averiada.unidades)}
+          pie={t("panel.kpi.pieAveriada")}
+          variante="contorno"
+          listo={listo}
         />
       </div>
 

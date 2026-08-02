@@ -111,10 +111,14 @@ export function TarjetaKpi({
 
       {listo ? (
         <p
-          // min-w-0 + break-words: una cifra larga se parte antes que
-          // desbordar la tarjeta o cortarse a media palabra.
-          className={`cifra mt-6 min-w-0 break-words font-extrabold leading-[0.85] tracking-[-0.04em] ${
-            destacada ? "text-5xl sm:text-7xl" : "text-4xl sm:text-5xl"
+          /*
+            El tamaño está calibrado al ancho real de la tarjeta: a text-4xl,
+            un importe como "USD 128.326" no cabe en una columna de cuatro y se
+            partía en dos líneas. `break-words` queda solo de red de seguridad
+            para valores excepcionalmente largos.
+          */
+          className={`cifra mt-6 min-w-0 break-words font-extrabold leading-[0.9] tracking-[-0.04em] ${
+            destacada ? "text-4xl sm:text-5xl xl:text-6xl" : "text-3xl"
           }`}
         >
           {valor}
