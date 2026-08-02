@@ -122,6 +122,81 @@ export function registrarRetornoObra(
   });
 }
 
+export interface LineaRetorno {
+  obraId: string;
+  articuloId: string;
+  almacenId: string;
+  ubicacionId: string;
+  cantidad: number;
+  condicion: "bueno" | "averiado";
+}
+
+/**
+ * Retorno múltiple: cuando llega el camión de vuelta con media obra encima.
+ *
+ * Es TODO O NADA. Se valida y se aplica sobre una copia, y solo se persiste si
+ * todos los renglones pasaron. Un retorno a medias dejaría al almacenista sin
+ * saber qué quedó registrado y qué no, que es peor que no registrar nada.
+ */
+export function registrarRetornosMultiples(
+  lineas: LineaRetorno[],
+): Resultado<Asiento[]> {
+  if (lineas.length === 0) {
+    return fallo("CANTIDAD_INVALIDA", "No hay renglones que devolver");
+  }
+
+  const estado = getEstado();
+  const ahora = Date.now();
+
+  // Varios renglones pueden apuntar a la misma obra y artículo; el límite se
+  // comprueba sobre la SUMA, no renglón por renglón.
+  const acumulado = new Map<string, number>();
+  for (const l of lineas) {
+    const clave = `${l.obraId}|${l.articuloId}`;
+    acumulado.set(clave, (acumulado.get(clave) ?? 0) + l.cantidad);
+  }
+  for (const [clave, total] of acumulado) {
+    const [obraId, articuloId] = clave.split("|");
+    const permitido = puedeRetornar(estado, obraId, articuloId, ahora);
+    if (total > permitido) {
+      return fallo(
+        "STOCK_INSUFICIENTE",
+        `Esa obra tiene ${permitido} sin devolver de ${articuloId}, no ${total}`,
+      );
+    }
+  }
+
+  let inventario = estado.inventario;
+  const asientos: Asiento[] = [];
+
+  for (const l of lineas) {
+    const articulo = estado.articulos.find((a) => a.id === l.articuloId);
+    if (!articulo) return fallo("CANTIDAD_INVALIDA", "Artículo desconocido");
+
+    const r = aplicar(
+      inventario,
+      {
+        tipo: "retorno",
+        obraId: l.obraId,
+        condicion: l.condicion,
+        cantidad: l.cantidad,
+        articuloId: l.articuloId,
+        almacenId: l.almacenId,
+        ubicacionId: l.ubicacionId,
+        usuarioId: USUARIO,
+      },
+      articulo,
+    );
+    if (!r.ok) return r;
+
+    inventario = r.valor.estado;
+    asientos.push(r.valor.asiento);
+  }
+
+  setEstado({ ...estado, inventario });
+  return ok(asientos);
+}
+
 // ---------------------------------------------------------------------------
 // Solicitudes
 // ---------------------------------------------------------------------------
