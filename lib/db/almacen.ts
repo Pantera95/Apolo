@@ -27,11 +27,30 @@ import type { EstadoInventario } from "@/lib/dominio/inventario";
 import { ESTADO_VACIO } from "@/lib/dominio/inventario";
 import type { Solicitud } from "@/lib/dominio/despacho";
 import type { Chofer, Despacho, Vehiculo } from "@/lib/dominio/entrega";
+import type { PerfilImportacion } from "@/lib/dominio/importacion";
 
 export const CLAVE_ESTADO = "apolo:estado";
 const EVENTO = "apolo:datos";
 /** Sube al cambiar la forma de los datos guardados: descarta lo viejo. */
-const VERSION = 2;
+const VERSION = 3;
+
+/**
+ * Un archivo cargado. Guarda las huellas de sus filas para la idempotencia y
+ * los asientos que generó para poder revertirlo.
+ */
+export interface ArchivoImportado {
+  id: string;
+  nombre: string;
+  perfilId: string;
+  perfilNombre: string;
+  fecha: string;
+  filasImportadas: number;
+  filasOmitidas: number;
+  asientoIds: string[];
+  claves: string[];
+  /** Revertido: sus filas dejan de contar para la detección de duplicados. */
+  revertido: boolean;
+}
 
 export interface EstadoApolo {
   articulos: Articulo[];
@@ -42,6 +61,8 @@ export interface EstadoApolo {
   choferes: Chofer[];
   vehiculos: Vehiculo[];
   despachos: Despacho[];
+  perfiles: PerfilImportacion[];
+  archivos: ArchivoImportado[];
   inventario: EstadoInventario;
 }
 
@@ -54,6 +75,8 @@ export const ESTADO_APOLO_VACIO: EstadoApolo = {
   choferes: [],
   vehiculos: [],
   despachos: [],
+  perfiles: [],
+  archivos: [],
   inventario: ESTADO_VACIO,
 };
 
@@ -71,6 +94,8 @@ interface Persistido {
   choferes: Chofer[];
   vehiculos: Vehiculo[];
   despachos: Despacho[];
+  perfiles: PerfilImportacion[];
+  archivos: ArchivoImportado[];
   asientos: Asiento[];
   saldos: Record<string, Saldo>;
 }
@@ -86,6 +111,8 @@ function serializar(estado: EstadoApolo): string {
     choferes: estado.choferes,
     vehiculos: estado.vehiculos,
     despachos: estado.despachos,
+    perfiles: estado.perfiles,
+    archivos: estado.archivos,
     asientos: [...estado.inventario.asientos],
     saldos: Object.fromEntries(estado.inventario.saldos),
   };
@@ -105,6 +132,8 @@ function deserializar(crudo: string): EstadoApolo | null {
       choferes: p.choferes ?? [],
       vehiculos: p.vehiculos ?? [],
       despachos: p.despachos ?? [],
+      perfiles: p.perfiles ?? [],
+      archivos: p.archivos ?? [],
       inventario: {
         saldos: new Map(Object.entries(p.saldos ?? {})),
         asientos: p.asientos ?? [],

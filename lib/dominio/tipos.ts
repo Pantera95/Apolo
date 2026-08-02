@@ -195,7 +195,13 @@ export type MotivoAjuste =
   | "merma"
   | "rotura"
   | "consumo_interno"
-  | "danado_de_fabrica";
+  | "danado_de_fabrica"
+  /**
+   * Reversión de un archivo importado por error. No es un descuadre físico,
+   * y por eso tiene motivo propio: mezclarlo con "merma" ensuciaría cualquier
+   * análisis de pérdidas.
+   */
+  | "reversion_importacion";
 
 /**
  * Un asiento de kardex es INMUTABLE. Nunca se edita ni se borra: un error se

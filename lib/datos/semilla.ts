@@ -22,6 +22,7 @@ import type {
   Ubicacion,
 } from "@/lib/dominio/tipos";
 import type { Solicitud } from "@/lib/dominio/despacho";
+import type { PerfilImportacion } from "@/lib/dominio/importacion";
 import {
   ponerEnRuta,
   registrarEntrega,
@@ -291,9 +292,55 @@ export function construirSemilla(ahora: Date = new Date()): EstadoApolo {
     choferes: CHOFERES,
     vehiculos: VEHICULOS,
     despachos,
+    perfiles: PERFILES,
+    archivos: [],
     inventario: inv,
   };
 }
+
+/**
+ * Perfiles de importación de ejemplo.
+ *
+ * Cada ERP nombra sus columnas a su manera; el perfil guarda esa traducción
+ * una sola vez y las cargas siguientes son un clic. Los nombres son ficticios
+ * pero el patrón —encabezados distintos para el mismo dato— es el real.
+ */
+const PERFILES: PerfilImportacion[] = [
+  {
+    id: "perf-generico",
+    nombre: "Genérico (Apolo)",
+    tipo: "movimientos",
+    separador: ";",
+    columnas: {
+      codigo: "Codigo",
+      cantidad: "Cantidad",
+      fecha: "Fecha",
+      documento: "Documento",
+    },
+  },
+  {
+    id: "perf-erp-a",
+    nombre: "ERP administrativo",
+    tipo: "movimientos",
+    separador: ";",
+    columnas: {
+      codigo: "Código Artículo",
+      cantidad: "Cant.",
+      fecha: "Fecha Doc.",
+      documento: "Nro. Documento",
+    },
+  },
+  {
+    id: "perf-existencias",
+    nombre: "Existencias del ERP",
+    tipo: "existencias",
+    separador: ";",
+    columnas: {
+      codigo: "Codigo",
+      cantidad: "Existencia",
+    },
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Flota y despachos
