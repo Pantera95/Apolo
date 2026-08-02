@@ -23,6 +23,7 @@ import type {
 } from "@/lib/dominio/tipos";
 import type { Solicitud } from "@/lib/dominio/despacho";
 import type { PerfilImportacion } from "@/lib/dominio/importacion";
+import type { OrdenCompra, Proveedor } from "@/lib/dominio/compras";
 import {
   ponerEnRuta,
   registrarEntrega,
@@ -294,8 +295,131 @@ export function construirSemilla(ahora: Date = new Date()): EstadoApolo {
     despachos,
     perfiles: PERFILES,
     archivos: [],
+    proveedores: PROVEEDORES,
+    ordenes: ordenes(ahora),
     inventario: inv,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Compras
+// ---------------------------------------------------------------------------
+
+const PROVEEDORES: Proveedor[] = [
+  {
+    id: "pro-1",
+    nombre: "Aceros y Tuberías del Centro",
+    contacto: "Mariela Suárez",
+    telefono: "0212-5551020",
+    leadTimeDias: 21,
+    activo: true,
+  },
+  {
+    id: "pro-2",
+    nombre: "Ferretería Industrial Oriente",
+    contacto: "José Ramón Piña",
+    telefono: "0281-2223344",
+    leadTimeDias: 7,
+    activo: true,
+  },
+  {
+    id: "pro-3",
+    nombre: "Suministros de Soldadura C.A.",
+    contacto: "Alfredo Camacho",
+    telefono: "0241-8877665",
+    leadTimeDias: 12,
+    activo: true,
+  },
+  {
+    id: "pro-4",
+    nombre: "Equipos y Herramientas Delta",
+    contacto: "Nubia Fermín",
+    leadTimeDias: 30,
+    activo: true,
+  },
+];
+
+/**
+ * Órdenes en las cuatro situaciones que importan: recién enviada, atrasada,
+ * a medio recibir y cerrada. La atrasada existe para que la alerta de la
+ * pantalla tenga algo real que señalar.
+ */
+function ordenes(ahora: Date): OrdenCompra[] {
+  const crudas: [
+    codigo: string,
+    proveedorId: string,
+    estado: OrdenCompra["estado"],
+    emitidaHace: number,
+    /** Días DESDE HOY: positivo = aún por vencer, negativo = ya vencida. */
+    esperadaEnDias: number,
+    lineas: [string, number, number, number][],
+  ][] = [
+    [
+      "OC-0031",
+      "pro-1",
+      "enviada",
+      6,
+      9,
+      [
+        ["art-20", 600, 0, 60],
+        ["art-22", 60, 0, 72],
+      ],
+    ],
+    [
+      "OC-0032",
+      "pro-2",
+      "enviada",
+      28,
+      -6,
+      [
+        ["art-03", 4000, 0, 0.82],
+        ["art-04", 4000, 0, 0.3],
+      ],
+    ],
+    [
+      "OC-0033",
+      "pro-3",
+      "parcial",
+      18,
+      -3,
+      [
+        ["art-01", 400, 240, 4.35],
+        ["art-02", 300, 0, 5.9],
+      ],
+    ],
+    [
+      "OC-0034",
+      "pro-4",
+      "recibida",
+      45,
+      -20,
+      [["art-16", 6, 6, 205]],
+    ],
+    [
+      "OC-0035",
+      "pro-2",
+      "borrador",
+      1,
+      14,
+      [["art-05", 500, 0, 1.85]],
+    ],
+  ];
+
+  return crudas.map(([codigo, proveedorId, estado, emitida, esperada, lineas]) => ({
+    id: `oc-${codigo}`,
+    codigo,
+    proveedorId,
+    estado,
+    fechaEmision: diasAtras(ahora, emitida),
+    // Signo invertido: `esperada` cuenta hacia adelante, `diasAtras` hacia atrás.
+    fechaEsperada: diasAtras(ahora, -esperada),
+    lineas: lineas.map(([articuloId, pedida, recibida, costo]) => ({
+      articuloId,
+      cantidadPedida: pedida,
+      cantidadRecibida: recibida,
+      costoUnitarioUsd: costo,
+    })),
+  }));
 }
 
 /**

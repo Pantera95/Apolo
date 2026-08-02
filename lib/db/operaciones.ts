@@ -35,6 +35,13 @@ import {
   type FilaImportada,
   type PerfilImportacion,
 } from "@/lib/dominio/importacion";
+import {
+  costoPromedioPonderado,
+  registrarRecepcion,
+  transicionarOrden,
+  type EstadoOrden,
+  type OrdenCompra,
+} from "@/lib/dominio/compras";
 import { puedeRetornar } from "@/lib/datos/obras";
 import {
   getEstado,
@@ -83,6 +90,106 @@ export function ejecutarTransferencia(
 
   setEstado({ ...estado, inventario: r.valor.estado });
   return { ok: true, valor: r.valor.asientos };
+}
+
+// ---------------------------------------------------------------------------
+// Compras
+// ---------------------------------------------------------------------------
+
+export function cambiarEstadoOrden(
+  ordenId: string,
+  hasta: EstadoOrden,
+): Resultado<OrdenCompra> {
+  const estado = getEstado();
+  const orden = estado.ordenes.find((o) => o.id === ordenId);
+  if (!orden) return fallo("CANTIDAD_INVALIDA", "Orden desconocida");
+
+  const r = transicionarOrden(orden.estado, hasta);
+  if (!r.ok) return r;
+
+  const actualizada = { ...orden, estado: r.valor };
+  setEstado({
+    ...estado,
+    ordenes: estado.ordenes.map((o) => (o.id === ordenId ? actualizada : o)),
+  });
+  return ok(actualizada);
+}
+
+/**
+ * Recibe parte de una línea de compra.
+ *
+ * Hace tres cosas en una sola operación, y o pasan las tres o no pasa ninguna:
+ *   1. avanza la orden,
+ *   2. mete la mercancía al almacén por el motor de inventario,
+ *   3. recalcula el costo promedio ponderado del artículo.
+ *
+ * El punto 3 es lo que hace que "promedio ponderado" sea real y no una
+ * etiqueta: si entran 100 tubos a $65 sobre 900 a $60, el costo del inventario
+ * sube a $60,50 y la valorización deja de mentir.
+ */
+export function recibirLineaCompra(
+  ordenId: string,
+  articuloId: string,
+  cantidad: number,
+  ubicacionId: string,
+): Resultado<OrdenCompra> {
+  const estado = getEstado();
+  const orden = estado.ordenes.find((o) => o.id === ordenId);
+  if (!orden) return fallo("CANTIDAD_INVALIDA", "Orden desconocida");
+
+  const ubicacion = estado.ubicaciones.find((u) => u.id === ubicacionId);
+  if (!ubicacion) return fallo("CANTIDAD_INVALIDA", "Ubicación desconocida");
+
+  const articulo = estado.articulos.find((a) => a.id === articuloId);
+  if (!articulo) return fallo("CANTIDAD_INVALIDA", "Artículo desconocido");
+
+  const linea = orden.lineas.find((l) => l.articuloId === articuloId);
+  if (!linea) return fallo("CANTIDAD_INVALIDA", "Ese artículo no está en la orden");
+
+  const avance = registrarRecepcion(orden, articuloId, cantidad);
+  if (!avance.ok) return avance;
+
+  const entrada = aplicar(
+    estado.inventario,
+    {
+      tipo: "recepcion",
+      cantidad,
+      fecha: new Date().toISOString(),
+      usuarioId: USUARIO,
+      documentoId: orden.codigo,
+      articuloId,
+      almacenId: ubicacion.almacenId,
+      ubicacionId: ubicacion.id,
+    },
+    articulo,
+  );
+  if (!entrada.ok) return entrada;
+
+  // Existencia física ANTES de esta entrada, para ponderar correctamente.
+  let existenciaPrevia = 0;
+  for (const [clave, saldo] of estado.inventario.saldos) {
+    if (clave.split("|")[0] === articuloId) existenciaPrevia += saldo.fisico;
+  }
+
+  const nuevoCosto = costoPromedioPonderado(
+    existenciaPrevia,
+    articulo.costoPromedioUsd,
+    cantidad,
+    linea.costoUnitarioUsd,
+  );
+
+  setEstado({
+    ...estado,
+    inventario: entrada.valor.estado,
+    ordenes: estado.ordenes.map((o) => (o.id === ordenId ? avance.valor : o)),
+    articulos: estado.articulos.map((a) =>
+      a.id === articuloId
+        ? { ...a, costoPromedioUsd: Math.round(nuevoCosto * 1e4) / 1e4 }
+        : a,
+    ),
+  });
+
+  return ok(avance.valor);
 }
 
 // ---------------------------------------------------------------------------

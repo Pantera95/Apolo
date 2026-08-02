@@ -28,11 +28,12 @@ import { ESTADO_VACIO } from "@/lib/dominio/inventario";
 import type { Solicitud } from "@/lib/dominio/despacho";
 import type { Chofer, Despacho, Vehiculo } from "@/lib/dominio/entrega";
 import type { PerfilImportacion } from "@/lib/dominio/importacion";
+import type { OrdenCompra, Proveedor } from "@/lib/dominio/compras";
 
 export const CLAVE_ESTADO = "apolo:estado";
 const EVENTO = "apolo:datos";
 /** Sube al cambiar la forma de los datos guardados: descarta lo viejo. */
-const VERSION = 3;
+const VERSION = 4;
 
 /**
  * Un archivo cargado. Guarda las huellas de sus filas para la idempotencia y
@@ -63,6 +64,8 @@ export interface EstadoApolo {
   despachos: Despacho[];
   perfiles: PerfilImportacion[];
   archivos: ArchivoImportado[];
+  proveedores: Proveedor[];
+  ordenes: OrdenCompra[];
   inventario: EstadoInventario;
 }
 
@@ -77,6 +80,8 @@ export const ESTADO_APOLO_VACIO: EstadoApolo = {
   despachos: [],
   perfiles: [],
   archivos: [],
+  proveedores: [],
+  ordenes: [],
   inventario: ESTADO_VACIO,
 };
 
@@ -96,6 +101,8 @@ interface Persistido {
   despachos: Despacho[];
   perfiles: PerfilImportacion[];
   archivos: ArchivoImportado[];
+  proveedores: Proveedor[];
+  ordenes: OrdenCompra[];
   asientos: Asiento[];
   saldos: Record<string, Saldo>;
 }
@@ -113,6 +120,8 @@ function serializar(estado: EstadoApolo): string {
     despachos: estado.despachos,
     perfiles: estado.perfiles,
     archivos: estado.archivos,
+    proveedores: estado.proveedores,
+    ordenes: estado.ordenes,
     asientos: [...estado.inventario.asientos],
     saldos: Object.fromEntries(estado.inventario.saldos),
   };
@@ -134,6 +143,8 @@ function deserializar(crudo: string): EstadoApolo | null {
       despachos: p.despachos ?? [],
       perfiles: p.perfiles ?? [],
       archivos: p.archivos ?? [],
+      proveedores: p.proveedores ?? [],
+      ordenes: p.ordenes ?? [],
       inventario: {
         saldos: new Map(Object.entries(p.saldos ?? {})),
         asientos: p.asientos ?? [],
