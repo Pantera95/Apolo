@@ -24,7 +24,9 @@ export function Tarjeta({
   return (
     <section
       className={[
-        "min-w-0 rounded-tarjeta border-2 border-borde bg-superficie",
+        // borde-fuerte y no borde: el suave separa 1,29:1 sobre la tarjeta en
+        // modo oscuro, o sea que el recuadro no existe.
+        "min-w-0 rounded-tarjeta border-2 border-borde-fuerte bg-superficie",
         className,
       ].join(" ")}
     >
@@ -84,7 +86,7 @@ export function TarjetaKpi({
   const estilos: Record<VarianteKpi, string> = {
     marca: "bg-bloque-marca text-bloque-marca-texto border-transparent",
     luz: "bg-bloque-luz text-bloque-luz-texto border-transparent",
-    contorno: "bg-superficie text-texto border-borde shadow-dura",
+    contorno: "bg-superficie text-texto border-borde-fuerte shadow-dura",
   };
 
   // El texto secundario del bloque verde NO baja de opacidad: al 70% caería a
@@ -118,7 +120,9 @@ export function TarjetaKpi({
             para valores excepcionalmente largos.
           */
           className={`cifra mt-6 min-w-0 break-words font-extrabold leading-[0.9] tracking-[-0.04em] ${
-            destacada ? "text-4xl sm:text-5xl xl:text-6xl" : "text-3xl"
+            destacada
+              ? "text-4xl sm:text-5xl xl:text-6xl"
+              : "text-[clamp(1.35rem,2.1vw,1.875rem)]"
           }`}
         >
           {valor}

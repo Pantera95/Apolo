@@ -53,16 +53,19 @@
 
 .dark {
   --fondo: #101016;
-  --superficie: #1a1a22;
-  --superficie-2: #23232e;
-  --superficie-hover: #2c2c3a;
+  /* Subida desde #1a1a22: la tarjeta se separaba del fondo 1,10:1 y los
+     recuadros del panel no se distinguían en modo oscuro. */
+  --superficie: #1e1e28;
+  --superficie-2: #262633;
+  --superficie-hover: #303040;
 
   --texto: #f3f3f7;
   --texto-2: #b9b9c6;
   --texto-3: #8e8e9e;
   --texto-invertido: #101016;
 
-  --borde: #2e2e3b;
+  /* El borde suave separaba 1,29:1 sobre la tarjeta, o sea nada. */
+  --borde: #383848;
   --borde-fuerte: #6a6a80;
 
   --marca: var(--apolo-violeta-claro);
