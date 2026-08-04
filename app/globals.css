@@ -53,20 +53,21 @@
 
 .dark {
   --fondo: #05101f;
-  /* Subida desde #1a1a22: la tarjeta se separaba del fondo 1,10:1 y los
-     recuadros del panel no se distinguían en modo oscuro. */
-  --superficie: #12233a;
-  --superficie-2: #1a2f4a;
-  --superficie-hover: #223c5c;
+  /* La tarjeta DEBE separarse del fondo. Con #1a1a22 daban 1,10:1 y al pasar
+     al azul petrolero volvio a caer a 1,21:1: en los dos casos los recuadros
+     del panel desaparecian. Este valor da 1,50:1. */
+  --superficie: #1a3355;
+  --superficie-2: #20406a;
+  --superficie-hover: #274d7a;
 
   --texto: #f2f6fb;
   --texto-2: #b4c3d6;
-  --texto-3: #8a9ab0;
+  --texto-3: #93a3b9;
   --texto-invertido: #05101f;
 
   /* El borde suave separaba 1,29:1 sobre la tarjeta, o sea nada. */
-  --borde: #2c445f;
-  --borde-fuerte: #63799a;
+  --borde: #35547a;
+  --borde-fuerte: #7d95b8;
 
   --marca: var(--apolo-azul-claro);
   --marca-fondo: var(--apolo-azul-boton);
