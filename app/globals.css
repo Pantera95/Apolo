@@ -15,26 +15,26 @@
 :root {
   --fondo: var(--apolo-humo);
   --superficie: #ffffff;
-  --superficie-2: #edf0f7;
-  --superficie-hover: #e4e8f2;
+  --superficie-2: #e9eef5;
+  --superficie-hover: #dde5ef;
 
   --texto: var(--apolo-tinta);
   --texto-2: #4f4f4f;
-  --texto-3: #6b7280;
+  --texto-3: #5f6879;
   --texto-invertido: #ffffff;
 
-  --borde: #e0e0e0;
+  --borde: #ccd7e4;
   /* 3:1 mínimo: un campo de formulario que no se distingue del fondo es un bug,
      no una decisión estética. */
-  --borde-fuerte: #868d9e;
+  --borde-fuerte: #7d8aa0;
 
-  --marca: var(--apolo-violeta-texto);
-  --marca-fondo: var(--apolo-violeta-bloque);
-  --marca-tenue: #efeaf9;
+  --marca: var(--apolo-azul-texto);
+  --marca-fondo: var(--apolo-azul-bloque);
+  --marca-tenue: #e6edf6;
 
   /* La "luz" de Apolo: señala sin cansar la vista. */
-  --luz: var(--apolo-verde-texto);
-  --luz-tenue: #e8f6ea;
+  --luz: var(--apolo-cian-texto);
+  --luz-tenue: #ddf5f9;
 
   --ok: #10763a;
   --ok-tenue: #e2f6e9;
@@ -42,38 +42,38 @@
   --advertencia-tenue: #fdf0dc;
   --peligro: #c8362c;
   --peligro-tenue: #fdeae8;
-  --info: var(--apolo-azul);
+  --info: var(--apolo-info);
   --info-tenue: #e7edfd;
 
-  --sombra: 0 1px 2px rgb(28 28 34 / 0.06), 0 4px 16px rgb(28 28 34 / 0.05);
+  --sombra: 0 1px 2px rgb(11 22 34 / 0.07), 0 4px 16px rgb(11 22 34 / 0.06);
   /* Sombra dura desplazada: la firma de la dirección visual aprobada. No es
      una sombra realista, es un bloque sólido corrido 4px. */
-  --sombra-dura: 4px 4px 0 0 #1c1c22;
+  --sombra-dura: 4px 4px 0 0 #0b1622;
 }
 
 .dark {
-  --fondo: #101016;
+  --fondo: #05101f;
   /* Subida desde #1a1a22: la tarjeta se separaba del fondo 1,10:1 y los
      recuadros del panel no se distinguían en modo oscuro. */
-  --superficie: #1e1e28;
-  --superficie-2: #262633;
-  --superficie-hover: #303040;
+  --superficie: #12233a;
+  --superficie-2: #1a2f4a;
+  --superficie-hover: #223c5c;
 
-  --texto: #f3f3f7;
-  --texto-2: #b9b9c6;
-  --texto-3: #8e8e9e;
-  --texto-invertido: #101016;
+  --texto: #f2f6fb;
+  --texto-2: #b4c3d6;
+  --texto-3: #8a9ab0;
+  --texto-invertido: #05101f;
 
   /* El borde suave separaba 1,29:1 sobre la tarjeta, o sea nada. */
-  --borde: #383848;
-  --borde-fuerte: #6a6a80;
+  --borde: #2c445f;
+  --borde-fuerte: #63799a;
 
-  --marca: var(--apolo-violeta-claro);
-  --marca-fondo: var(--apolo-violeta-boton);
-  --marca-tenue: #251d3d;
+  --marca: var(--apolo-azul-claro);
+  --marca-fondo: var(--apolo-azul-boton);
+  --marca-tenue: #14283f;
 
-  --luz: var(--apolo-verde-claro);
-  --luz-tenue: #14301b;
+  --luz: var(--apolo-cian-claro);
+  --luz-tenue: #0b3742;
 
   --ok: #4ad07e;
   --ok-tenue: #16301f;
@@ -85,7 +85,7 @@
   --info-tenue: #17244a;
 
   --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 20px rgb(0 0 0 / 0.35);
-  --sombra-dura: 4px 4px 0 0 #4a4a5c;
+  --sombra-dura: 4px 4px 0 0 #3f5675;
 }
 
 /**
@@ -98,21 +98,21 @@
   /* Bloques protagonistas: FIJOS en los dos temas, siempre bajo texto blanco.
      Fijarlos garantiza el contraste del texto secundario al 70% (medido: 5.91
      y 4.63) y hace que el panel se vea igual con luz y en oscuro. */
-  --bloque-marca: var(--apolo-violeta-bloque);
-  --bloque-luz: var(--apolo-verde-bloque);
+  --bloque-marca: var(--apolo-azul-bloque);
+  --bloque-luz: var(--apolo-cian-bloque);
   /* Cada bloque declara el color de su propio texto: el violeta es oscuro y
      lleva blanco, el verde es medio y lleva tinta. */
   --bloque-marca-texto: #ffffff;
   --bloque-luz-texto: var(--apolo-tinta);
 
-  --nav-fondo: #15151c;
-  --nav-texto: #a2a2b4;
+  --nav-fondo: #081729;
+  --nav-texto: #9fb1c7;
   --nav-texto-activo: #ffffff;
-  --nav-activo: #2a2036;
-  --nav-borde: #26262f;
+  --nav-activo: #14304e;
+  --nav-borde: #1a3050;
   /* El acento de la nav es siempre el verde claro: el oliva oscuro
      desaparecería sobre un panel negro. */
-  --nav-acento: var(--apolo-verde-claro);
+  --nav-acento: var(--apolo-cian-claro);
 }
 
 @theme inline {

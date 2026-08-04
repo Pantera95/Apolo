@@ -8,37 +8,45 @@
  * Concepto: Apolo es el dios de la LUZ. El producto existe para que una empresa
  * vea lo que hoy no ve de su propio almacén.
  *
- * DECISIÓN DE TONO — importante, no tocar sin entender el porqué:
- * la dirección visual de referencia usa violeta #812eff y lima #9dff00 a plena
- * saturación. Eso funciona en una web de marketing que se mira treinta
- * segundos. Apolo es un panel que el almacén tiene abierto toda la jornada, y a
- * ese ritmo el lima neón en bloques grandes produce fatiga visual real.
- * Se conservan los MISMOS colores, bajados en luminosidad y saturación:
- * el violeta pasa a un morado profundo y el lima a un verde oliva sereno.
- * El neón queda descartado como área grande.
+ * PALETA COMPARTIDA CON LA LANDING DE GLOBAL XXI.
+ * Antes Apolo era violeta y verde, una identidad propia y sin relación con la
+ * del sitio corporativo. Se unificó a petición del cliente: quien entra desde
+ * la landing y aterriza en la aplicación no debe sentir que cambió de empresa.
+ * Los valores son los mismos hex del sitio —azul petrolero, cian y ámbar— y si
+ * allí cambian, aquí también deben cambiar.
+ *
+ * REPARTO DE PAPELES:
+ *   Azul petrolero  la marca. La oscuridad sobre la que Apolo alumbra.
+ *   Cian            la "luz": el acento que señala el dato importante.
+ *   Ámbar           avisos y acento de apoyo.
+ *
+ * Cada bloque grande declara qué tinta lleva encima, y no es intercambiable:
+ * el azul es oscuro y pide blanco, el cian es CLARO —por saturado que se vea—
+ * y pide tinta oscura. Blanco sobre cian daría 1,7:1.
  */
 
 :root {
-  /* Violeta: la marca. La oscuridad sobre la que Apolo alumbra. */
-  --apolo-violeta-bloque: #4c2f85; /* bloques grandes, bajo texto blanco */
-  --apolo-violeta-texto: #5b3ba8; /* legible como texto sobre fondo claro */
-  --apolo-violeta-boton: #5f42a3; /* relleno de botón en tema oscuro */
-  --apolo-violeta-claro: #a892e0; /* texto de marca en tema oscuro */
+  /* Azul petrolero: la marca. */
+  --apolo-azul-bloque: #0e2a47; /* bloques grandes, bajo texto blanco */
+  --apolo-azul-texto: #17406e; /* legible como texto sobre fondo claro */
+  --apolo-azul-boton: #17406e; /* relleno de botón en tema oscuro */
+  --apolo-azul-claro: #7fb0e8; /* texto de marca en tema oscuro */
 
-  /* Verde: el acento de "luz" de Apolo. Tono elegido por el cliente.
-     Al ser un verde medio, el bloque grande lleva texto OSCURO encima
-     (6.74:1 medido); con texto blanco daría 2.52:1 y sería ilegible. */
-  --apolo-verde-bloque: #48b956; /* bloques grandes, bajo texto tinta */
-  --apolo-verde-texto: #2f7c39; /* legible como texto sobre fondo claro */
-  --apolo-verde-claro: #48b956; /* texto sobre oscuro y acento de la nav */
+  /* Cian: el acento de "luz" de Apolo, el mismo de los accesos en la landing.
+     Al ser un tono claro, el bloque grande lleva texto OSCURO encima. */
+  --apolo-cian-bloque: #00e5ff; /* bloques grandes, bajo texto tinta */
+  --apolo-cian-texto: #00707f; /* legible como texto sobre fondo claro */
+  --apolo-cian-claro: #4fe6f7; /* texto sobre oscuro y acento de la nav */
 
   /* Acentos de apoyo */
-  --apolo-azul: #2657e8;
+  --apolo-ambar: #ff6b00;
+  --apolo-info: #2657e8;
   --apolo-coral: #f9675d;
 
-  /* Tinta y grises */
-  --apolo-tinta: #1c1c22;
-  --apolo-humo: #f5f6fa;
+  /* Tinta y grises, en la familia del azul petrolero para que las superficies
+     de la aplicación y las del sitio pertenezcan al mismo mundo. */
+  --apolo-tinta: #0b1622;
+  --apolo-humo: #f4f7fa;
 
   /* Forma: radios generosos y sombra dura, la firma de la referencia. */
   --apolo-radio-tarjeta: 20px;

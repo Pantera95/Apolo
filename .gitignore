@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Material de partida ajeno al producto.
+# La regla irrevocable del proyecto es que el Blueprint Macedonia y todo lo
+# relacionado con Sumigases/Sudematin/SumiControl NO existen dentro de Apolo,
+# ni en el codigo ni en el repositorio. Un `git add -A` metio este .txt en un
+# commit; queda ignorado para que no vuelva a pasar.
+*Blueprint Macedonia*
+/PROMPT*.txt
