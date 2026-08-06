@@ -25,10 +25,15 @@ import type { Solicitud } from "@/lib/dominio/despacho";
 import type { Despacho } from "@/lib/dominio/entrega";
 import type { ClaveTexto } from "@/lib/i18n/textos";
 import { usePreferencias } from "@/lib/preferencias";
+import { ObraPremium } from "@/components/obras/premium";
+import { usePremium } from "@/lib/dashboard/premium";
+import { useEstadosFinancieros } from "@/lib/dashboard/estados-store";
 import { useAhora } from "@/lib/tiempo";
 import { tonoObra } from "../page";
 
 export default function DetalleObra() {
+  const premium = usePremium();
+  const finanzas = useEstadosFinancieros();
   const { t, idioma } = usePreferencias();
   const { id } = useParams<{ id: string }>();
   const estado = useEstado();
@@ -205,6 +210,20 @@ export default function DetalleObra() {
           {t("obr.retornar")}
         </Boton>
       </div>
+
+      {/* El bloque Premium va ARRIBA de los KPI: quien abre la ficha con
+          Premium activo viene a decidir —cerrar, aprobar, reclamar— y lo que
+          decide está aquí. Las existencias las mira después. */}
+      {premium && listo && ahora > 0 && (
+        <div className="mb-6">
+          <ObraPremium
+            estado={estado}
+            obra={obra}
+            ahora={ahora}
+            demo={finanzas.demo}
+          />
+        </div>
+      )}
 
       {/* Una sola columna en móvil: a 375px dos columnas no dan para una cifra
           en moneda y el número se corta a media palabra. */}
