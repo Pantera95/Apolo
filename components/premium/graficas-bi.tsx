@@ -37,13 +37,14 @@ import { usePreferencias } from "@/lib/preferencias";
  * mayor. Si son más, la función devuelve barras en vez de una torta ilegible.
  */
 
-const PALETA = [
-  "--bloque-marca",
-  "--bloque-luz",
-  "--info",
-  "--advertencia",
-  "--peligro",
-];
+/**
+ * Paleta de series, con tokens que CAMBIAN de valor entre temas.
+ *
+ * No se usan los `--bloque-*`: están fijados iguales en claro y oscuro para que
+ * los bloques KPI se vean idénticos, y eso hace que `--bloque-marca` (#143a7a)
+ * se funda con la superficie oscura (#1a3355) y la serie desaparezca.
+ */
+const PALETA = ["--serie-1", "--serie-2", "--serie-3", "--serie-4", "--peligro"];
 
 export function tono(css: string): string {
   if (typeof window === "undefined") return "#888";
@@ -52,7 +53,7 @@ export function tono(css: string): string {
 
 function ejeComun(idioma: "es" | "en", moneda: boolean) {
   return {
-    stroke: tono("--texto-3"),
+    stroke: tono("--grafico-eje"),
     fontSize: 11,
     tickFormatter: (v: unknown) =>
       moneda ? dineroCompacto(Number(v) || 0, idioma) : numero(Number(v) || 0, idioma),
@@ -118,13 +119,13 @@ export function BarrasComparativas({
     <Marco titulo={titulo} nota={nota}>
       <ResponsiveContainer width="100%" height={Math.max(180, datos.length * 40)}>
         <BarChart data={datos} layout="vertical" margin={{ left: 4, right: 20 }}>
-          <CartesianGrid horizontal={false} stroke={tono("--borde")} />
+          <CartesianGrid horizontal={false} stroke={tono("--grafico-rejilla")} />
           <XAxis type="number" {...ejeComun(idioma, moneda)} />
           <YAxis
             type="category"
             dataKey="etiqueta"
             width={130}
-            stroke={tono("--texto-3")}
+            stroke={tono("--grafico-eje")}
             fontSize={11}
           />
           <Tooltip
@@ -188,19 +189,19 @@ export function Dispersion({
     <Marco titulo={titulo} nota={nota}>
       <ResponsiveContainer width="100%" height={240}>
         <ScatterChart margin={{ left: 4, right: 16, top: 8, bottom: 16 }}>
-          <CartesianGrid stroke={tono("--borde")} />
+          <CartesianGrid stroke={tono("--grafico-rejilla")} />
           <XAxis
             type="number"
             dataKey="x"
             name={ejeX}
-            stroke={tono("--texto-3")}
+            stroke={tono("--grafico-eje")}
             fontSize={11}
             tickFormatter={(v) => numero(Number(v) || 0, idioma)}
             label={{
               value: ejeX,
               position: "insideBottom",
               offset: -8,
-              fill: tono("--texto-3"),
+              fill: tono("--grafico-eje"),
               fontSize: 11,
             }}
           />
@@ -208,7 +209,7 @@ export function Dispersion({
             type="number"
             dataKey="y"
             name={ejeY}
-            stroke={tono("--texto-3")}
+            stroke={tono("--grafico-eje")}
             fontSize={11}
             width={54}
             tickFormatter={(v) => numero(Number(v) || 0, idioma)}
@@ -221,13 +222,20 @@ export function Dispersion({
             formatter={(v, n) => [numero(Number(v) || 0, idioma), String(n)]}
             labelFormatter={() => ""}
           />
-          <Scatter data={datos} fill={tono("--bloque-marca")}>
+          <Scatter
+            data={datos}
+            fill={tono("--serie-1")}
+            // Contorno: sobre fondo oscuro dos puntos que se solapan sin borde
+            // se leen como uno solo.
+            stroke={tono("--superficie")}
+            strokeWidth={1.5}
+          >
             {datos.map((d, i) => (
               <Cell
                 key={d.etiqueta}
                 // El último punto es el cierre vigente: se destaca para que se
                 // vea hacia dónde se movió la empresa.
-                fill={i === datos.length - 1 ? tono("--bloque-luz") : tono("--bloque-marca")}
+                fill={i === datos.length - 1 ? tono("--serie-2") : tono("--serie-1")}
               />
             ))}
           </Scatter>
@@ -270,9 +278,9 @@ export function Histograma({
     <Marco titulo={titulo} nota={nota}>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={tramos} margin={{ left: 4, right: 12, top: 6 }} barCategoryGap={2}>
-          <CartesianGrid vertical={false} stroke={tono("--borde")} />
-          <XAxis dataKey="etiqueta" stroke={tono("--texto-3")} fontSize={11} />
-          <YAxis allowDecimals={false} stroke={tono("--texto-3")} fontSize={11} width={34} />
+          <CartesianGrid vertical={false} stroke={tono("--grafico-rejilla")} />
+          <XAxis dataKey="etiqueta" stroke={tono("--grafico-eje")} fontSize={11} />
+          <YAxis allowDecimals={false} stroke={tono("--grafico-eje")} fontSize={11} width={34} />
           <Tooltip
             cursor={{ fill: tono("--superficie-2") }}
             contentStyle={tooltipComun()}
@@ -282,7 +290,7 @@ export function Histograma({
             {tramos.map((t) => (
               <Cell
                 key={t.etiqueta}
-                fill={t.alerta ? tono("--peligro") : tono("--bloque-marca")}
+                fill={t.alerta ? tono("--peligro") : tono("--serie-1")}
               />
             ))}
           </Bar>

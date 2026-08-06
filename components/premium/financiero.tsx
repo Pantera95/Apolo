@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -285,7 +283,7 @@ function TarjetaFinanciera({
   // flojo dentro de una subida sostenida no es un cambio de tendencia.
   const subiendo = primero !== null && ultimo !== null && ultimo >= primero;
 
-  const colorLinea = subiendo ? tono("--ok") : tono("--peligro");
+  const colorLinea = subiendo ? tono("--serie-alza") : tono("--serie-baja");
 
   return (
     <div
@@ -313,19 +311,25 @@ function TarjetaFinanciera({
         )}
       </p>
 
-      {/* Sparkline: la forma de la curva importa más que sus valores exactos,
-          así que va sin ejes. El detalle exacto lo da la gráfica de familia. */}
+      {/*
+        Minigráfica de COLUMNAS, no de línea.
+
+        Los cierres mensuales son valores discretos: comparar seis meses entre
+        sí es comparar magnitudes, y en eso la columna gana a la línea. Además,
+        una línea de 2px sobre fondo oscuro casi no se ve, mientras que una
+        columna tiene superficie y se lee de un vistazo.
+
+        La línea se reserva para "Evolución del periodo", que es donde la
+        pendiente sí es la información.
+
+        La última columna va destacada: es el cierre vigente, el que importa.
+      */}
       {puntos.length > 1 && (
-        <div className="mt-2 h-10 w-full">
+        <div className="mt-2 h-12 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={puntos} margin={{ top: 2, bottom: 2, left: 0, right: 0 }}>
-              <defs>
-                <linearGradient id={`g-${indicador.id}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={colorLinea} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={colorLinea} stopOpacity={0} />
-                </linearGradient>
-              </defs>
+            <BarChart data={puntos} margin={{ top: 2, bottom: 0, left: 0, right: 0 }}>
               <Tooltip
+                cursor={{ fill: tono("--superficie-2") }}
                 contentStyle={{
                   background: tono("--superficie"),
                   border: `1px solid ${tono("--borde-fuerte")}`,
@@ -336,16 +340,15 @@ function TarjetaFinanciera({
                 formatter={(v) => formatear(Number(v) || 0, indicador.unidad, idioma)}
                 labelFormatter={(l) => String(l)}
               />
-              <Area
-                type="monotone"
-                dataKey="valor"
-                stroke={colorLinea}
-                strokeWidth={2}
-                fill={`url(#g-${indicador.id})`}
-                dot={false}
-                isAnimationActive={false}
-              />
-            </AreaChart>
+              <Bar dataKey="valor" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+                {puntos.map((_, i) => (
+                  <Cell
+                    key={i}
+                    fill={i === puntos.length - 1 ? colorLinea : tono("--grafico-rejilla")}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       )}
@@ -430,11 +433,13 @@ function GraficaFamilia({
     return fila;
   });
 
+  // Series con tokens propios: los `--bloque-*` están fijados iguales en los
+  // dos temas y sobre fondo oscuro se funden con la superficie.
   const colores = [
-    tono("--bloque-marca"),
-    tono("--bloque-luz"),
-    tono("--info"),
-    tono("--advertencia"),
+    tono("--serie-1"),
+    tono("--serie-2"),
+    tono("--serie-3"),
+    tono("--serie-4"),
   ];
   const unidad = elegidos[0].unidad;
 
@@ -460,10 +465,10 @@ function GraficaFamilia({
 
       <ResponsiveContainer width="100%" height={180} className="mt-3">
         <LineChart data={filas} margin={{ left: 4, right: 12, top: 6 }}>
-          <CartesianGrid stroke={tono("--borde")} vertical={false} />
-          <XAxis dataKey="etiqueta" stroke={tono("--texto-3")} fontSize={11} />
+          <CartesianGrid stroke={tono("--grafico-rejilla")} vertical={false} />
+          <XAxis dataKey="etiqueta" stroke={tono("--grafico-eje")} fontSize={11} />
           <YAxis
-            stroke={tono("--texto-3")}
+            stroke={tono("--grafico-eje")}
             fontSize={11}
             width={54}
             tickFormatter={(v) =>
@@ -491,8 +496,11 @@ function GraficaFamilia({
               type="monotone"
               dataKey={i.id}
               stroke={colores[n % colores.length]}
-              strokeWidth={2.5}
-              dot={false}
+              strokeWidth={3}
+              // Los puntos marcan cada cierre: sin ellos no se sabe si la línea
+              // tiene seis cortes o sesenta.
+              dot={{ r: 3, strokeWidth: 0 }}
+              activeDot={{ r: 5 }}
               // Sin animación: con cuatro líneas redibujándose a cada cambio de
               // filtro, la animación se percibe como parpadeo.
               isAnimationActive={false}
@@ -570,10 +578,10 @@ function Desgloses({ datos }: { datos: DatosPanel }) {
             className="mt-4"
           >
             <BarChart data={activa.datos} layout="vertical" margin={{ left: 4, right: 24 }}>
-              <CartesianGrid horizontal={false} stroke={tono("--borde")} />
+              <CartesianGrid horizontal={false} stroke={tono("--grafico-rejilla")} />
               <XAxis
                 type="number"
-                stroke={tono("--texto-3")}
+                stroke={tono("--grafico-eje")}
                 fontSize={11}
                 tickFormatter={(v) => dineroCompacto(Number(v) || 0, idioma)}
               />
@@ -581,7 +589,7 @@ function Desgloses({ datos }: { datos: DatosPanel }) {
                 type="category"
                 dataKey="etiqueta"
                 width={120}
-                stroke={tono("--texto-3")}
+                stroke={tono("--grafico-eje")}
                 fontSize={11}
               />
               <Tooltip
@@ -599,7 +607,7 @@ function Desgloses({ datos }: { datos: DatosPanel }) {
                 {activa.datos.map((r, i) => (
                   <Cell
                     key={r.clave}
-                    fill={i === 0 ? tono("--bloque-luz") : tono("--marca-fondo")}
+                    fill={i === 0 ? tono("--serie-2") : tono("--serie-1")}
                   />
                 ))}
               </Bar>

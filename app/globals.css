@@ -46,6 +46,26 @@
   --info-tenue: #e7edfd;
 
   --sombra: 0 1px 2px rgb(11 22 34 / 0.07), 0 4px 16px rgb(11 22 34 / 0.06);
+
+  /*
+    TOKENS DE GRÁFICA — separados de los de bloque a propósito.
+
+    Los `--bloque-*` están FIJADOS iguales en los dos temas para que el panel se
+    vea igual con luz y en oscuro. Eso es correcto para un bloque de color
+    macizo bajo texto blanco, pero rompe una gráfica: `--bloque-marca` (#143a7a)
+    sobre la superficie oscura (#1a3355) es prácticamente el mismo color y la
+    serie desaparece.
+
+    Estos cambian de valor entre temas, como el resto de tokens semánticos.
+  */
+  --grafico-rejilla: #dbe4ee;
+  --grafico-eje: #5f6879;
+  --serie-1: #1b4fa6;
+  --serie-2: #b07c00;
+  --serie-3: #2657e8;
+  --serie-4: #0f766e;
+  --serie-alza: #10763a;
+  --serie-baja: #c8362c;
   /* Sombra dura desplazada: la firma de la dirección visual aprobada. No es
      una sombra realista, es un bloque sólido corrido 4px. */
   --sombra-dura: 4px 4px 0 0 #0b1622;
@@ -87,6 +107,16 @@
 
   --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 20px rgb(0 0 0 / 0.35);
   --sombra-dura: 4px 4px 0 0 #3f5675;
+
+  /* En oscuro las series se aclaran: un azul de marca se funde con el fondo. */
+  --grafico-rejilla: #2f4d75;
+  --grafico-eje: #9fb3cc;
+  --serie-1: #7fb0f0;
+  --serie-2: #f2b01e;
+  --serie-3: #a5c8ff;
+  --serie-4: #5eead4;
+  --serie-alza: #4ad07e;
+  --serie-baja: #ff8b83;
 }
 
 /**
@@ -129,6 +159,13 @@
 
   --color-borde: var(--borde);
   --color-borde-fuerte: var(--borde-fuerte);
+
+  --color-grafico-rejilla: var(--grafico-rejilla);
+  --color-grafico-eje: var(--grafico-eje);
+  --color-serie-1: var(--serie-1);
+  --color-serie-2: var(--serie-2);
+  --color-serie-3: var(--serie-3);
+  --color-serie-4: var(--serie-4);
 
   --color-marca: var(--marca);
   --color-marca-fondo: var(--marca-fondo);
