@@ -60,10 +60,20 @@
   */
   --grafico-rejilla: #dbe4ee;
   --grafico-eje: #5f6879;
-  --serie-1: #1b4fa6;
-  --serie-2: #b07c00;
-  --serie-3: #2657e8;
-  --serie-4: #0f766e;
+
+  /*
+    PALETA DE DATOS — deliberadamente INDEPENDIENTE de la marca.
+    Los colores de marca sirven para identificar el producto; una serie de datos
+    tiene otro trabajo: distinguirse de las demás y sostener el contraste sobre
+    el fondo. Atarlos produce dos azules casi iguales en la misma gráfica.
+    Estos tonos son distinguibles entre sí también en deuteranopía, que es la
+    forma de daltonismo más común.
+  */
+  --serie-1: #b0431a;
+  --serie-2: #b87a00; /* 3,61:1 sobre blanco; #d99000 se quedaba en 2,64 */
+  --serie-3: #1a6b4a;
+  --serie-4: #2657e8;
+  --serie-5: #7c3aed;
   --serie-alza: #10763a;
   --serie-baja: #c8362c;
   /* Sombra dura desplazada: la firma de la dirección visual aprobada. No es
@@ -111,10 +121,13 @@
   /* En oscuro las series se aclaran: un azul de marca se funde con el fondo. */
   --grafico-rejilla: #2f4d75;
   --grafico-eje: #9fb3cc;
-  --serie-1: #7fb0f0;
-  --serie-2: #f2b01e;
-  --serie-3: #a5c8ff;
-  --serie-4: #5eead4;
+
+  /* Las mismas familias, aclaradas: sobre fondo oscuro un tono medio se apaga. */
+  --serie-1: #ff8f5e;
+  --serie-2: #f5c445;
+  --serie-3: #4ade9f;
+  --serie-4: #7fb0f0;
+  --serie-5: #c4a2fd;
   --serie-alza: #4ad07e;
   --serie-baja: #ff8b83;
 }
@@ -166,6 +179,7 @@
   --color-serie-2: var(--serie-2);
   --color-serie-3: var(--serie-3);
   --color-serie-4: var(--serie-4);
+  --color-serie-5: var(--serie-5);
 
   --color-marca: var(--marca);
   --color-marca-fondo: var(--marca-fondo);

@@ -127,6 +127,7 @@ export function PanelPremium() {
         filtros={filtros}
         totalObras={estado.obras.length}
         totalAlmacenes={estado.almacenes.length}
+        estado={estado}
       />
 
       <div className="border-t border-borde pt-6">

@@ -25,6 +25,11 @@ import type {
   Veredicto,
 } from "@/lib/dashboard/finanzas";
 import {
+  CurvaComparada,
+  HistoricoVentasCompras,
+  RentabilidadRoi,
+} from "@/components/premium/finanzas-avanzado";
+import {
   BarrasComparativas,
   Dispersion,
   Histograma,
@@ -32,11 +37,13 @@ import {
 } from "@/components/premium/graficas-bi";
 import {
   aplicarFiltros,
+  etiquetaCorte,
   indicadoresConSerie,
   recortarSerie,
   type PuntoIndicador,
 } from "@/lib/dashboard/serie-finanzas";
 import type { DatosPanel, Filtros, Rebanada } from "@/lib/dashboard/tipos";
+import type { EstadoApolo } from "@/lib/db/almacen";
 import { dinero, dineroCompacto, numero } from "@/lib/datos/indicadores";
 import { usePreferencias } from "@/lib/preferencias";
 
@@ -78,11 +85,13 @@ export function SeccionFinanciera({
   filtros,
   totalObras,
   totalAlmacenes,
+  estado,
 }: {
   datos: DatosPanel;
   filtros: Filtros;
   totalObras: number;
   totalAlmacenes: number;
+  estado: EstadoApolo;
 }) {
   const { t, idioma } = usePreferencias();
   const guardado = useEstadosFinancieros();
@@ -155,6 +164,33 @@ export function SeccionFinanciera({
           </div>
         );
       })}
+
+      {/*
+        Ventas contra compras, cierre a cierre.
+        Va con el mismo recorte de periodo que el resto del bloque: es una
+        lectura del periodo elegido, no del histórico completo.
+      */}
+      <CurvaComparada
+        filas={cortes.map((ef) => ({
+          etiqueta: etiquetaCorte(ef.corte, idioma),
+          ventas: ef.ventasNetas ?? null,
+          compras: ef.costoVentas ?? null,
+          utilidad: ef.utilidadNeta ?? null,
+        }))}
+        series={[
+          { clave: "ventas", nombre: t("hist.serieVentas"), color: tono("--serie-1") },
+          { clave: "compras", nombre: t("hist.serieCompras"), color: tono("--serie-2") },
+          { clave: "utilidad", nombre: t("hist.serieUtilidad"), color: tono("--serie-3") },
+        ]}
+        titulo={t("hist.ventasCompras")}
+        subtitulo={`${t("hist.ventasComprasSub")} · ${cortes.length} ${t("hist.cierres")}`}
+      />
+
+      <RentabilidadRoi cortes={cortes} estado={estado} />
+
+      {/* El histórico usa `historial` completo, NO `cortes`: recortarlo con el
+          filtro lo convertiría en otra vista del periodo que ya está arriba. */}
+      <HistoricoVentasCompras historial={guardado.historial} demo={guardado.demo} />
 
       <BloqueBI indicadores={indicadores} series={series} datos={datos} />
 
