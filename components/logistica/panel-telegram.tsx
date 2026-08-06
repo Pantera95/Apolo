@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 import { Alerta } from "@/components/ui/alerta";
 import { Boton } from "@/components/ui/boton";
 import { Insignia } from "@/components/ui/insignia";
+import {
+  enlaceRutaCompleta,
+  enlaceSiguienteParada,
+} from "@/lib/logistica/enlaces";
 import { debeEnviar, type EnvioRegistrado } from "@/lib/logistica/nucleo";
 import {
   CHOFERES_DEMO,
@@ -86,6 +90,11 @@ export function PanelTelegram({
       minute: "2-digit",
     });
 
+  // Enlaces de navegación: se calculan aquí y se pasan a la plantilla para que
+  // el mensaje y los botones de la pantalla usen exactamente la misma URL.
+  const rutaMaps = enlaceRutaCompleta(ruta, LUGARES_DEMO);
+  const siguienteMaps = enlaceSiguienteParada(ruta, LUGARES_DEMO);
+
   const html = componer(plantilla, {
     ruta,
     vehiculo: vehiculo?.descripcion ?? ruta.vehiculoId,
@@ -96,6 +105,11 @@ export function PanelTelegram({
     evento: eventos[0]?.detalle ?? "Sin eventos abiertos",
     rutas,
     hora,
+    urlRuta: rutaMaps?.url ?? null,
+    urlSiguiente: siguienteMaps?.url ?? null,
+    nombreSiguiente: siguienteMaps?.destino.nombre ?? null,
+    paradasEnEnlace: rutaMaps?.paradas ?? 0,
+    omitidas: rutaMaps?.omitidas ?? [],
   });
 
   // Se comprueba el anti-spam ANTES de enviar y se enseña el veredicto: así el
@@ -240,6 +254,47 @@ export function PanelTelegram({
             </Boton>
           </div>
 
+          {/*
+            Los enlaces se abren desde la pantalla ANTES de mandarlos a un
+            grupo: comprobar que la ruta es la correcta después de enviarla a
+            veinte personas ya no sirve de nada.
+          */}
+          {(rutaMaps || siguienteMaps) && (
+            <div className="rounded-control border border-borde bg-superficie-2 p-3">
+              <p className="mono mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-texto-3">
+                Navegación · Google Maps
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {siguienteMaps && (
+                  <a
+                    href={siguienteMaps.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-borde-fuerte px-3 text-xs font-bold text-texto hover:border-marca hover:text-marca"
+                  >
+                    🧭 Ir a {siguienteMaps.destino.nombre}
+                  </a>
+                )}
+                {rutaMaps && (
+                  <a
+                    href={rutaMaps.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-borde-fuerte px-3 text-xs font-bold text-texto hover:border-marca hover:text-marca"
+                  >
+                    🗺 Ruta completa ({rutaMaps.paradas})
+                  </a>
+                )}
+              </div>
+              {rutaMaps && rutaMaps.omitidas.length > 0 && (
+                <p className="mt-2 text-[11px] text-advertencia">
+                  No caben en el enlace: {rutaMaps.omitidas.join(", ")}. Google
+                  admite 9 paradas por ruta.
+                </p>
+              )}
+            </div>
+          )}
+
           {!veredicto.enviar && (
             <p className="text-[11px] text-advertencia">
               Anti-spam: {veredicto.motivo}. Se enviaría igual si la severidad subiera.
@@ -302,6 +357,42 @@ interface Ctx {
   evento: string;
   rutas: PlanRuta[];
   hora: (iso: string) => string;
+  /** Ruta completa planificada en Google Maps. `null` si no se pudo componer. */
+  urlRuta: string | null;
+  /** Navegación directa a la siguiente parada. */
+  urlSiguiente: string | null;
+  nombreSiguiente: string | null;
+  paradasEnEnlace: number;
+  omitidas: string[];
+}
+
+/**
+ * Bloque de navegación que se añade a los mensajes de viaje.
+ *
+ * Van los DOS enlaces porque sirven a dos personas: el supervisor quiere ver la
+ * ruta planificada completa, y el chofer solo necesita llegar a la siguiente
+ * parada. Mandar solo uno obliga a la otra persona a reconstruirlo a mano.
+ *
+ * Las paradas que no caben en el enlace se declaran: Google descarta por encima
+ * de nueve waypoints EN SILENCIO, y un chofer navegando una ruta recortada sin
+ * saberlo es peor que no darle enlace.
+ */
+function bloqueNavegacion(c: Ctx): string {
+  const partes: string[] = [];
+  if (c.urlSiguiente && c.nombreSiguiente) {
+    partes.push(`🧭 <a href="${c.urlSiguiente}">Ir a ${esc(c.nombreSiguiente)}</a>`);
+  }
+  if (c.urlRuta) {
+    partes.push(
+      `🗺 <a href="${c.urlRuta}">Ruta completa (${c.paradasEnEnlace} paradas)</a>`,
+    );
+  }
+  if (c.omitidas.length > 0) {
+    partes.push(
+      `⚠️ No caben en el enlace: ${esc(c.omitidas.join(", "))}. Google admite 9 paradas.`,
+    );
+  }
+  return partes.length > 0 ? "\n" + partes.join("\n") : "";
 }
 
 function componer(id: IdPlantilla, c: Ctx): string {
@@ -319,7 +410,7 @@ function componer(id: IdPlantilla, c: Ctx): string {
         base,
         `Destino: ${esc(c.destino)}`,
         `ETA: ${esc(c.eta)}`,
-      ].join("\n");
+      ].join("\n") + bloqueNavegacion(c);
     case "en_ruta":
       return [
         `<b>📍 En ruta</b>`,
@@ -327,7 +418,7 @@ function componer(id: IdPlantilla, c: Ctx): string {
         `Destino: ${esc(c.destino)}`,
         `ETA actual: ${esc(c.eta)}`,
         `Estado: ${c.desvioMin > 10 ? `Retraso de ${c.desvioMin} min` : "En tiempo"}`,
-      ].join("\n");
+      ].join("\n") + bloqueNavegacion(c);
     case "alerta":
       return [
         `<b>⚠️ Alerta en el viaje</b>`,
@@ -337,14 +428,14 @@ function componer(id: IdPlantilla, c: Ctx): string {
         ``,
         `Acción recomendada:`,
         `Contactar al conductor y avisar a la obra.`,
-      ].join("\n");
+      ].join("\n") + bloqueNavegacion(c);
     case "entrega":
       return [
         `<b>✅ Entrega completada</b>`,
         base,
         `Obra: ${esc(c.destino)}`,
         `Paradas completadas: ${c.ruta.paradas.filter((p) => p.estado === "completada").length} de ${c.ruta.paradas.length}`,
-      ].join("\n");
+      ].join("\n") + bloqueNavegacion(c);
     case "resumen": {
       const filas = c.rutas
         .map(
