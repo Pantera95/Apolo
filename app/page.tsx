@@ -1,5 +1,6 @@
 "use client";
 
+import { PanelPremium } from "@/components/premium/panel";
 import { Alerta } from "@/components/ui/alerta";
 import { Boton } from "@/components/ui/boton";
 import { EstadoVacio } from "@/components/ui/estado-vacio";
@@ -38,6 +39,7 @@ import { setEstado, useEstado, useListo } from "@/lib/db/almacen";
 import type { Asiento } from "@/lib/dominio/tipos";
 import type { ClaveTexto } from "@/lib/i18n/textos";
 import { estaAbierta, pendientePorRecibir } from "@/lib/dominio/compras";
+import { usePremium } from "@/lib/dashboard/premium";
 import { usePreferencias } from "@/lib/preferencias";
 
 /**
@@ -50,7 +52,22 @@ import { usePreferencias } from "@/lib/preferencias";
  * Cada cifra y cada gráfico salen del kardex. Si un dato no se puede derivar de
  * los asientos, no aparece.
  */
+/**
+ * Panel principal.
+ *
+ * Con Premium activo se sustituye por el panel de dirección. No se apilan los
+ * dos: son dos lecturas del mismo negocio para dos personas distintas, y
+ * mostrarlas juntas obligaría a bajar media pantalla para llegar a la que
+ * interesa. El conmutador vive en la barra superior, junto a los datos de
+ * demostración.
+ */
 export default function Panel() {
+  const premium = usePremium();
+  if (premium) return <PanelPremium />;
+  return <PanelBase />;
+}
+
+function PanelBase() {
   const { t, idioma } = usePreferencias();
   const estado = useEstado();
   const listo = useListo();
