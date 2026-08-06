@@ -4,7 +4,13 @@ import {
   type EstadosFinancieros,
   type IndicadorFinanciero,
 } from "@/lib/dashboard/finanzas";
-import type { Periodo } from "@/lib/dashboard/tipos";
+import {
+  PARTICIPACION_ALMACEN,
+  PARTICIPACION_OBRA,
+  cuota,
+  prorratear,
+} from "@/lib/dashboard/semilla-finanzas";
+import type { Filtros, Periodo } from "@/lib/dashboard/tipos";
 
 /**
  * Serie histórica de cada indicador.
@@ -22,22 +28,27 @@ export interface PuntoIndicador {
 }
 
 /**
- * Cuántos cortes mensuales entran en cada periodo del filtro.
+ * Cuántos cierres mensuales se muestran en cada periodo del filtro.
  *
- * Un balance es mensual: "hoy" y "últimos 7 días" caen dentro del mismo corte,
- * así que muestran el mes en curso. Fingir un balance diario sería inventar
- * datos que ninguna contabilidad produce.
+ * Un balance es MENSUAL: no existe un corte diario, así que "hoy" no puede
+ * mostrar un punto por hora. Lo que hace el filtro es fijar cuánta historia se
+ * enseña alrededor del cierre vigente, y la pantalla lo dice literalmente
+ * ("últimos N cierres").
+ *
+ * Antes "30 días" daba 2 puntos y la gráfica salía como una recta: dos puntos
+ * SIEMPRE son una recta, no hay tendencia que ver. El mínimo es 4 porque por
+ * debajo de eso una línea de tiempo no informa de nada.
  */
 export function cortesDelPeriodo(periodo: Periodo): number {
   switch (periodo) {
     case "hoy":
     case "7d":
-      return 1;
+      return 4;
     case "30d":
     case "mes":
-      return 2;
+      return 6;
     case "trimestre":
-      return 3;
+      return 9;
     case "anio":
       return 12;
     default:
@@ -58,6 +69,26 @@ export function recortarSerie(
   if (historial.length === 0) return [];
   const n = Math.max(1, Math.min(cortesDelPeriodo(periodo), historial.length));
   return historial.slice(-n);
+}
+
+/**
+ * Aplica los filtros de obra y almacén al histórico.
+ *
+ * Es lo que hace que elegir una obra MUEVA las cifras: los flujos se prorratean
+ * por la participación de esa obra y las existencias por la del almacén. Sin
+ * esto, cambiar el selector no alteraba un solo indicador financiero y la
+ * función parecía decorativa.
+ */
+export function aplicarFiltros(
+  historial: EstadosFinancieros[],
+  filtros: Filtros,
+  totalObras: number,
+  totalAlmacenes: number,
+): EstadosFinancieros[] {
+  const cObra = cuota(PARTICIPACION_OBRA, filtros.obraId, totalObras);
+  const cAlmacen = cuota(PARTICIPACION_ALMACEN, filtros.almacenId, totalAlmacenes);
+  if (cObra === 1 && cAlmacen === 1) return historial;
+  return historial.map((ef) => prorratear(ef, cObra, cAlmacen));
 }
 
 /**

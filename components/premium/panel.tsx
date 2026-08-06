@@ -122,7 +122,12 @@ export function PanelPremium() {
       )}
 
       {/* Lo financiero abre el panel: quien lo consulta decide con dinero. */}
-      <SeccionFinanciera datos={datos} filtros={filtros} />
+      <SeccionFinanciera
+        datos={datos}
+        filtros={filtros}
+        totalObras={estado.obras.length}
+        totalAlmacenes={estado.almacenes.length}
+      />
 
       <div className="border-t border-borde pt-6">
         <h2 className="text-xl font-extrabold tracking-[-0.02em] sm:text-2xl">

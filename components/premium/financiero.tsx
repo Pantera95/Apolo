@@ -27,6 +27,13 @@ import type {
   Veredicto,
 } from "@/lib/dashboard/finanzas";
 import {
+  BarrasComparativas,
+  Dispersion,
+  Histograma,
+  Torta,
+} from "@/components/premium/graficas-bi";
+import {
+  aplicarFiltros,
   indicadoresConSerie,
   recortarSerie,
   type PuntoIndicador,
@@ -71,18 +78,31 @@ function tono(css: string): string {
 export function SeccionFinanciera({
   datos,
   filtros,
+  totalObras,
+  totalAlmacenes,
 }: {
   datos: DatosPanel;
   filtros: Filtros;
+  totalObras: number;
+  totalAlmacenes: number;
 }) {
   const { t, idioma } = usePreferencias();
   const guardado = useEstadosFinancieros();
 
-  // El filtro de periodo recorta la serie: cambiarlo mueve TODAS las gráficas.
-  const cortes = useMemo(
-    () => recortarSerie(guardado.historial, filtros.periodo),
-    [guardado.historial, filtros.periodo],
-  );
+  /**
+   * Los TRES filtros mueven las cifras:
+   * el periodo recorta cuántos cierres se muestran, y la obra y el almacén
+   * prorratean los flujos y las existencias por su participación.
+   */
+  const cortes = useMemo(() => {
+    const filtrado = aplicarFiltros(
+      guardado.historial,
+      filtros,
+      totalObras,
+      totalAlmacenes,
+    );
+    return recortarSerie(filtrado, filtros.periodo);
+  }, [guardado.historial, filtros, totalObras, totalAlmacenes]);
 
   const { indicadores, series } = useMemo(
     () => indicadoresConSerie(cortes, datos.finanzasDerivadas, idioma),
@@ -138,8 +158,109 @@ export function SeccionFinanciera({
         );
       })}
 
+      <BloqueBI indicadores={indicadores} series={series} datos={datos} />
+
       <Desgloses datos={datos} />
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bloque BI: cada pregunta con su forma
+// ---------------------------------------------------------------------------
+
+/**
+ * Las cuatro lecturas que no da una línea de tiempo.
+ *
+ * Cada gráfica responde a una pregunta distinta y usa la forma que le
+ * corresponde. Repetir líneas para todo desperdicia tres de las cuatro.
+ */
+function BloqueBI({
+  indicadores,
+  series,
+  datos,
+}: {
+  indicadores: IndicadorFinanciero[];
+  series: Map<string, PuntoIndicador[]>;
+  datos: DatosPanel;
+}) {
+  const { t, idioma } = usePreferencias();
+
+  const valor = (id: string) => indicadores.find((i) => i.id === id)?.valor ?? null;
+  const serie = (id: string) => (series.get(id) ?? []).filter((p) => p.valor !== null);
+
+  // COMPARAR: los porcentajes de las cuatro familias, en la misma escala.
+  const comparables = indicadores
+    .filter((i) => i.unidad === "porcentaje" && i.valor !== null)
+    .map((i) => ({
+      etiqueta: i.nombre,
+      valor: i.valor as number,
+      alerta: i.veredicto === "malo",
+    }));
+
+  // RELACIÓN: endeudamiento contra rentabilidad, corte a corte. Un punto por
+  // mes: es la nube la que dice si más deuda vino con más o menos retorno.
+  const end = serie("endeudamiento_total");
+  const rent = serie("roe");
+  const dispersion = end
+    .map((p, i) => ({
+      x: p.valor as number,
+      y: (rent[i]?.valor as number) ?? null,
+      z: Math.abs((valor("valor_inventario") ?? 1) / 1000),
+      etiqueta: p.etiqueta,
+    }))
+    .filter((p): p is { x: number; y: number; z: number; etiqueta: string } => p.y !== null);
+
+  // DISTRIBUCIÓN: cómo se reparte la cobertura de los artículos críticos. El
+  // promedio esconde que la mitad esté a tres días.
+  const tramos = [
+    { etiqueta: "0-2 d", cuenta: 0, alerta: true },
+    { etiqueta: "3-6 d", cuenta: 0, alerta: true },
+    { etiqueta: "7-14 d", cuenta: 0 },
+    { etiqueta: "15-30 d", cuenta: 0 },
+    { etiqueta: "+30 d", cuenta: 0 },
+  ];
+  for (const a of datos.stockCritico) {
+    const c = a.cobertura;
+    if (c === null) continue;
+    const i = c < 3 ? 0 : c < 7 ? 1 : c < 15 ? 2 : c < 31 ? 3 : 4;
+    tramos[i].cuenta += 1;
+  }
+
+  // PARTES DE UN TODO: la estructura del balance son exactamente TRES bloques,
+  // que es el máximo que una torta puede mostrar sin volverse ilegible.
+  const estructura = [
+    { etiqueta: t("fin.pasivoCorto"), valor: valor("endeudamiento_corto") ?? 0 },
+    { etiqueta: t("fin.pasivoLargo"), valor: (valor("endeudamiento_largo") ?? 0) * 100 },
+    { etiqueta: t("fin.patrimonio"), valor: 100 },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <BarrasComparativas
+        datos={comparables}
+        titulo={t("bi.comparar")}
+        nota={t("bi.compararNota")}
+      />
+      <Dispersion
+        datos={dispersion}
+        titulo={t("bi.relacion")}
+        nota={t("bi.relacionNota")}
+        ejeX={idioma === "es" ? "Endeudamiento %" : "Debt ratio %"}
+        ejeY="ROE %"
+      />
+      <Histograma
+        tramos={tramos}
+        titulo={t("bi.distribucion")}
+        nota={t("bi.distribucionNota")}
+      />
+      <Torta
+        porciones={estructura}
+        titulo={t("bi.estructura")}
+        nota={t("bi.estructuraNota")}
+        moneda={false}
+      />
+    </div>
   );
 }
 
