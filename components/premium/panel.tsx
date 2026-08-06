@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 
 import { EncabezadoPremium } from "@/components/premium/encabezado";
+import { ComparadorPeriodos } from "@/components/premium/comparador";
 import { SeccionFinanciera } from "@/components/premium/financiero";
+import { InformesProgramados } from "@/components/premium/programados";
 import { InformeTelegram } from "@/components/premium/informe-telegram";
 import { BarrasAvance, BarrasEstado } from "@/components/premium/graficas";
 import {
@@ -13,6 +15,7 @@ import {
 } from "@/components/premium/tablas";
 import { TarjetaKpiPremium } from "@/components/premium/tarjeta-kpi";
 import { Alerta } from "@/components/ui/alerta";
+import { Boton } from "@/components/ui/boton";
 import { EstadoVacio } from "@/components/ui/estado-vacio";
 import { calcularPanel } from "@/lib/dashboard/fuente-local";
 import { definicion } from "@/lib/dashboard/catalogo";
@@ -95,15 +98,20 @@ export function PanelPremium() {
         generadoEn={datos.generadoEn}
         onExportar={() => exportar(datos, t("premium.sinDatos"))}
         acciones={
-          // El informe sale del MISMO `datos` que pintó el panel, con los
-          // mismos filtros: si recalculara aparte, el mensaje podría decir
-          // cifras distintas de las que el gerente acaba de mirar.
-          <InformeTelegram
-            datos={datos}
-            filtros={filtros}
-            nombreObra={(id) => estado.obras.find((o) => o.id === id)?.nombre ?? id}
-            nombreAlmacen={(id) => estado.almacenes.find((a) => a.id === id)?.nombre ?? id}
-          />
+          <>
+            <Boton compacto variante="suave" onClick={() => window.print()}>
+              {t("pdf.exportar")}
+            </Boton>
+            {/* El informe sale del MISMO `datos` que pintó el panel, con los
+                mismos filtros: si recalculara aparte, el mensaje podría decir
+                cifras distintas de las que el gerente acaba de mirar. */}
+            <InformeTelegram
+              datos={datos}
+              filtros={filtros}
+              nombreObra={(id) => estado.obras.find((o) => o.id === id)?.nombre ?? id}
+              nombreAlmacen={(id) => estado.almacenes.find((a) => a.id === id)?.nombre ?? id}
+            />
+          </>
         }
       />
 
@@ -183,6 +191,16 @@ export function PanelPremium() {
         <TablaObrasCriticas filas={datos.obrasCriticas} />
         <TablaStockCritico filas={datos.stockCritico} />
       </section>
+
+      <ComparadorPeriodos estado={estado} filtros={filtros} ahora={ahora} />
+
+      <InformesProgramados
+        datos={datos}
+        filtros={filtros}
+        ahora={ahora}
+        nombreObra={(id) => estado.obras.find((o) => o.id === id)?.nombre ?? id}
+        nombreAlmacen={(id) => estado.almacenes.find((a) => a.id === id)?.nombre ?? id}
+      />
 
       <p className="text-xs text-texto-3">
         {t("premium.actualizado")}{" "}

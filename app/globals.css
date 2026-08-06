@@ -227,3 +227,66 @@
     scroll-behavior: auto !important;
   }
 }
+
+/**
+ * Hoja de impresión — el "exportar a PDF" del panel.
+ *
+ * Se usa el diálogo del navegador ("Guardar como PDF") en vez de una librería
+ * como jsPDF. Pesa 0 KB frente a ~300, respeta el texto seleccionable y los
+ * enlaces, y sobre todo imprime lo que el usuario ESTÁ VIENDO: una librería
+ * reconstruye el documento aparte y acaba divergiendo de la pantalla.
+ *
+ * Lo que se retira al imprimir es lo que no significa nada en papel: la
+ * navegación, los botones y los controles de filtro. Los VALORES de los filtros
+ * sí se quedan, en la cabecera de impresión: un informe sin decir de qué
+ * periodo es no se puede archivar.
+ */
+@media print {
+  /* Fondo blanco y tinta negra: el tema oscuro gasta un cartucho por hoja. */
+  :root,
+  .dark {
+    --fondo: #ffffff;
+    --superficie: #ffffff;
+    --superficie-2: #f4f7fa;
+    --texto: #0b1622;
+    --texto-2: #35414f;
+    --texto-3: #5f6879;
+    --borde: #ccd7e4;
+    --borde-fuerte: #7d8aa0;
+    --sombra: none;
+    --sombra-dura: none;
+  }
+
+  .no-imprimir,
+  nav,
+  aside.chasis-nav {
+    display: none !important;
+  }
+
+  /* Nada de sombras ni fondos de bloque a plena tinta. */
+  * {
+    box-shadow: none !important;
+  }
+
+  /* Una tarjeta partida entre dos páginas es ilegible. */
+  section,
+  table,
+  li {
+    break-inside: avoid;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  /* El destino de un enlace se pierde en papel: se imprime al lado. */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9px;
+    color: #5f6879;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}
