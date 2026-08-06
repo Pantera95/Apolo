@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { EncabezadoPremium } from "@/components/premium/encabezado";
+import { SeccionFinanciera } from "@/components/premium/financiero";
 import { BarrasAvance, BarrasEstado } from "@/components/premium/graficas";
 import {
   TablaAlertas,
@@ -99,6 +100,15 @@ export function PanelPremium() {
           {t("demo.aviso")}
         </Alerta>
       )}
+
+      {/* Lo financiero abre el panel: quien lo consulta decide con dinero. */}
+      <SeccionFinanciera datos={datos} />
+
+      <div className="border-t border-borde pt-6">
+        <h2 className="text-xl font-extrabold tracking-[-0.02em] sm:text-2xl">
+          {t("fin.operativo")}
+        </h2>
+      </div>
 
       {/* Dirección: dinero y obra. */}
       {/* Cinco columnas y la principal ocupa dos: con cuatro iguales, "USD

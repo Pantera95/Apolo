@@ -1,5 +1,6 @@
 "use client";
 
+import { ImportarFinanzas } from "@/components/premium/importar-finanzas";
 import { PanelPremium } from "@/components/premium/panel";
 import { Alerta } from "@/components/ui/alerta";
 import { Boton } from "@/components/ui/boton";
@@ -114,6 +115,11 @@ function PanelBase() {
             {t("panel.subtitulo")}
           </p>
         </div>
+
+        {/* La importación de estados financieros vive aquí Y en el Premium: la
+            cifra cargada es la misma, y obligar a activar Premium para poder
+            subirla seria una traba artificial. */}
+        <ImportarFinanzas compacto={false} />
       </div>
 
       {/*

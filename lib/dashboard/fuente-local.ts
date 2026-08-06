@@ -9,6 +9,7 @@ import {
 import type {
   Alerta,
   Conteo,
+  Rebanada,
   DatosPanel,
   FilaObraCritica,
   FilaStockCritico,
@@ -356,8 +357,58 @@ export function calcularPanel(
   add(kpi("exactitud_inventario", null));
   add(kpi("cumplimiento_plan_obra", null));
 
+  // --- Desgloses ------------------------------------------------------------
+  // Se calculan una vez y sirven a las cuatro graficas de desglose: recorrer
+  // los saldos una vez por widget seria el equivalente en cliente de un N+1.
+  const nombreAlmacen = new Map(estado.almacenes.map((a) => [a.id, a.nombre]));
+  const acumular = (
+    mapa: Map<string, Rebanada>,
+    clave: string,
+    etiqueta: string,
+    valorUsd: number,
+    unidades: number,
+  ) => {
+    const prev = mapa.get(clave) ?? { clave, etiqueta, valorUsd: 0, unidades: 0 };
+    prev.valorUsd += valorUsd;
+    prev.unidades += unidades;
+    mapa.set(clave, prev);
+  };
+
+  const mAlmacen = new Map<string, Rebanada>();
+  const mClase = new Map<string, Rebanada>();
+  for (const [k, s] of saldosFiltrados) {
+    const [articuloId, almacenId] = k.split("|");
+    const art = articulos.get(articuloId);
+    if (!art || s.fisico <= 0) continue;
+    const valor = s.fisico * art.costoPromedioUsd;
+    acumular(mAlmacen, almacenId, nombreAlmacen.get(almacenId) ?? almacenId, valor, s.fisico);
+    acumular(mClase, art.clase, art.clase, valor, s.fisico);
+  }
+
+  const mObra = new Map<string, Rebanada>();
+  for (const a of estado.inventario.asientos) {
+    if (!a.obraId || a.delta.enObra === 0) continue;
+    if (filtros.obraId && a.obraId !== filtros.obraId) continue;
+    const art = articulos.get(a.articuloId);
+    const o = estado.obras.find((x) => x.id === a.obraId);
+    if (!art || !o) continue;
+    acumular(mObra, o.id, o.codigo, a.delta.enObra * art.costoPromedioUsd, a.delta.enObra);
+  }
+
+  const ordenar = (m: Map<string, Rebanada>) =>
+    [...m.values()].filter((r) => r.valorUsd > 0).sort((a, b) => b.valorUsd - a.valorUsd);
+
   return {
     generadoEn: new Date(ahoraMs).toISOString(),
+    finanzasDerivadas: {
+      inventarioValorizado: valorInventario,
+      consumoACoste: consumo.valorUsd,
+      comprometidoConProveedores: valorPorRecibir,
+      diasDelPeriodo: diasVentana,
+    },
+    porAlmacen: ordenar(mAlmacen),
+    porClase: ordenar(mClase),
+    porObra: ordenar(mObra),
     kpis,
     alertas: construirAlertas(estado, stockCritico, ahoraMs, v),
     obrasCriticas,

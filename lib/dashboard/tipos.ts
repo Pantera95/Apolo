@@ -162,8 +162,27 @@ export interface Conteo {
 // El paquete que consume la pantalla
 // ---------------------------------------------------------------------------
 
+/** Un corte del inventario por alguna dimensión, para los desgloses. */
+export interface Rebanada {
+  clave: string;
+  etiqueta: string;
+  valorUsd: number;
+  unidades: number;
+}
+
 export interface DatosPanel {
   generadoEn: string;
+  /** Lo que Apolo mide por sí mismo y alimenta los ratios financieros. */
+  finanzasDerivadas: {
+    inventarioValorizado: number;
+    consumoACoste: number;
+    comprometidoConProveedores: number;
+    diasDelPeriodo: number;
+  };
+  /** Desgloses del inventario. Son el drill-down de las gráficas financieras. */
+  porAlmacen: Rebanada[];
+  porClase: Rebanada[];
+  porObra: Rebanada[];
   kpis: Record<string, ValorKpi>;
   alertas: Alerta[];
   obrasCriticas: FilaObraCritica[];
