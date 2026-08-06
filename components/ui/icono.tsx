@@ -148,15 +148,31 @@ export function MarcaApolo({ tam = 28 }: { tam?: number }) {
     <svg
       width={tam}
       height={tam}
-      viewBox="0 0 32 32"
+      viewBox="0 0 64 64"
       aria-hidden="true"
       focusable="false"
     >
-      {/* Usa los tokens FIJOS, no los del tema: la marca tiene que verse igual
-          sobre el panel oscuro de la nav y sobre el lienzo claro. */}
-      <circle cx="16" cy="16" r="13" fill="var(--bloque-marca)" />
-      <path d="M16 3a13 13 0 0 1 0 26z" fill="var(--nav-acento)" />
-      <path d="M16 9.5 22.5 22h-13z" fill="var(--bloque-marca)" />
+      {/*
+        El hexágono del logotipo, con la "A" dorada dentro.
+
+        Se dibuja en SVG y no se usa el PNG original por tres razones: pesa
+        1,3MB, se ve borroso en pantallas densas al escalarlo, y un vector puede
+        heredar los tokens de marca. Las proporciones siguen al logotipo.
+
+        Usa los tokens FIJOS de bloque, no los del tema: la marca tiene que
+        verse igual sobre el panel oscuro de la nav y sobre el lienzo claro.
+      */}
+      <path
+        d="M32 3 58 18v28L32 61 6 46V18z"
+        fill="var(--bloque-marca)"
+      />
+      {/* Cara interior en oro: es la que da el volumen del isotipo. */}
+      <path d="M32 12 50 22.5v19L32 52 14 41.5v-19z" fill="var(--bloque-luz)" />
+      {/* La A, en el azul de la marca para que recorte sobre el oro. */}
+      <path
+        d="M32 19 43 45h-6.2l-1.9-4.8h-5.8L27.2 45H21zm0 10.8-2 5.2h4z"
+        fill="var(--bloque-marca)"
+      />
     </svg>
   );
 }

@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 
+import dynamic from "next/dynamic";
+
 import { MapaControl } from "@/components/logistica/mapa";
+import { PanelTelegram } from "@/components/logistica/panel-telegram";
 import { Alerta } from "@/components/ui/alerta";
 import { Insignia, type TonoInsignia } from "@/components/ui/insignia";
 import {
@@ -23,8 +26,28 @@ import {
 } from "@/lib/logistica/simulado";
 import type { EstadoViaje, PlanRuta, PosicionVehiculo } from "@/lib/logistica/tipos";
 import { numero } from "@/lib/datos/indicadores";
+import { usePremium } from "@/lib/dashboard/premium";
 import { usePreferencias } from "@/lib/preferencias";
 import { useAhora } from "@/lib/tiempo";
+
+/**
+ * El mapa real se carga en diferido y sin SSR.
+ *
+ * MapLibre toca `window` al construirse, así que renderizarlo en el servidor
+ * rompe la compilación. Y pesa ~800 KB: cargarlo con la página penalizaría a
+ * quien solo viene a mirar el panel lateral.
+ */
+const MapaReal = dynamic(
+  () => import("@/components/logistica/mapa-real").then((m) => m.MapaReal),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center bg-superficie-2 text-sm text-texto-3">
+        Cargando callejero…
+      </div>
+    ),
+  },
+);
 
 const TONO_VIAJE: Partial<Record<EstadoViaje, TonoInsignia>> = {
   en_ruta: "ok",
@@ -51,9 +74,13 @@ const TONO_VIAJE: Partial<Record<EstadoViaje, TonoInsignia>> = {
  * proveedor es sustituir el módulo que los construye.
  */
 export default function CentroControl() {
-  const { idioma } = usePreferencias();
+  const { idioma, tema } = usePreferencias();
+  const premium = usePremium();
   const ahora = useAhora();
   const [seleccion, setSeleccion] = useState<string | null>("ruta-1");
+  // El callejero es el valor por defecto: es lo que un supervisor necesita.
+  // El esquema se conserva porque funciona sin red, y en una obra eso pasa.
+  const [vistaMapa, setVistaMapa] = useState<"calle" | "esquema">("calle");
 
   const rutas = useMemo(() => (ahora === 0 ? [] : rutasDemo(ahora)), [ahora]);
 
@@ -120,18 +147,56 @@ export default function CentroControl() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_22rem]">
         <section className="min-w-0 overflow-hidden rounded-tarjeta border border-borde-fuerte bg-superficie">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-borde px-3 py-2">
+            <span className="mono text-[11px] font-bold uppercase tracking-[0.12em] text-texto-3">
+              {vistaMapa === "calle" ? "Callejero · OpenStreetMap" : "Esquema · sin red"}
+            </span>
+            <div className="flex gap-1" role="tablist" aria-label="Vista del mapa">
+              {(["calle", "esquema"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="tab"
+                  aria-selected={v === vistaMapa}
+                  onClick={() => setVistaMapa(v)}
+                  className={`mono flex min-h-11 items-center rounded-pildora px-3 text-[11px] font-bold uppercase tracking-[0.1em] transition-colors ${
+                    v === vistaMapa
+                      ? "bg-marca-fondo text-white"
+                      : "bg-superficie-2 text-texto-2 hover:text-texto"
+                  }`}
+                >
+                  {v === "calle" ? "Calles" : "Esquema"}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="h-[26rem] w-full sm:h-[34rem]">
-            <MapaControl
-              lugares={LUGARES_DEMO}
-              rutas={rutas}
-              posiciones={posiciones}
-              seleccion={activa.id}
-              onSeleccionar={setSeleccion}
-              etiquetaVehiculo={(id) => {
-                const r = rutas.find((x) => x.id === id);
-                return r ? (vehiculoDe(r)?.descripcion ?? r.vehiculoId) : id;
-              }}
-            />
+            {vistaMapa === "calle" ? (
+              <MapaReal
+                lugares={LUGARES_DEMO}
+                rutas={rutas}
+                posiciones={posiciones}
+                seleccion={activa.id}
+                onSeleccionar={setSeleccion}
+                oscuro={tema === "oscuro"}
+                etiquetaVehiculo={(id) => {
+                  const r = rutas.find((x) => x.id === id);
+                  return r ? (vehiculoDe(r)?.descripcion ?? r.vehiculoId) : id;
+                }}
+              />
+            ) : (
+              <MapaControl
+                lugares={LUGARES_DEMO}
+                rutas={rutas}
+                posiciones={posiciones}
+                seleccion={activa.id}
+                onSeleccionar={setSeleccion}
+                etiquetaVehiculo={(id) => {
+                  const r = rutas.find((x) => x.id === id);
+                  return r ? (vehiculoDe(r)?.descripcion ?? r.vehiculoId) : id;
+                }}
+              />
+            )}
           </div>
         </section>
 
@@ -192,6 +257,10 @@ export default function CentroControl() {
           })}
         </aside>
       </div>
+
+      {/* El panel de informes es Premium: la operación base ve el mapa y la
+          línea de tiempo, pero el canal de avisos es lo que se vende aparte. */}
+      {premium && <PanelTelegram rutas={rutas} posiciones={posiciones} ahora={ahora} />}
 
       <DetalleViaje
         ruta={activa}

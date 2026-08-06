@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { EncabezadoPremium } from "@/components/premium/encabezado";
 import { SeccionFinanciera } from "@/components/premium/financiero";
+import { InformeTelegram } from "@/components/premium/informe-telegram";
 import { BarrasAvance, BarrasEstado } from "@/components/premium/graficas";
 import {
   TablaAlertas,
@@ -93,6 +94,17 @@ export function PanelPremium() {
         almacenes={estado.almacenes}
         generadoEn={datos.generadoEn}
         onExportar={() => exportar(datos, t("premium.sinDatos"))}
+        acciones={
+          // El informe sale del MISMO `datos` que pintó el panel, con los
+          // mismos filtros: si recalculara aparte, el mensaje podría decir
+          // cifras distintas de las que el gerente acaba de mirar.
+          <InformeTelegram
+            datos={datos}
+            filtros={filtros}
+            nombreObra={(id) => estado.obras.find((o) => o.id === id)?.nombre ?? id}
+            nombreAlmacen={(id) => estado.almacenes.find((a) => a.id === id)?.nombre ?? id}
+          />
+        }
       />
 
       {!hayOperacion && (
@@ -102,7 +114,7 @@ export function PanelPremium() {
       )}
 
       {/* Lo financiero abre el panel: quien lo consulta decide con dinero. */}
-      <SeccionFinanciera datos={datos} />
+      <SeccionFinanciera datos={datos} filtros={filtros} />
 
       <div className="border-t border-borde pt-6">
         <h2 className="text-xl font-extrabold tracking-[-0.02em] sm:text-2xl">

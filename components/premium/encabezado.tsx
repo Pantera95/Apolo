@@ -31,6 +31,7 @@ export function EncabezadoPremium({
   almacenes,
   generadoEn,
   onExportar,
+  acciones,
 }: {
   filtros: Filtros;
   onCambio: (f: Filtros) => void;
@@ -38,6 +39,8 @@ export function EncabezadoPremium({
   almacenes: Almacen[];
   generadoEn: string;
   onExportar: () => void;
+  /** Acciones adicionales, a la izquierda de Exportar. */
+  acciones?: React.ReactNode;
 }) {
   const { t, idioma } = usePreferencias();
 
@@ -61,9 +64,12 @@ export function EncabezadoPremium({
           <p className="mt-1 text-sm text-texto-2">{t("premium.sub")}</p>
         </div>
 
-        <Boton compacto variante="suave" onClick={onExportar}>
-          {t("premium.exportar")}
-        </Boton>
+        <div className="flex flex-wrap items-center gap-2">
+          {acciones}
+          <Boton compacto variante="suave" onClick={onExportar}>
+            {t("premium.exportar")}
+          </Boton>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

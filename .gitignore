@@ -47,3 +47,6 @@ next-env.d.ts
 # commit; queda ignorado para que no vuelva a pasar.
 *Blueprint Macedonia*
 /PROMPT*.txt
+
+# Material de marca en bruto: el isotipo vive en SVG dentro del codigo.
+/Apolo Logo.png

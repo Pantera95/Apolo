@@ -19,12 +19,28 @@ const CLAVE = "apolo:finanzas";
 
 export interface EstadosGuardados {
   estados: EstadosFinancieros;
+  /**
+   * Cortes mensuales anteriores, del más antiguo al más reciente.
+   *
+   * Es lo que hace posible que CADA indicador tenga gráfica: sin serie solo hay
+   * un punto, y un punto no es una tendencia. El último elemento coincide con
+   * `estados`.
+   */
+  historial: EstadosFinancieros[];
   /** Nombre del archivo del que salieron, para poder rastrear la cifra. */
   archivo: string;
   importadoEn: string;
+  /** Marca explícita: estas cifras son de demostración, no del cliente. */
+  demo: boolean;
 }
 
-const VACIO: EstadosGuardados = { estados: {}, archivo: "", importadoEn: "" };
+const VACIO: EstadosGuardados = {
+  estados: {},
+  historial: [],
+  archivo: "",
+  importadoEn: "",
+  demo: false,
+};
 
 let actual: EstadosGuardados = VACIO;
 let leido = false;
@@ -35,7 +51,17 @@ function leer(): EstadosGuardados {
   leido = true;
   try {
     const crudo = window.localStorage.getItem(CLAVE);
-    actual = crudo ? (JSON.parse(crudo) as EstadosGuardados) : VACIO;
+    const leidoCrudo = crudo ? (JSON.parse(crudo) as Partial<EstadosGuardados>) : null;
+    // Un guardado de una versión anterior no traía `historial`: se rellena en
+    // vez de dejar que las gráficas reciban `undefined`.
+    actual = leidoCrudo
+      ? {
+          ...VACIO,
+          ...leidoCrudo,
+          estados: leidoCrudo.estados ?? {},
+          historial: leidoCrudo.historial ?? (leidoCrudo.estados ? [leidoCrudo.estados] : []),
+        }
+      : VACIO;
   } catch {
     // Un JSON corrupto no puede tumbar el panel: se empieza en blanco.
     actual = VACIO;
@@ -43,8 +69,21 @@ function leer(): EstadosGuardados {
   return actual;
 }
 
-export function guardarEstados(estados: EstadosFinancieros, archivo: string): void {
-  actual = { estados, archivo, importadoEn: new Date().toISOString() };
+export function guardarEstados(
+  estados: EstadosFinancieros,
+  archivo: string,
+  historial: EstadosFinancieros[] = [],
+  demo = false,
+): void {
+  actual = {
+    estados,
+    // Un archivo suelto no trae historia: se guarda como único corte para que
+    // las gráficas muestren un punto en vez de romperse.
+    historial: historial.length > 0 ? historial : [estados],
+    archivo,
+    importadoEn: new Date().toISOString(),
+    demo,
+  };
   leido = true;
   try {
     window.localStorage.setItem(CLAVE, JSON.stringify(actual));

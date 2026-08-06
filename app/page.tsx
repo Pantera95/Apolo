@@ -1,6 +1,9 @@
 "use client";
 
 import { ImportarFinanzas } from "@/components/premium/importar-finanzas";
+import { InformeTelegram } from "@/components/premium/informe-telegram";
+import { calcularPanel } from "@/lib/dashboard/fuente-local";
+import { FILTROS_INICIALES } from "@/lib/dashboard/tipos";
 import { PanelPremium } from "@/components/premium/panel";
 import { Alerta } from "@/components/ui/alerta";
 import { Boton } from "@/components/ui/boton";
@@ -42,6 +45,7 @@ import type { ClaveTexto } from "@/lib/i18n/textos";
 import { estaAbierta, pendientePorRecibir } from "@/lib/dominio/compras";
 import { usePremium } from "@/lib/dashboard/premium";
 import { usePreferencias } from "@/lib/preferencias";
+import { useAhora } from "@/lib/tiempo";
 
 /**
  * Panel de operación.
@@ -70,6 +74,9 @@ export default function Panel() {
 
 function PanelBase() {
   const { t, idioma } = usePreferencias();
+  // `Date.now()` durante el render es impuro y desajusta la hidratación: el
+  // servidor renderiza en un instante y el cliente en otro.
+  const ahoraMs = useAhora();
   const estado = useEstado();
   const listo = useListo();
 
@@ -119,7 +126,21 @@ function PanelBase() {
         {/* La importación de estados financieros vive aquí Y en el Premium: la
             cifra cargada es la misma, y obligar a activar Premium para poder
             subirla seria una traba artificial. */}
-        <ImportarFinanzas compacto={false} />
+        <div className="flex flex-wrap items-center gap-2">
+          <ImportarFinanzas compacto={false} />
+          {/* Mismo informe que en Premium, sobre los filtros por defecto: el
+              panel básico no tiene selectores, así que el mensaje declara que
+              cubre los últimos 30 días y todas las obras. */}
+          {listo && ahoraMs > 0 && (
+            <InformeTelegram
+              datos={calcularPanel(estado, FILTROS_INICIALES, ahoraMs)}
+              filtros={FILTROS_INICIALES}
+              nombreObra={(id) => estado.obras.find((o) => o.id === id)?.nombre ?? id}
+              nombreAlmacen={(id) => estado.almacenes.find((a) => a.id === id)?.nombre ?? id}
+              compacto={false}
+            />
+          )}
+        </div>
       </div>
 
       {/*

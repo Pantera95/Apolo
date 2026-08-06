@@ -1,7 +1,9 @@
 "use client";
 
 import { construirSemilla } from "@/lib/datos/semilla";
+import { guardarEstados, limpiarEstados } from "@/lib/dashboard/estados-store";
 import { setPremium, usePremium } from "@/lib/dashboard/premium";
+import { serieFinancieraDemo } from "@/lib/dashboard/semilla-finanzas";
 import { reiniciarACero, setEstado, useEstado, useListo } from "@/lib/db/almacen";
 import { usePreferencias } from "@/lib/preferencias";
 import { Boton } from "@/components/ui/boton";
@@ -50,7 +52,16 @@ export function ControlesDemo() {
           <span className="hidden text-xs font-semibold text-texto-3 xl:inline">
             {t("demo.ficticios")}
           </span>
-          <Boton compacto variante="suave" onClick={() => reiniciarACero()}>
+          <Boton
+            compacto
+            variante="suave"
+            onClick={() => {
+              reiniciarACero();
+              // Reiniciar borra TODO lo ficticio, también el balance: dejarlo
+              // haría que el panel enseñara ratios sobre una operación vacía.
+              limpiarEstados();
+            }}
+          >
             {t("demo.reiniciar")}
           </Boton>
         </>
@@ -58,7 +69,19 @@ export function ControlesDemo() {
         <Boton
           compacto
           variante="luz"
-          onClick={() => setEstado(construirSemilla())}
+          onClick={() => {
+            setEstado(construirSemilla());
+            // Los estados financieros entran CON el resto: sin ellos trece de
+            // los diecisiete indicadores quedan vacíos y el panel financiero no
+            // enseña nada. Se marcan como demo para que la pantalla lo diga.
+            const serie = serieFinancieraDemo(Date.now());
+            guardarEstados(
+              serie[serie.length - 1],
+              "demostración",
+              serie,
+              true,
+            );
+          }}
         >
           {t("demo.cargar")}
         </Boton>

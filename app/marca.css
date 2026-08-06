@@ -8,43 +8,44 @@
  * Concepto: Apolo es el dios de la LUZ. El producto existe para que una empresa
  * vea lo que hoy no ve de su propio almacén.
  *
- * PALETA COMPARTIDA CON LA LANDING DE GLOBAL XXI.
+ * PALETA DERIVADA DEL LOGOTIPO, compatible con la landing de Global XXI.
  * Antes Apolo era violeta y verde, una identidad propia y sin relación con la
  * del sitio corporativo. Se unificó a petición del cliente: quien entra desde
  * la landing y aterriza en la aplicación no debe sentir que cambió de empresa.
  * Los valores son los mismos hex del sitio —azul petrolero, cian y ámbar— y si
  * allí cambian, aquí también deben cambiar.
  *
- * REPARTO DE PAPELES:
- *   Azul petrolero  la marca. La oscuridad sobre la que Apolo alumbra.
- *   Cian            la "luz": el acento que señala el dato importante.
- *   Ámbar           avisos y acento de apoyo.
+ * REPARTO DE PAPELES, tomado del logotipo:
+ *   Azul real  el hexágono. La marca, la oscuridad sobre la que Apolo alumbra.
+ *   Oro        la "A" del centro. La "luz": señala el dato importante.
+ *   Ámbar      avisos y acento de apoyo.
  *
  * Cada bloque grande declara qué tinta lleva encima, y no es intercambiable:
- * el azul es oscuro y pide blanco, el cian es CLARO —por saturado que se vea—
- * y pide tinta oscura. Blanco sobre cian daría 1,7:1.
+ * el azul es oscuro y pide blanco, el oro es CLARO —por saturado que se vea—
+ * y pide tinta oscura. Blanco sobre el oro daría 1,9:1.
  */
 
 :root {
-  /* Azul petrolero: la marca. */
-  --apolo-azul-bloque: #0e2a47; /* bloques grandes, bajo texto blanco */
-  --apolo-azul-texto: #17406e; /* legible como texto sobre fondo claro */
-  --apolo-azul-boton: #17406e; /* relleno de botón en tema oscuro */
-  --apolo-azul-claro: #7fb0e8; /* texto de marca en tema oscuro */
+  /* Azul del logotipo: la marca. El hexágono es azul real, no petrolero. */
+  --apolo-azul-bloque: #143a7a; /* bloques grandes, bajo texto blanco */
+  --apolo-azul-texto: #1b4fa6; /* legible como texto sobre fondo claro */
+  --apolo-azul-boton: #1b4fa6; /* relleno de botón en tema oscuro */
+  --apolo-azul-claro: #8ab4f0; /* texto de marca en tema oscuro */
 
-  /* Cian: el acento de "luz" de Apolo, el mismo de los accesos en la landing.
-     Al ser un tono claro, el bloque grande lleva texto OSCURO encima. */
-  --apolo-cian-bloque: #00e5ff; /* bloques grandes, bajo texto tinta */
-  --apolo-cian-texto: #00707f; /* legible como texto sobre fondo claro */
-  --apolo-cian-claro: #4fe6f7; /* texto sobre oscuro y acento de la nav */
+  /* Oro del logotipo: la "luz" de Apolo. Sustituye al cian.
+     Es la "A" dorada dentro del hexágono, y como tono CLARO que es, el bloque
+     grande lleva tinta oscura encima. Blanco sobre este oro daría 1,9:1. */
+  --apolo-oro-bloque: #f2b01e; /* bloques grandes, bajo texto tinta */
+  --apolo-oro-texto: #8a6100; /* legible como texto sobre fondo claro */
+  --apolo-oro-claro: #f7c556; /* texto sobre oscuro y acento de la nav */
 
   /* Acentos de apoyo */
   --apolo-ambar: #ff6b00;
   --apolo-info: #2657e8;
   --apolo-coral: #f9675d;
 
-  /* Tinta y grises, en la familia del azul petrolero para que las superficies
-     de la aplicación y las del sitio pertenezcan al mismo mundo. */
+  /* Tinta y grises en la familia del azul, para que las superficies de la
+     aplicación y las del sitio pertenezcan al mismo mundo. */
   --apolo-tinta: #0b1622;
   --apolo-humo: #f4f7fa;
 
