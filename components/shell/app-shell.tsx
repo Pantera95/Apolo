@@ -33,6 +33,7 @@ const SECCIONES: Seccion[] = [
       { href: "/obras", icono: "obras", clave: "nav.obras" },
       { href: "/solicitudes", icono: "solicitudes", clave: "nav.solicitudes" },
       { href: "/despacho", icono: "despacho", clave: "nav.despacho" },
+      { href: "/logistica", icono: "despacho", clave: "nav.logistica" },
     ],
   },
   {

@@ -61,6 +61,8 @@ export const textos = {
     "demo.cargar": "Cargar datos de demostración",
     "demo.ficticios": "Datos ficticios, no son cifras del cliente.",
 
+    "nav.logistica": "Centro de Control",
+
     "fin.titulo": "Situación financiera",
     "fin.sub": "Liquidez, endeudamiento, rentabilidad y gestión",
     "fin.importar": "Importar estados financieros",
@@ -562,6 +564,8 @@ export const textos = {
     "demo.reiniciar": "Reset to zero",
     "demo.cargar": "Load demo data",
     "demo.ficticios": "Fictional data, not the client's figures.",
+
+    "nav.logistica": "Control Center",
 
     "fin.titulo": "Financial position",
     "fin.sub": "Liquidity, leverage, profitability and efficiency",
