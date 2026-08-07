@@ -16,17 +16,17 @@
   --fondo: var(--apolo-humo);
   --superficie: #ffffff;
   --superficie-2: #e9eef5;
-  --superficie-hover: #dde5ef;
+  --superficie-hover: #dfe6ef;
 
   --texto: var(--apolo-tinta);
   --texto-2: #4f4f4f;
-  --texto-3: #5f6879;
+  --texto-3: #5c6576;
   --texto-invertido: #ffffff;
 
-  --borde: #ccd7e4;
+  --borde: #b7c5d8;
   /* 3:1 mínimo: un campo de formulario que no se distingue del fondo es un bug,
      no una decisión estética. */
-  --borde-fuerte: #7d8aa0;
+  --borde-fuerte: #768399;
 
   --marca: var(--apolo-azul-texto);
   --marca-fondo: var(--apolo-azul-bloque);
@@ -36,11 +36,11 @@
   --luz: var(--apolo-oro-texto);
   --luz-tenue: #fdf3dc;
 
-  --ok: #10763a;
+  --ok: #0d7337;
   --ok-tenue: #e2f6e9;
   --advertencia: #92540a;
   --advertencia-tenue: #fdf0dc;
-  --peligro: #c8362c;
+  --peligro: #bf2d23;
   --peligro-tenue: #fdeae8;
   --info: var(--apolo-info);
   --info-tenue: #e7edfd;
@@ -83,36 +83,57 @@
 
 .dark {
   --fondo: #05101f;
-  /* La tarjeta DEBE separarse del fondo. Con #1a1a22 daban 1,10:1 y al pasar
-     al azul petrolero volvio a caer a 1,21:1: en los dos casos los recuadros
-     del panel desaparecian. Este valor da 1,50:1. */
-  --superficie: #1a3355;
-  --superficie-2: #20406a;
-  --superficie-hover: #274d7a;
 
-  --texto: #f2f6fb;
-  --texto-2: #b4c3d6;
-  --texto-3: #93a3b9;
+  /*
+   * LA RAMPA OSCURA SE MIDIO ENTERA, no por pares elegidos a mano.
+   *
+   * El script de contraste comprobaba 66 pares curados y daba 66/66 mientras
+   * el usuario no podia leer la pantalla: los pares rotos no estaban en la
+   * lista. Ahora `scripts/contraste.mjs` cruza TODOS los textos contra TODOS
+   * los fondos —90 combinaciones— y ademas los bordes contra sus superficies.
+   *
+   * Lo que estaba mal:
+   *   1,50:1  superficie sobre fondo      las tarjetas no se despegaban
+   *   1,64:1  borde sobre superficie      el limite que deberia definirlas
+   *   3,37:1  texto-3 sobre hover         y otros siete pares de texto
+   *
+   * EL LIMITE LO LLEVA EL BORDE, NO LA SUPERFICIE. Exigir 3:1 entre superficie
+   * y fondo obligaria a tarjetas casi blancas sobre fondo negro, que no es como
+   * se construye una interfaz oscura. La superficie separa lo justo para
+   * percibirse (1,58:1) y el borde la delimita con holgura (4,46:1).
+   */
+  --superficie: #1c3757;
+  --superficie-2: #24446a;
+  --superficie-hover: #2b5079;
+
+  /* Texto secundario y terciario subidos: antes caian por debajo de 4,5:1 en
+     cuanto la tarjeta era la clara o estaba en hover. */
+  --texto: #f4f8fc;
+  --texto-2: #cfdae8;
+  --texto-3: #b3c1d3;
   --texto-invertido: #05101f;
 
-  /* El borde suave separaba 1,29:1 sobre la tarjeta, o sea nada. */
-  --borde: #35547a;
-  --borde-fuerte: #7d95b8;
+  /* 4,46:1 sobre la tarjeta y 3,08:1 sobre la mas clara. Es el elemento que
+     hace visible el recuadro, asi que se le pide el 3:1 de no-texto. */
+  --borde: #7da0c7;
+  --borde-fuerte: #a3bad6;
 
-  --marca: var(--apolo-azul-claro);
+  --marca: #9dc2f5;
   --marca-fondo: var(--apolo-azul-boton);
   --marca-tenue: #12244a;
 
   --luz: var(--apolo-oro-claro);
   --luz-tenue: #3a2c07;
 
-  --ok: #4ad07e;
+  /* Aclarados hasta pasar 4,5:1 tambien sobre la superficie en hover, que era
+     donde todos se caian. */
+  --ok: #62dc92;
   --ok-tenue: #16301f;
-  --advertencia: #f0ad3f;
+  --advertencia: #f5bd5e;
   --advertencia-tenue: #3a2a0e;
-  --peligro: #ff8b83;
+  --peligro: #ffa9a2;
   --peligro-tenue: #3d1d1b;
-  --info: #7ea3ff;
+  --info: #a4c1ff;
   --info-tenue: #17244a;
 
   --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 20px rgb(0 0 0 / 0.35);
@@ -209,6 +230,7 @@
   --color-nav-borde: var(--nav-borde);
 
   --font-sans: var(--fuente-sans);
+  --font-titular: var(--fuente-titular);
   --font-mono: var(--fuente-mono);
 
   --radius-tarjeta: var(--apolo-radio-tarjeta);
@@ -231,6 +253,14 @@
     background-color: var(--fondo);
     color: var(--texto);
     font-family: var(--fuente-sans), system-ui, sans-serif;
+    /*
+     * El cuerpo sube a 500. Manrope en 400 sobre fondo oscuro se afina y se
+     * lee gris aunque el color pase el contraste: el peso hace tanto por la
+     * legibilidad como el tono, porque un trazo mas grueso cubre mas pixeles
+     * y el antialiasing se lo come menos.
+     */
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
     /* La referencia usa peso 600 en todo. En una herramienta densa eso aplana
        la jerarquía, así que el cuerpo baja a 500 y los títulos suben a 800:
        se conserva el carácter y se recupera la lectura. */
@@ -301,9 +331,9 @@
     --superficie-2: #f4f7fa;
     --texto: #0b1622;
     --texto-2: #35414f;
-    --texto-3: #5f6879;
-    --borde: #ccd7e4;
-    --borde-fuerte: #7d8aa0;
+    --texto-3: #5c6576;
+    --borde: #b7c5d8;
+    --borde-fuerte: #768399;
     --sombra: none;
     --sombra-dura: none;
   }
@@ -339,5 +369,30 @@
 
   @page {
     margin: 14mm;
+  }
+}
+
+@layer base {
+  /*
+   * Titulares con la expandida.
+   *
+   * `font-stretch: 125%` es el maximo del eje de anchura de Archivo. Sin el,
+   * la variable carga en su anchura normal y no se distingue del cuerpo, que
+   * es justo lo que un titular no puede permitirse.
+   */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--fuente-titular), var(--fuente-sans), system-ui, sans-serif;
+    font-stretch: 125%;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  /* El titular grande de pagina aprieta mas: a 48 px el tracking por defecto
+     de una expandida abre demasiado y el titulo se parte en dos lineas. */
+  h1 {
+    letter-spacing: -0.03em;
   }
 }

@@ -39,39 +39,104 @@ const lum = ([r, g, b]) => {
 };
 const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 
-// [texto, fondo, minimo, descripcion]
-const PARES = [
-  ["--texto", "--fondo", 4.5], ["--texto", "--superficie", 4.5], ["--texto", "--superficie-2", 4.5],
-  ["--texto-2", "--fondo", 4.5], ["--texto-2", "--superficie", 4.5], ["--texto-2", "--superficie-2", 4.5],
-  ["--texto-3", "--fondo", 4.5], ["--texto-3", "--superficie", 4.5],
-  ["--marca", "--fondo", 4.5], ["--marca", "--superficie", 4.5], ["--marca", "--marca-tenue", 4.5],
-  ["--luz", "--fondo", 4.5], ["--luz", "--superficie", 4.5], ["--luz", "--luz-tenue", 4.5],
-  ["--ok", "--superficie", 4.5], ["--ok", "--ok-tenue", 4.5],
-  ["--advertencia", "--superficie", 4.5], ["--advertencia", "--advertencia-tenue", 4.5],
-  ["--peligro", "--superficie", 4.5], ["--peligro", "--peligro-tenue", 4.5],
-  ["--info", "--superficie", 4.5], ["--info", "--info-tenue", 4.5],
-  // Separacion entre superficies: sin esto una tarjeta invisible pasa la
-  // revision entera, que es exactamente lo que ocurrio dos veces.
-  ["--borde-fuerte", "--fondo", 3], ["--borde-fuerte", "--superficie", 3], ["--borde", "--superficie", 1.4],
-  ["--bloque-marca-texto", "--bloque-marca", 4.5], ["--bloque-luz-texto", "--bloque-luz", 4.5],
-  ["--nav-texto", "--nav-fondo", 4.5], ["--nav-texto-activo", "--nav-fondo", 4.5],
-  ["--nav-acento", "--nav-fondo", 4.5], ["--nav-texto-activo", "--nav-activo", 4.5],
-  ["--texto", "--marca-tenue", 4.5],
+/*
+ * SE CRUZA TODO CONTRA TODO. No hay lista curada.
+ *
+ * La version anterior comprobaba 66 pares elegidos a mano y devolvia 66/66
+ * mientras la pantalla en oscuro era ilegible: los pares rotos sencillamente
+ * no estaban en la lista. Faltaba `--superficie-hover` entera —el peor
+ * infractor, con texto a 3,37:1— y `--texto-3` sobre `--superficie-2`.
+ *
+ * Peor aun: el minimo del borde estaba puesto en 1,4 en vez de 3. Ese numero
+ * no sale de ninguna norma, sale de lo que el valor de entonces cumplia. Una
+ * prueba ajustada al codigo que vigila no vigila nada.
+ *
+ * Ahora el producto cartesiano no deja elegir: si aparece un token nuevo,
+ * entra solo en la matriz.
+ */
+
+/** Todo lo que puede llevar texto encima. */
+const FONDOS = [
+  "--fondo", "--superficie", "--superficie-2", "--superficie-hover",
+  "--marca-tenue", "--luz-tenue", "--ok-tenue",
+  "--advertencia-tenue", "--peligro-tenue", "--info-tenue",
 ];
 
-let fallos = 0, total = 0;
+/** Todo lo que se pinta como texto. */
+const TEXTOS = [
+  "--texto", "--texto-2", "--texto-3",
+  "--marca", "--luz", "--ok", "--advertencia", "--peligro", "--info",
+];
+
+/**
+ * Pares que NO son texto y por tanto piden 3:1, no 4,5:1.
+ *
+ * El limite de una tarjeta lo lleva el BORDE, no la superficie. Exigirle 3:1
+ * a `--superficie` sobre `--fondo` obligaria a tarjetas casi blancas sobre
+ * fondo negro, que no es como se construye una interfaz oscura: la superficie
+ * separa lo justo para percibirse y el borde la delimita.
+ */
+const NO_TEXTO = [
+  // `--borde-fuerte` viste CAMPOS Y CONTROLES. La norma pide 3:1 a los
+  // componentes de interfaz —un campo de formulario que no se distingue del
+  // fondo no se puede usar— y aqui si es exigible sin discusion.
+  ["--borde-fuerte", "--superficie", 3],
+  ["--borde-fuerte", "--superficie-2", 3],
+  ["--borde-fuerte", "--fondo", 3],
+
+  // `--borde` es un DIVISOR decorativo: separa filas de una tabla o tarjetas
+  // que ya se distinguen por su superficie. La norma no le exige 3:1, y
+  // ponerselo daria una reticula de lineas negras sobre todo el producto.
+  // Se le pide lo que si tiene que cumplir: verse.
+  ["--borde", "--superficie", 1.5],
+  ["--borde", "--fondo", 1.35],
+];
+
+/** Bloques de color solidos, cada uno con la tinta que declara. */
+const BLOQUES = [
+  ["--bloque-marca-texto", "--bloque-marca", 4.5],
+  ["--bloque-luz-texto", "--bloque-luz", 4.5],
+  ["--nav-texto", "--nav-fondo", 4.5],
+  ["--nav-texto-activo", "--nav-fondo", 4.5],
+  ["--nav-acento", "--nav-fondo", 4.5],
+  ["--nav-texto-activo", "--nav-activo", 4.5],
+];
+
+/** La superficie tiene que percibirse, aunque el borde haga de limite. */
+const PERCEPTIBLE = [
+  // Umbral BAJO a proposito y con motivo: la tarjeta no tiene que delimitarse
+  // sola, para eso lleva borde. Solo tiene que notarse que hay algo. Subirlo
+  // obligaria a un fondo tan oscuro que el texto puesto sobre el —que en modo
+  // claro es casi negro— empezaria a fallar por el otro lado.
+  ["--superficie", "--fondo", 1.2],
+  ["--superficie-2", "--superficie", 1.1],
+];
+
+let fallos = 0, total = 0, sinResolver = 0;
+
 for (const [nombre, tabla] of [["CLARO", claro], ["OSCURO", oscuro]]) {
   console.log(`\n=== TEMA ${nombre} ===`);
-  const SOLO_OSCURO = [["--superficie", "--fondo", 1.45], ["--superficie-2", "--superficie", 1.15]];
-  for (const [t, f, min] of [...PARES, ...(nombre === "OSCURO" ? SOLO_OSCURO : [])]) {
+  let malos = 0;
+
+  const pares = [
+    ...FONDOS.flatMap((f) => TEXTOS.map((t) => [t, f, 4.5])),
+    ...NO_TEXTO,
+    ...BLOQUES,
+    ...PERCEPTIBLE,
+  ];
+
+  for (const [t, f, min] of pares) {
     const ct = resolver(tabla[t], tabla), cf = resolver(tabla[f], tabla);
-    if (!ct || !cf) { console.log(`  ?  ${t} / ${f} — sin resolver`); continue; }
+    if (!ct || !cf) { sinResolver++; console.log(`  ?  ${t} / ${f} — sin resolver`); continue; }
     const r = ratio(ct, cf);
     total++;
-    const ok = r >= min;
-    if (!ok) fallos++;
-    if (!ok) console.log(`  ✗ ${r.toFixed(2)}:1  (min ${min})  ${t} sobre ${f}`);
+    if (r < min) {
+      fallos++; malos++;
+      console.log(`  ✗ ${r.toFixed(2)}:1  (min ${min})  ${t} sobre ${f}`);
+    }
   }
+  if (malos === 0) console.log("  sin fallos");
 }
-console.log(`\n${total - fallos}/${total} pares pasan. Fallos: ${fallos}`);
+
+console.log(`\n${total - fallos}/${total} pares pasan. Fallos: ${fallos}${sinResolver ? ` · sin resolver: ${sinResolver}` : ""}`);
 process.exit(fallos ? 1 : 0);

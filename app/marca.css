@@ -36,7 +36,7 @@
      Es la "A" dorada dentro del hexágono, y como tono CLARO que es, el bloque
      grande lleva tinta oscura encima. Blanco sobre este oro daría 1,9:1. */
   --apolo-oro-bloque: #f2b01e; /* bloques grandes, bajo texto tinta */
-  --apolo-oro-texto: #8a6100; /* legible como texto sobre fondo claro */
+  --apolo-oro-texto: #7f5900; /* legible como texto sobre fondo claro */
   --apolo-oro-claro: #f7c556; /* texto sobre oscuro y acento de la nav */
 
   /* Acentos de apoyo */
@@ -47,7 +47,7 @@
   /* Tinta y grises en la familia del azul, para que las superficies de la
      aplicación y las del sitio pertenezcan al mismo mundo. */
   --apolo-tinta: #0b1622;
-  --apolo-humo: #f4f7fa;
+  --apolo-humo: #e2e7f0;
 
   /* Forma: radios generosos y sombra dura, la firma de la referencia. */
   --apolo-radio-tarjeta: 20px;
