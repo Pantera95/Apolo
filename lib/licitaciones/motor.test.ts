@@ -104,16 +104,38 @@ describe("calcularApu", () => {
     expect(a.manoObraUsd).toBe(4200);
   });
 
-  it("aplica overhead y utilidad EN CASCADA, no sumados", () => {
+  /**
+   * Por defecto los recargos se SUMAN sobre el directo.
+   *
+   * Antes este módulo encadenaba overhead y utilidad, y el razonamiento no era
+   * malo —el cascada rinde más—, pero la planilla que audita la operadora
+   * suma. Cuando el pliego trae el formato del cliente, gana el formato: una
+   * oferta cuyos totales no reconcilian con su plantilla se objeta antes de
+   * leerse. El cascada sigue disponible como parámetro.
+   */
+  it("por defecto suma los recargos sobre el costo directo", () => {
     const a = calcularApu(renglon(), P);
     const directo = 9450 + 1050 + 4200; // 14700
     expect(a.costoDirectoUsd).toBe(directo);
-    expect(a.indirectosUsd).toBeCloseTo(directo * 0.2);
-    // Utilidad sobre (directo + indirectos), no sobre el directo.
-    expect(a.utilidadUsd).toBeCloseTo(directo * 1.2 * 0.1);
-    // 20% + 10% NO son 30%: son 32%.
-    expect(a.totalUsd).toBeCloseTo(directo * 1.2 * 1.1);
-    expect(a.totalUsd).toBeGreaterThan(directo * 1.3);
+    expect(a.indirectosUsd).toBeCloseTo(directo * P.overhead);
+    expect(a.imprevistosUsd).toBeCloseTo(directo * P.imprevistos);
+    expect(a.utilidadUsd).toBeCloseTo(directo * P.utilidad);
+    expect(a.totalUsd).toBeCloseTo(
+      directo * (1 + P.overhead + P.imprevistos + P.utilidad),
+    );
+  });
+
+  it("en modo cascada cada recargo va sobre el subtotal anterior", () => {
+    const a = calcularApu(renglon(), { ...P, modoMarkup: "cascada" });
+    const directo = 9450 + 1050 + 4200;
+    expect(a.totalUsd).toBeCloseTo(
+      directo * (1 + P.overhead) * (1 + P.imprevistos) * (1 + P.utilidad),
+    );
+    // Y siempre rinde más que el aditivo, que es justo por lo que hay que
+    // elegirlo a conciencia y no por descuido.
+    expect(a.totalUsd).toBeGreaterThan(
+      calcularApu(renglon(), P).totalUsd,
+    );
   });
 
   it("el precio unitario va sobre la cantidad final, no la del plano", () => {

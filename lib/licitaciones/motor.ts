@@ -1,6 +1,8 @@
 import type {
   Apu,
   Desempeno,
+  DesgloseApu,
+  LineaApu,
   Disciplina,
   Estimacion,
   ObraHistorica,
@@ -69,39 +71,166 @@ export function duracionDias(
 // ---------------------------------------------------------------------------
 
 /**
+ * Desglose del precio unitario por capítulos, POR UNIDAD de obra.
+ *
+ * Cuando el renglón trae composición, cada insumo se valoriza y se conserva
+ * para imprimirlo en el APU. Cuando no la trae —lo normal en un schedule
+ * exportado de un modelo—, se emite una línea agregada por capítulo y se marca
+ * `detallado: false`, para que el documento lo diga en vez de aparentar un
+ * detalle que nadie cargó.
+ */
+function desglosar(renglon: RenglonMto, p: Parametros): DesgloseApu {
+  const c = renglon.composicion;
+
+  if (!c) {
+    const moDirecta = renglon.rendimientoHh * p.costoHoraHombreUsd;
+    const fasUsd = moDirecta * (p.fas - 1);
+    return {
+      materiales: [
+        {
+          descripcion: renglon.descripcion || "Material del renglón",
+          unidad: renglon.unidad,
+          coeficiente: 1,
+          precioUnitarioUsd: renglon.costoMaterialUsd,
+          costoUsd: renglon.costoMaterialUsd,
+        },
+      ],
+      equipos: [
+        {
+          descripcion: "Equipos y herramientas",
+          unidad: "gl",
+          coeficiente: 1,
+          precioUnitarioUsd: renglon.costoEquipoUsd,
+          costoUsd: renglon.costoEquipoUsd,
+        },
+      ],
+      manoObra: [
+        {
+          descripcion: "Cuadrilla (promedio)",
+          unidad: "HH",
+          coeficiente: renglon.rendimientoHh,
+          precioUnitarioUsd: p.costoHoraHombreUsd,
+          costoUsd: moDirecta,
+        },
+      ],
+      manoObraDirectaUsd: moDirecta,
+      fasUsd,
+      manoObraCargadaUsd: moDirecta + fasUsd,
+      detallado: false,
+    };
+  }
+
+  const materiales = c.materiales.map((m) => ({
+    descripcion: m.descripcion,
+    unidad: m.unidad,
+    coeficiente: m.cantidadPorUnidad,
+    precioUnitarioUsd: m.precioUnitarioUsd,
+    costoUsd: m.cantidadPorUnidad * m.precioUnitarioUsd,
+  }));
+
+  const manoObra = c.cuadrilla.map((h) => ({
+    descripcion: h.categoria,
+    unidad: "HH",
+    coeficiente: h.hhPorUnidad,
+    precioUnitarioUsd: h.tarifaHoraUsd,
+    costoUsd: h.hhPorUnidad * h.tarifaHoraUsd,
+  }));
+
+  const manoObraDirectaUsd = manoObra.reduce((s, l) => s + l.costoUsd, 0);
+  // El FAS se expresa como recargo: FAS 2,10 son prestaciones del 110%.
+  const fasUsd = manoObraDirectaUsd * (p.fas - 1);
+
+  const equipos: LineaApu[] = c.equipos.map((e) => ({
+    descripcion: e.descripcion,
+    unidad: e.unidad,
+    coeficiente: e.rendimientoPorUnidad,
+    precioUnitarioUsd: e.precioUnitarioUsd,
+    costoUsd: e.rendimientoPorUnidad * e.precioUnitarioUsd,
+  }));
+
+  if (c.herramientasMenoresPct > 0) {
+    equipos.push({
+      descripcion: `Herramientas menores (${(c.herramientasMenoresPct * 100).toFixed(1)}% M.O.)`,
+      unidad: "%",
+      coeficiente: c.herramientasMenoresPct,
+      precioUnitarioUsd: 0,
+      // Sobre la mano de obra DIRECTA: la herramienta se gasta en proporción
+      // al trabajo, no a las prestaciones de quien lo hace.
+      costoUsd: manoObraDirectaUsd * c.herramientasMenoresPct,
+      esPorcentaje: true,
+    });
+  }
+
+  return {
+    materiales,
+    equipos,
+    manoObra,
+    manoObraDirectaUsd,
+    fasUsd,
+    manoObraCargadaUsd: manoObraDirectaUsd + fasUsd,
+    detallado: true,
+  };
+}
+
+/**
  * Análisis de Precio Unitario.
  *
- *   Costo directo = Materiales + Equipos + (Mano de obra × FAS)
- *   Precio        = Directo × (1 + Overhead) × (1 + Utilidad)
+ *   Costo directo = Materiales + Equipos + Mano de obra cargada
+ *   Precio        = Directo + Indirectos + Contingencia + Utilidad
  *
- * EL FAS SOLO MULTIPLICA LA MANO DE OBRA, y esto es lo que más se equivoca:
- * el Factor de Ajuste Salarial cubre prestaciones, seguridad social y
- * dotación, que son cargas sobre el sueldo. Aplicarlo también al material
- * inflaría la oferta un 30–40% y la empresa perdería la licitación sin
- * entender por qué.
+ * EL FAS SOLO CARGA LA MANO DE OBRA. El Factor de Ajuste Salarial cubre
+ * prestaciones, seguridad social y dotación: son cargas sobre el sueldo.
+ * Aplicarlo también al material inflaría la oferta un 30–40% y la empresa
+ * perdería la licitación sin entender por qué.
  *
- * El overhead y la utilidad se aplican EN CASCADA, no sumados: un 18% de
- * indirectos y un 12% de utilidad no son un 30%, son un 32,2%. Sumarlos deja
- * dinero sobre la mesa en cada renglón.
+ * LOS RECARGOS SE SUMAN SOBRE EL DIRECTO, no se encadenan. Este es el modelo de
+ * las planillas de licitación de las operadoras, y es el que Apolo trae por
+ * defecto. El modo "cascada" —cada recargo sobre el subtotal anterior— queda
+ * disponible en los parámetros porque muchas constructoras lo usan y les rinde
+ * un 2,8% más, pero cuando el pliego trae la planilla del cliente, gana la
+ * planilla: una oferta que no cuadra con su formato se objeta antes de leerse.
  */
 export function calcularApu(renglon: RenglonMto, p: Parametros): Apu {
   const desperdicio =
     renglon.factorDesperdicio > 0 ? renglon.factorDesperdicio : p.desperdicioPorDefecto;
 
   const cantidad = cantidadFinal(renglon.cantidadBase, desperdicio);
-  const hh = horasHombre(cantidad, renglon.rendimientoHh);
+  const desglose = desglosar(renglon, p);
 
-  const materialesUsd = cantidad * renglon.costoMaterialUsd;
-  const equiposUsd = cantidad * renglon.costoEquipoUsd;
-  // La mano de obra se calcula sobre las HH y se ajusta por FAS.
-  const manoObraUsd = hh * p.costoHoraHombreUsd * p.fas;
+  // Las HH salen de la cuadrilla cuando hay composición: sumar las categorías
+  // es el dato real, y el `rendimientoHh` agregado solo es un respaldo.
+  const hhPorUnidad = desglose.detallado
+    ? desglose.manoObra.reduce((s, l) => s + l.coeficiente, 0)
+    : renglon.rendimientoHh;
+  const hh = horasHombre(cantidad, hhPorUnidad);
+
+  const unitarioMateriales = desglose.materiales.reduce((s, l) => s + l.costoUsd, 0);
+  const unitarioEquipos = desglose.equipos.reduce((s, l) => s + l.costoUsd, 0);
+
+  const materialesUsd = cantidad * unitarioMateriales;
+  const equiposUsd = cantidad * unitarioEquipos;
+  const manoObraUsd = cantidad * desglose.manoObraCargadaUsd;
 
   const costoDirectoUsd = materialesUsd + equiposUsd + manoObraUsd;
-  const indirectosUsd = costoDirectoUsd * p.overhead;
-  const conIndirectos = costoDirectoUsd + indirectosUsd;
-  const utilidadUsd = conIndirectos * p.utilidad;
-  const totalUsd = conIndirectos + utilidadUsd;
 
+  let indirectosUsd: number;
+  let imprevistosUsd: number;
+  let utilidadUsd: number;
+
+  if (p.modoMarkup === "cascada") {
+    indirectosUsd = costoDirectoUsd * p.overhead;
+    const s1 = costoDirectoUsd + indirectosUsd;
+    imprevistosUsd = s1 * p.imprevistos;
+    const s2 = s1 + imprevistosUsd;
+    utilidadUsd = s2 * p.utilidad;
+  } else {
+    // Los tres, sobre el costo directo.
+    indirectosUsd = costoDirectoUsd * p.overhead;
+    imprevistosUsd = costoDirectoUsd * p.imprevistos;
+    utilidadUsd = costoDirectoUsd * p.utilidad;
+  }
+
+  const totalUsd = costoDirectoUsd + indirectosUsd + imprevistosUsd + utilidadUsd;
   const dias = duracionDias(hh, p.cuadrillas, p.horasJornada, p.personasPorCuadrilla);
 
   return {
@@ -112,6 +241,7 @@ export function calcularApu(renglon: RenglonMto, p: Parametros): Apu {
     equiposUsd,
     costoDirectoUsd,
     indirectosUsd,
+    imprevistosUsd,
     utilidadUsd,
     // Precio unitario sobre la cantidad FINAL: es lo que se cotiza por unidad
     // realmente instalada, no por unidad de plano.
@@ -119,6 +249,7 @@ export function calcularApu(renglon: RenglonMto, p: Parametros): Apu {
     totalUsd,
     horasHombre: hh,
     diasEstimados: dias ?? 0,
+    desglose,
   };
 }
 
@@ -145,6 +276,7 @@ export function estimar(renglones: RenglonMto[], p: Parametros): Estimacion {
     totalEquiposUsd: suma((a) => a.equiposUsd),
     totalDirectoUsd: suma((a) => a.costoDirectoUsd),
     totalIndirectosUsd: suma((a) => a.indirectosUsd),
+    totalImprevistosUsd: suma((a) => a.imprevistosUsd),
     totalUtilidadUsd: suma((a) => a.utilidadUsd),
     totalUsd: suma((a) => a.totalUsd),
     horasHombre: suma((a) => a.horasHombre),
@@ -255,14 +387,36 @@ export interface FamiliaRfq {
  * paquete: pedir por separado 40 diámetros de tubería del mismo material
  * multiplica el trabajo administrativo y empeora el precio.
  *
- * La familia sale del prefijo del código, que es como están organizados los
- * catálogos de material industrial.
+ * LA FAMILIA ES EL SEGMENTO DE MATERIAL, y cuál es depende de la convención.
+ * Conviven dos en la industria:
+ *
+ *   CIV-CON-04    disciplina · familia · correlativo  → la familia es CON
+ *   TUB-A106-6    familia · especificación · medida   → la familia es TUB
+ *
+ * Tomar siempre el segmento del medio rompería la segunda, y tomar siempre el
+ * primero rompería la primera agrupando toda una disciplina en un paquete:
+ * pedir una sola cotización por "todo lo civil" mezcla concreto, cabilla y
+ * encofrado, que son tres mercados con tres proveedores distintos.
+ *
+ * Se resuelve mirando si el primer segmento es un código de DISCIPLINA. Si lo
+ * es, la familia es el siguiente; si no, es el primero.
  */
+const PREFIJOS_DISCIPLINA = new Set(["CIV", "EST", "MEC", "PIP", "ELE", "INS"]);
+
+export function familiaDe(codigo: string): string {
+  const partes = codigo.split("-").filter(Boolean);
+  if (partes.length === 0) return "OTROS";
+  if (partes.length >= 3 && PREFIJOS_DISCIPLINA.has(partes[0].toUpperCase())) {
+    return partes[1];
+  }
+  return partes[0];
+}
+
 export function agruparRfq(apus: Apu[]): FamiliaRfq[] {
   const mapa = new Map<string, FamiliaRfq>();
 
   for (const a of apus) {
-    const familia = a.renglon.codigo.split("-")[0] || "OTROS";
+    const familia = familiaDe(a.renglon.codigo);
     const clave = `${familia}|${a.renglon.disciplina}`;
     const prev =
       mapa.get(clave) ??

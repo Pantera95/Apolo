@@ -113,6 +113,68 @@ export interface RenglonMto {
   /** Horas-hombre por unidad. El dato que decide el plazo. */
   rendimientoHh: number;
   costoEquipoUsd: number;
+  /**
+   * Desglose del precio unitario, cuando se conoce.
+   *
+   * OPCIONAL A PROPÓSITO. Un schedule exportado de Revit trae cantidades y a lo
+   * sumo un costo unitario agregado — no trae la cuadrilla tipo ni los insumos
+   * que componen un m³ de concreto. Eso lo aporta la base de precios de la
+   * empresa, no el modelo.
+   *
+   * Cuando falta, el APU se emite igual pero con una sola línea agregada por
+   * capítulo, y el documento declara que el desglose no vino del origen. Es
+   * preferible a inventar una cuadrilla que nadie aprobó.
+   */
+  composicion?: Composicion;
+}
+
+// ---------------------------------------------------------------------------
+// Composición del precio unitario
+// ---------------------------------------------------------------------------
+
+/** Un insumo del capítulo de materiales: cuánto entra en UNA unidad de obra. */
+export interface InsumoMaterial {
+  descripcion: string;
+  unidad: string;
+  /** Cantidad por unidad de obra. Incluye ya su propia merma si aplica. */
+  cantidadPorUnidad: number;
+  precioUnitarioUsd: number;
+}
+
+/** Un equipo del capítulo de equipos, medido en horas-máquina por unidad. */
+export interface InsumoEquipo {
+  descripcion: string;
+  unidad: string;
+  /** Horas-máquina por unidad de obra. */
+  rendimientoPorUnidad: number;
+  precioUnitarioUsd: number;
+}
+
+/**
+ * Una categoría de la cuadrilla tipo.
+ *
+ * Se guarda el HH por unidad de CADA categoría y no un promedio: un capataz a
+ * 25 USD/h y un peón a 12 no se promedian sin perder la estructura del costo,
+ * que es justo lo que el cliente audita cuando revisa un APU.
+ */
+export interface InsumoManoObra {
+  categoria: string;
+  hhPorUnidad: number;
+  tarifaHoraUsd: number;
+}
+
+export interface Composicion {
+  materiales: InsumoMaterial[];
+  equipos: InsumoEquipo[];
+  cuadrilla: InsumoManoObra[];
+  /**
+   * Herramientas menores, como porcentaje de la mano de obra DIRECTA.
+   *
+   * Se calcula sobre la directa y no sobre la cargada con FAS: la herramienta
+   * menor —discos, brocas, guantes, cintas— se gasta en proporción al trabajo
+   * hecho, no a las prestaciones sociales de quien lo hace.
+   */
+  herramientasMenoresPct: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,10 +208,37 @@ export interface Parametros {
    * En Venezuela ronda 1,8–2,4 sobre el salario base.
    */
   fas: number;
-  /** Indirectos y administración, sobre el costo directo. 0.18 = 18%. */
+  /** Indirectos de campo y oficina, sobre el costo directo. 0.15 = 15%. */
   overhead: number;
-  /** Utilidad esperada, sobre el costo con indirectos. */
+  /**
+   * Imprevistos y contingencia.
+   *
+   * Va SEPARADO de los indirectos aunque ambos sean un porcentaje del directo.
+   * Fundirlos en un solo número es cómodo para calcular y pésimo para negociar:
+   * cuando el cliente pide bajar el precio, la contingencia es lo primero que
+   * se discute y los indirectos son un costo real que no se puede regalar.
+   */
+  imprevistos: number;
+  /** Utilidad / fee del contratista. */
   utilidad: number;
+  /**
+   * Cómo se aplican los recargos sobre el costo directo.
+   *
+   *   "aditivo"  Directo × (1 + i + c + u). Cada recargo se calcula sobre el
+   *              costo directo. Es el modelo de las planillas de licitación de
+   *              las operadoras, y por eso es el que trae Apolo por defecto.
+   *   "cascada"  Directo × (1+i) × (1+c) × (1+u). Cada recargo se calcula sobre
+   *              el subtotal anterior, o sea también sobre los recargos.
+   *
+   * NO SON EQUIVALENTES y la diferencia no es despreciable: con 15/5/10 el
+   * cascada da 32,8% de recargo y el aditivo 30,0%. Sobre un directo de 229
+   * USD/m³ y 1.500 m³ son casi 10.000 USD de diferencia en un solo renglón.
+   *
+   * Se ofrece el cascada porque muchas constructoras lo usan y les rinde más,
+   * pero si el pliego trae la planilla de la operadora, gana la planilla: una
+   * oferta que no cuadra con el formato del cliente se objeta antes de leerla.
+   */
+  modoMarkup: "aditivo" | "cascada";
   /** Desperdicio por defecto cuando el renglón no trae el suyo. */
   desperdicioPorDefecto: number;
 }
@@ -160,15 +249,54 @@ export const PARAMETROS_INICIALES: Parametros = {
   personasPorCuadrilla: 12,
   horasJornada: 8,
   costoHoraHombreUsd: 6.5,
-  fas: 2.0,
-  overhead: 0.18,
-  utilidad: 0.12,
+  // FAS 2,10 = un recargo del 110% sobre el salario base, que es como lo
+  // expresan las planillas: "FAS @ 110%".
+  fas: 2.1,
+  overhead: 0.15,
+  imprevistos: 0.05,
+  utilidad: 0.1,
+  modoMarkup: "aditivo",
   desperdicioPorDefecto: 0.05,
 };
 
 // ---------------------------------------------------------------------------
 // Resultados
 // ---------------------------------------------------------------------------
+
+/**
+ * Una línea del APU ya valorizada, POR UNIDAD de obra.
+ *
+ * `costoUsd` es el costo en una sola unidad, no en el renglón completo: es lo
+ * que el cliente audita cuando pregunta "¿por qué su m³ cuesta 297?".
+ */
+export interface LineaApu {
+  descripcion: string;
+  unidad: string;
+  /** Cantidad, rendimiento o HH por unidad de obra, según el capítulo. */
+  coeficiente: number;
+  precioUnitarioUsd: number;
+  costoUsd: number;
+  /** Cierto en la línea de herramientas menores, que es un % y no un producto. */
+  esPorcentaje?: boolean;
+}
+
+/** Desglose por capítulos, tal como se imprime en el APU. */
+export interface DesgloseApu {
+  materiales: LineaApu[];
+  equipos: LineaApu[];
+  manoObra: LineaApu[];
+  /** Suma de las categorías de la cuadrilla, sin FAS. */
+  manoObraDirectaUsd: number;
+  /** El recargo por prestaciones. */
+  fasUsd: number;
+  /** Directa + FAS. */
+  manoObraCargadaUsd: number;
+  /**
+   * Falso cuando el origen no traía composición y el desglose se emitió como
+   * una sola línea agregada por capítulo. El documento lo declara.
+   */
+  detallado: boolean;
+}
 
 /** Análisis de Precio Unitario de un renglón, desglosado. */
 export interface Apu {
@@ -179,12 +307,15 @@ export interface Apu {
   equiposUsd: number;
   costoDirectoUsd: number;
   indirectosUsd: number;
+  imprevistosUsd: number;
   utilidadUsd: number;
-  /** Precio unitario de venta, ya con indirectos y utilidad. */
+  /** Precio unitario de venta, ya con indirectos, contingencia y utilidad. */
   precioUnitarioUsd: number;
   totalUsd: number;
   horasHombre: number;
   diasEstimados: number;
+  /** Los capítulos, por unidad de obra. */
+  desglose: DesgloseApu;
 }
 
 export interface Estimacion {
@@ -194,6 +325,7 @@ export interface Estimacion {
   totalEquiposUsd: number;
   totalDirectoUsd: number;
   totalIndirectosUsd: number;
+  totalImprevistosUsd: number;
   totalUtilidadUsd: number;
   totalUsd: number;
   horasHombre: number;

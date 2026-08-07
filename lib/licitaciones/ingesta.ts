@@ -1,4 +1,5 @@
 import { aNumero, leerCsv, normalizarEncabezado } from "@/lib/dominio/importacion";
+import { COMPOSICIONES_DEMO } from "@/lib/licitaciones/composiciones";
 import type {
   Disciplina,
   ObraHistorica,
@@ -216,43 +217,55 @@ export function computoSimulado(archivo: string, origen: OrigenModelo): Resultad
     ],
     renglones: [
       // --- Civil ---
-      r("s1", "civil", "CON-280", "Concreto premezclado fundaciones", "f'c=280 kg/cm²", "m³", 1_240, 0.06, 118, 2.4, 14),
-      r("s2", "civil", "CON-210", "Concreto de limpieza", "f'c=210 kg/cm²", "m³", 180, 0.08, 96, 1.6, 9),
-      r("s3", "civil", "ACE-REF", "Acero de refuerzo", "ASTM A615 Gr.60", "kg", 96_500, 0.04, 1.32, 0.035, 0.1),
-      r("s4", "civil", "ENC-MET", "Encofrado metálico", "Panel modular", "m²", 3_150, 0.03, 22, 0.55, 3.2),
-      r("s5", "civil", "EXC-MEC", "Excavación mecánica", "Material tipo II", "m³", 4_800, 0.02, 0, 0.08, 6.4),
+      r("s1", "civil", "CIV-CON-04", "Vaciado de concreto en fundaciones (incl. curado y encofrado)", "f'c=280 kg/cm²", "m³", 1_500, 0.05, 118, 2.4, 14),
+      r("s2", "civil", "CIV-CON-02", "Concreto de limpieza", "f'c=210 kg/cm²", "m³", 180, 0.08, 96, 1.6, 9),
+      r("s3", "civil", "CIV-ACE-07", "Acero de refuerzo", "ASTM A615 Gr.60", "kg", 96_500, 0.04, 1.32, 0.035, 0.1),
+      r("s4", "civil", "CIV-ENC-09", "Encofrado metálico", "Panel modular", "m²", 3_150, 0.03, 22, 0.55, 3.2),
+      r("s5", "civil", "CIV-EXC-01", "Excavación mecánica", "Material tipo II", "m³", 4_800, 0.02, 0, 0.08, 6.4),
 
       // --- Estructural ---
-      r("s6", "estructural", "EST-A36", "Acero estructural fabricado", "ASTM A36", "kg", 412_000, 0.05, 2.15, 0.042, 0.28),
-      r("s7", "estructural", "EST-GRT", "Rejilla de piso galvanizada", "Grating 30x3", "m²", 1_680, 0.04, 78, 0.72, 2.1),
-      r("s8", "estructural", "EST-PIN", "Pintura de acabado industrial", "Epóxico 3 capas", "m²", 9_400, 0.1, 9.4, 0.18, 0.6),
+      r("s6", "estructural", "EST-A36-11", "Acero estructural fabricado y montado", "ASTM A36", "kg", 412_000, 0.05, 2.15, 0.042, 0.28),
+      r("s7", "estructural", "EST-GRT-14", "Rejilla de piso galvanizada", "Grating 30x3", "m²", 1_680, 0.04, 78, 0.72, 2.1),
+      r("s8", "estructural", "EST-PIN-16", "Pintura de acabado industrial", "Epóxico 3 capas", "m²", 9_400, 0.1, 9.4, 0.18, 0.6),
 
       // --- Piping ---
-      r("s9", "piping", "TUB-A106-6", "Tubería de acero al carbono 6\"", "ASTM A106 Gr.B Sch 40", "m", 3_820, 0.05, 62, 1.35, 3.8),
-      r("s10", "piping", "TUB-A106-4", "Tubería de acero al carbono 4\"", "ASTM A106 Gr.B Sch 40", "m", 5_140, 0.05, 41, 1.05, 3.1),
-      r("s11", "piping", "TUB-A312-3", "Tubería inoxidable 3\"", "ASTM A312 TP316L Sch 10S", "m", 940, 0.06, 128, 1.65, 4.2),
-      r("s12", "piping", "VAL-GAT-6", "Válvula de compuerta 6\" flangeada", "API 600 Clase 150 WCB", "und", 46, 0, 1_840, 9.5, 22),
-      r("s13", "piping", "VAL-BOL-4", "Válvula de bola 4\" flangeada", "API 608 Clase 150", "und", 78, 0, 1_120, 7.2, 18),
-      r("s14", "piping", "SOP-PIP", "Soportería de tubería", "Fabricada en sitio", "kg", 28_400, 0.07, 2.4, 0.055, 0.32),
-      r("s15", "piping", "JUN-SOL", "Junta soldada de campo", "GTAW raíz + SMAW relleno", "und", 2_340, 0, 12, 3.4, 5.6),
+      r("s9", "piping", "PIP-TUB-18", "Tubería de acero al carbono 6\"", "ASTM A106 Gr.B Sch 40", "m", 3_820, 0.03, 62, 1.35, 3.8),
+      r("s10", "piping", "PIP-TUB-19", "Tubería de acero al carbono 4\"", "ASTM A106 Gr.B Sch 40", "m", 5_140, 0.05, 41, 1.05, 3.1),
+      r("s11", "piping", "PIP-TUB-21", "Tubería inoxidable 3\"", "ASTM A312 TP316L Sch 10S", "m", 940, 0.06, 128, 1.65, 4.2),
+      r("s12", "piping", "PIP-VAL-23", "Válvula de compuerta 6\" flangeada", "API 600 Clase 150 WCB", "und", 46, 0, 1_840, 9.5, 22),
+      r("s13", "piping", "PIP-VAL-24", "Válvula de bola 4\" flangeada", "API 608 Clase 150", "und", 78, 0, 1_120, 7.2, 18),
+      r("s14", "piping", "PIP-SOP-26", "Soportería de tubería", "Fabricada en sitio", "kg", 28_400, 0.07, 2.4, 0.055, 0.32),
+      r("s15", "piping", "PIP-JUN-27", "Junta soldada de campo", "GTAW raíz + SMAW relleno", "und", 2_340, 0, 12, 3.4, 5.6),
 
       // --- Mecánica ---
-      r("s16", "mecanica", "EQU-BOM", "Bomba centrífuga API 610", "OH2 · 150 m³/h · 45 m", "und", 6, 0, 42_000, 62, 180),
-      r("s17", "mecanica", "EQU-INT", "Intercambiador de calor", "TEMA AES · 320 m²", "und", 3, 0, 118_000, 96, 340),
-      r("s18", "mecanica", "EQU-TAN", "Tanque atmosférico", "API 650 · 2.500 m³", "und", 2, 0, 268_000, 480, 1_250),
+      r("s16", "mecanica", "MEC-EQU-28", "Bomba centrífuga API 610", "OH2 · 150 m³/h · 45 m", "und", 6, 0, 42_000, 62, 180),
+      r("s17", "mecanica", "MEC-EQU-29", "Intercambiador de calor", "TEMA AES · 320 m²", "und", 3, 0, 118_000, 96, 340),
+      r("s18", "mecanica", "MEC-EQU-30", "Tanque atmosférico", "API 650 · 2.500 m³", "und", 2, 0, 268_000, 480, 1_250),
 
       // --- Electricidad ---
-      r("s19", "electricidad", "CAB-POT", "Cable de potencia 3x120 mm²", "XLPE 15 kV", "m", 4_600, 0.08, 38, 0.28, 1.4),
-      r("s20", "electricidad", "BAN-CAB", "Bandeja portacables galvanizada", "600 mm · escalera", "m", 2_150, 0.05, 46, 0.42, 1.8),
-      r("s21", "electricidad", "TAB-MCC", "Centro de control de motores", "480 V · 12 celdas", "und", 4, 0, 62_000, 88, 240),
-      r("s22", "electricidad", "ILU-LED", "Luminaria LED antiexplosión", "Clase I Div 2 · 150 W", "und", 186, 0.03, 620, 2.8, 4.5),
+      r("s19", "electricidad", "ELE-CAB-31", "Cable de potencia 3x120 mm²", "XLPE 15 kV", "m", 4_600, 0.06, 38, 0.28, 1.4),
+      r("s20", "electricidad", "ELE-BAN-33", "Bandeja portacables galvanizada", "600 mm · escalera", "m", 2_150, 0.05, 46, 0.42, 1.8),
+      r("s21", "electricidad", "ELE-TAB-35", "Centro de control de motores", "480 V · 12 celdas", "und", 4, 0, 62_000, 88, 240),
+      r("s22", "electricidad", "ELE-ILU-36", "Luminaria LED antiexplosión", "Clase I Div 2 · 150 W", "und", 186, 0.03, 620, 2.8, 4.5),
 
       // --- Instrumentación ---
-      r("s23", "instrumentacion", "INS-TRA", "Transmisor de presión", "4-20 mA HART · SIL 2", "und", 94, 0, 1_450, 6.4, 12),
-      r("s24", "instrumentacion", "INS-VAL", "Válvula de control", "Globo 3\" · posicionador digital", "und", 22, 0, 8_900, 18, 42),
-      r("s25", "instrumentacion", "INS-CAB", "Cable de instrumentación apantallado", "2x1.5 mm² · par trenzado", "m", 8_200, 0.1, 6.8, 0.14, 0.5),
-    ],
+      r("s23", "instrumentacion", "INS-TRA-38", "Transmisor de presión", "4-20 mA HART · SIL 2", "und", 94, 0, 1_450, 6.4, 12),
+      r("s24", "instrumentacion", "INS-VAL-40", "Válvula de control", "Globo 3\" · posicionador digital", "und", 22, 0, 8_900, 18, 42),
+      r("s25", "instrumentacion", "INS-CAB-42", "Cable de instrumentación apantallado", "2x1.5 mm² · par trenzado", "m", 8_200, 0.1, 6.8, 0.14, 0.5),
+    ].map(conComposicion),
   };
+}
+
+/**
+ * Adjunta la composición de la base de precios, cuando existe para ese código.
+ *
+ * Se hace aquí y no dentro de `r()` porque la composición NO viene del modelo:
+ * viene de la base de la empresa, y mezclarlas en el mismo sitio haría pensar
+ * que el archivo BIM trae la cuadrilla tipo. No la trae.
+ */
+function conComposicion(renglon: RenglonMto): RenglonMto {
+  const c = COMPOSICIONES_DEMO[renglon.codigo];
+  return c ? { ...renglon, composicion: c } : renglon;
 }
 
 /** Obras ya ejecutadas, para comparar la estimación contra la historia. */

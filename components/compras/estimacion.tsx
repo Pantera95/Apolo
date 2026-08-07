@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { Entregables } from "@/components/compras/entregables";
 import { Alerta } from "@/components/ui/alerta";
 import { Boton } from "@/components/ui/boton";
 import { Insignia } from "@/components/ui/insignia";
@@ -42,6 +43,18 @@ import {
 import { usePreferencias } from "@/lib/preferencias";
 
 type Pestana = "mto" | "apu" | "rfq" | "benchmark";
+
+/**
+ * Identidad de los documentos.
+ *
+ * Van aquí y no en el motor porque son de PRESENTACIÓN: el mismo cómputo
+ * emitido por otra constructora lleva otro membrete sin que cambie un número.
+ * Cuando la estimación se guarde en base de datos, saldrán de la ficha del
+ * proyecto.
+ */
+const CLIENTE = "Multiservicios y Construcciones Global XXI, C.A.";
+const PROYECTO = "Plataforma de procesamiento y módulos civiles · Fase 1";
+const PREPARADO_POR = "Departamento de Estimaciones y Costos";
 
 function tono(css: string): string {
   if (typeof window === "undefined") return "#888";
@@ -139,6 +152,41 @@ export function EstimacionLicitacion() {
             <>
               <Resumen estimacion={estimacion} idioma={idioma} />
               <Ajustes parametros={parametros} onCambio={setParametros} />
+
+              <Entregables
+                informe={{
+                  proyecto: PROYECTO,
+                  cliente: CLIENTE,
+                  origen: ORIGENES.find((o) => o.id === ingesta.origen)?.nombre ?? ingesta.origen,
+                  archivo: ingesta.archivo,
+                  estimacion,
+                  parametros,
+                  historico: HISTORICO_DEMO,
+                  simulado: ingesta.simulado,
+                  preparadoPor: PREPARADO_POR,
+                }}
+                apu={{
+                  proyecto: PROYECTO,
+                  cliente: CLIENTE,
+                  // Solo los renglones con composición cargada: emitir 25 hojas
+                  // donde 19 dicen "desglose agregado" no es un entregable, es
+                  // relleno. Las que faltan salen cuando se cargue su análisis.
+                  apus: estimacion.apus.filter((a) => a.desglose.detallado),
+                  parametros,
+                  simulado: ingesta.simulado,
+                  preparadoPor: PREPARADO_POR,
+                }}
+                leyendaDatos={{
+                  proyecto: PROYECTO,
+                  cliente: CLIENTE,
+                  origen: ORIGENES.find((o) => o.id === ingesta.origen)?.nombre ?? ingesta.origen,
+                  estimacion,
+                  parametros,
+                  historico: HISTORICO_DEMO,
+                  simulado: ingesta.simulado,
+                  preparadoPor: PREPARADO_POR,
+                }}
+              />
 
               <div className="flex flex-wrap gap-1.5" role="tablist">
                 {(
@@ -391,13 +439,19 @@ function Ajustes({
   parametros: Parametros;
   onCambio: (p: Parametros) => void;
 }) {
-  const campos: { k: keyof Parametros; nombre: string; paso: number; sufijo?: string }[] = [
+  // Solo las claves numéricas: `modoMarkup` es una opción y va aparte.
+  type ClaveNumerica = {
+    [K in keyof Parametros]: Parametros[K] extends number ? K : never;
+  }[keyof Parametros];
+
+  const campos: { k: ClaveNumerica; nombre: string; paso: number }[] = [
     { k: "cuadrillas", nombre: "Cuadrillas", paso: 1 },
     { k: "personasPorCuadrilla", nombre: "Personas/cuadrilla", paso: 1 },
     { k: "horasJornada", nombre: "Horas/jornada", paso: 1 },
-    { k: "costoHoraHombreUsd", nombre: "Costo HH", paso: 0.5, sufijo: "USD" },
+    { k: "costoHoraHombreUsd", nombre: "Costo HH (USD)", paso: 0.5 },
     { k: "fas", nombre: "FAS", paso: 0.1 },
     { k: "overhead", nombre: "Indirectos", paso: 0.01 },
+    { k: "imprevistos", nombre: "Imprevistos", paso: 0.01 },
     { k: "utilidad", nombre: "Utilidad", paso: 0.01 },
   ];
 
@@ -431,7 +485,60 @@ function Ajustes({
             />
           </label>
         ))}
+
+        <label className="min-w-0 text-xs sm:col-span-2">
+          <span className="mb-1 block font-bold uppercase tracking-[0.06em] text-texto-3">
+            Modo de recargo
+          </span>
+          <select
+            value={parametros.modoMarkup}
+            onChange={(e) =>
+              onCambio({
+                ...parametros,
+                modoMarkup: e.target.value as Parametros["modoMarkup"],
+              })
+            }
+            className="min-h-11 w-full rounded-control border border-borde-fuerte bg-superficie px-2 text-sm text-texto"
+          >
+            <option value="aditivo">Aditivo · sobre el costo directo</option>
+            <option value="cascada">Cascada · sobre el subtotal anterior</option>
+          </select>
+        </label>
       </div>
+
+      <p className="mt-3 text-[11px] text-texto-3">
+        {parametros.modoMarkup === "aditivo" ? (
+          <>
+            Los tres recargos se calculan sobre el costo directo, como en la
+            planilla del cliente. Suman{" "}
+            <strong className="text-texto">
+              {(
+                (parametros.overhead + parametros.imprevistos + parametros.utilidad) *
+                100
+              ).toFixed(1)}
+              %
+            </strong>
+            .
+          </>
+        ) : (
+          <>
+            Cada recargo se calcula sobre el subtotal anterior, así que también
+            sobre los recargos: el total no es la suma de los tres, sino{" "}
+            <strong className="text-texto">
+              {(
+                ((1 + parametros.overhead) *
+                  (1 + parametros.imprevistos) *
+                  (1 + parametros.utilidad) -
+                  1) *
+                100
+              ).toFixed(1)}
+              %
+            </strong>
+            . Rinde más, pero si el pliego trae la planilla del cliente, gana la
+            planilla.
+          </>
+        )}
+      </p>
     </section>
   );
 }
