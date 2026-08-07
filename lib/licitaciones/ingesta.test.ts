@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   computoSimulado,
   HISTORICO_DEMO,
+  ingestaLocal,
   leerScheduleCsv,
   plantillaScheduleCsv,
+  origenPorExtension,
 } from "@/lib/licitaciones/ingesta";
 
 describe("leerScheduleCsv", () => {
@@ -91,5 +93,43 @@ describe("historico", () => {
     const sinSobrecosto = HISTORICO_DEMO.filter((o) => o.acUsd <= o.evUsd);
     expect(conSobrecosto.length).toBeGreaterThan(0);
     expect(sinSobrecosto.length).toBeGreaterThan(0);
+  });
+});
+
+describe("el origen que se informa es el real, no el declarado", () => {
+  /**
+   * Este fallo se vio en pantalla, no leyendo el codigo: con el selector en su
+   * valor por defecto y un `.rvt` arrastrado encima, la vista previa del
+   * mensaje decia "Origen: Schedule en CSV" sobre un computo SIMULADO. Ese
+   * encabezado viaja al PDF y a la mesa de licitacion.
+   */
+  it("un .rvt subido con el selector en CSV se informa como Revit", async () => {
+    const archivo = new File(["x"], "plataforma.rvt");
+    const r = await ingestaLocal().procesar(archivo, "csv");
+    expect(r.origen).toBe("revit");
+    expect(r.simulado).toBe(true);
+  });
+
+  it("y avisa de la discrepancia en vez de corregirla en silencio", async () => {
+    const archivo = new File(["x"], "plataforma.rvt");
+    const r = await ingestaLocal().procesar(archivo, "csv");
+    expect(r.avisos.some((a) => /Manda la extensi/.test(a))).toBe(true);
+  });
+
+  it("un CSV subido declarando Revit se lee como CSV, no se simula", async () => {
+    const csv = "Civil;CIV-CON-04;Concreto;f'c=280;m3;100;0.05;118;2.4;14";
+    const r = await ingestaLocal().procesar(new File([csv], "schedule.csv"), "revit");
+    expect(r.simulado).toBe(false);
+    expect(r.origen).toBe("csv");
+    expect(r.renglones).toHaveLength(1);
+  });
+
+  it("sin discrepancia no inventa avisos", async () => {
+    const r = await ingestaLocal().procesar(new File(["x"], "modelo.rvt"), "revit");
+    expect(r.avisos.some((a) => /Manda la extensi/.test(a))).toBe(false);
+  });
+
+  it("una extension desconocida respeta lo declarado", () => {
+    expect(origenPorExtension("modelo.zip")).toBeNull();
   });
 });

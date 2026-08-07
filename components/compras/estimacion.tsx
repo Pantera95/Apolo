@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { Entregables } from "@/components/compras/entregables";
+import { PanelTelegramEstimacion } from "@/components/compras/panel-telegram-estimacion";
 import { Alerta } from "@/components/ui/alerta";
 import { Boton } from "@/components/ui/boton";
 import { Insignia } from "@/components/ui/insignia";
@@ -153,7 +153,18 @@ export function EstimacionLicitacion() {
               <Resumen estimacion={estimacion} idioma={idioma} />
               <Ajustes parametros={parametros} onCambio={setParametros} />
 
-              <Entregables
+              <PanelTelegramEstimacion
+                ctx={{
+                  proyecto: PROYECTO,
+                  cliente: CLIENTE,
+                  origen: ORIGENES.find((o) => o.id === ingesta.origen)?.nombre ?? ingesta.origen,
+                  archivo: ingesta.archivo,
+                  estimacion,
+                  parametros,
+                  historico: HISTORICO_DEMO,
+                  simulado: ingesta.simulado,
+                  preparadoPor: PREPARADO_POR,
+                }}
                 informe={{
                   proyecto: PROYECTO,
                   cliente: CLIENTE,
@@ -173,16 +184,6 @@ export function EstimacionLicitacion() {
                   // relleno. Las que faltan salen cuando se cargue su análisis.
                   apus: estimacion.apus.filter((a) => a.desglose.detallado),
                   parametros,
-                  simulado: ingesta.simulado,
-                  preparadoPor: PREPARADO_POR,
-                }}
-                leyendaDatos={{
-                  proyecto: PROYECTO,
-                  cliente: CLIENTE,
-                  origen: ORIGENES.find((o) => o.id === ingesta.origen)?.nombre ?? ingesta.origen,
-                  estimacion,
-                  parametros,
-                  historico: HISTORICO_DEMO,
                   simulado: ingesta.simulado,
                   preparadoPor: PREPARADO_POR,
                 }}

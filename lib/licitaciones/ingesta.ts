@@ -303,19 +303,54 @@ export const HISTORICO_DEMO: ObraHistorica[] = [
  * "Revit" pero sube un CSV, se lee el CSV. Fiarse de la etiqueta produciría un
  * cómputo simulado teniendo el real delante.
  */
+/**
+ * Origen deducido de la extensión del archivo.
+ *
+ * MANDA LA EXTENSIÓN, NO EL DESPLEGABLE. El origen que el usuario declara es
+ * una intención; la extensión es un hecho. Si alguien deja el selector en
+ * "Schedule en CSV" y suelta un `.rvt` —que es lo que pasa al arrastrar el
+ * archivo sin tocar el selector—, todo lo que salga después diría "Origen:
+ * Schedule en CSV" sobre un cómputo que en realidad es SIMULADO. Ese
+ * encabezado viaja al PDF, al mensaje de Telegram y a la mesa de licitación.
+ *
+ * Devuelve `null` cuando la extensión no dice nada, y entonces sí se respeta
+ * lo declarado: es lo único que se sabe.
+ */
+export function origenPorExtension(nombreArchivo: string): OrigenModelo | null {
+  const n = nombreArchivo.toLowerCase();
+  if (n.endsWith(".csv") || n.endsWith(".txt")) return "csv";
+  if (n.endsWith(".xml")) return "smartplant";
+  if (n.endsWith(".rvt")) return "revit";
+  if (n.endsWith(".ifc")) return "ifc";
+  if (n.endsWith(".mac") || n.endsWith(".dat")) return "pdms";
+  return null;
+}
+
 export function ingestaLocal(): ProveedorIngesta {
   return {
     nombre: "local",
     async procesar(archivo, origen) {
       const nombre = archivo.name.toLowerCase();
+      const real = origenPorExtension(archivo.name);
+
+      // La discrepancia se dice, no se corrige en silencio: quien eligió mal
+      // el desplegable tiene que enterarse de que se leyó otra cosa.
+      const discrepa =
+        real !== null && real !== origen
+          ? [`Se declaró "${origen}" pero el archivo es ${real.toUpperCase()}. Manda la extensión.`]
+          : [];
 
       if (nombre.endsWith(".csv") || nombre.endsWith(".txt")) {
-        return leerScheduleCsv(await archivo.text(), archivo.name);
+        const r = leerScheduleCsv(await archivo.text(), archivo.name);
+        return { ...r, avisos: [...discrepa, ...r.avisos] };
       }
       if (nombre.endsWith(".xml")) {
-        return leerReporteXml(await archivo.text(), archivo.name);
+        const r = leerReporteXml(await archivo.text(), archivo.name);
+        return { ...r, avisos: [...discrepa, ...r.avisos] };
       }
-      return computoSimulado(archivo.name, origen);
+
+      const r = computoSimulado(archivo.name, real ?? origen);
+      return { ...r, avisos: [...discrepa, ...r.avisos] };
     },
   };
 }
