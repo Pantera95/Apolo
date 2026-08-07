@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { PanelTelegramEstimacion } from "@/components/compras/panel-telegram-estimacion";
+import { PanelTelegramEstimacion } from "@/components/estimaciones/panel-telegram";
 import { Alerta } from "@/components/ui/alerta";
 import { Boton } from "@/components/ui/boton";
 import { Insignia } from "@/components/ui/insignia";
@@ -63,17 +63,19 @@ function tono(css: string): string {
 }
 
 /**
- * Estimación de licitaciones desde modelos BIM/CAD — Premium, dentro de Compras.
+ * Estimación desde modelos BIM/CAD — el módulo de Estimaciones.
  *
- * Vive en Compras y no en una ruta propia porque lo que produce es una
- * intención de compra: el cómputo se convierte en solicitudes de cotización,
- * que es exactamente el trabajo de este módulo.
+ * Vivió como pestaña de Compras y ahí estaba mal: el cómputo termina en
+ * solicitudes de cotización, pero eso solo describe la salida. El trabajo
+ * —calcular cantidades, rendimientos y precios unitarios para decidir si se
+ * oferta— es del departamento de estimaciones y ocurre antes de que exista
+ * ninguna orden.
  *
  * LA FRONTERA SE DECLARA EN PANTALLA. Un `.rvt` no se lee en un navegador, y
  * la interfaz lo dice antes de que nadie suba nada — no después, con un
  * resultado simulado ya delante.
  */
-export function EstimacionLicitacion() {
+export function PanelEstimacion() {
   const { idioma } = usePreferencias();
   const [origen, setOrigen] = useState<OrigenModelo>("csv");
   const [ingesta, setIngesta] = useState<ResultadoIngesta | null>(null);

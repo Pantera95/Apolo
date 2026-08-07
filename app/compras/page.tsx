@@ -25,12 +25,10 @@ import {
   type Proveedor,
 } from "@/lib/dominio/compras";
 import type { ClaveTexto } from "@/lib/i18n/textos";
-import { EstimacionLicitacion } from "@/components/compras/estimacion";
-import { usePremium } from "@/lib/dashboard/premium";
 import { usePreferencias } from "@/lib/preferencias";
 import { useAhora } from "@/lib/tiempo";
 
-type Vista = "ordenes" | "proveedores" | "estimacion";
+type Vista = "ordenes" | "proveedores";
 
 function tonoOrden(estado: EstadoOrden): TonoInsignia {
   switch (estado) {
@@ -49,7 +47,6 @@ function tonoOrden(estado: EstadoOrden): TonoInsignia {
 
 export default function Compras() {
   const { t, idioma } = usePreferencias();
-  const premium = usePremium();
   const estado = useEstado();
   const listo = useListo();
   const ahora = useAhora();
@@ -300,18 +297,10 @@ export default function Compras() {
               texto: t("com.proveedores"),
               contador: estado.proveedores.length,
             },
-            // La estimación solo aparece con Premium: es la función que se
-            // vende aparte, no una vista más del listado de órdenes.
-            ...(premium
-              ? [{ valor: "estimacion" as const, texto: "◆ Estimación BIM" }]
-              : []),
           ]}
         />
       </div>
 
-      {vista === "estimacion" ? (
-        <EstimacionLicitacion />
-      ) : (
       <Tarjeta>
         {vista === "ordenes" ? (
           <Tabla
@@ -331,7 +320,6 @@ export default function Compras() {
           />
         )}
       </Tarjeta>
-      )}
 
       {recibiendoVivo && (
         <DialogoRecepcion

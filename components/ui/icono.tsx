@@ -12,6 +12,7 @@ export type NombreIcono =
   | "despacho"
   | "herramientas"
   | "compras"
+  | "estimaciones"
   | "importacion"
   | "reportes"
   | "sol"
@@ -77,6 +78,16 @@ const TRAZOS: Record<NombreIcono, React.ReactNode> = {
       <path d="M12 3v11" />
       <path d="m7.5 9.5 4.5 4.5 4.5-4.5" />
       <path d="M4 17v2.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V17" />
+    </>
+  ),
+  // Compas de dibujo: mide y traza, que es lo que hace el modulo. No se
+  // reutiliza el carrito de compras — dos entradas del mismo grupo con el
+  // mismo icono se confunden a 18 px de alto.
+  estimaciones: (
+    <>
+      <circle cx="12" cy="4" r="1.5" />
+      <path d="m10.8 5.3-5.3 14.2M13.2 5.3l5.3 14.2" />
+      <path d="M8.4 13.2a7 7 0 0 0 7.2 0" />
     </>
   ),
   reportes: (

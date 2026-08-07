@@ -41,6 +41,7 @@ const SECCIONES: Seccion[] = [
     enlaces: [
       { href: "/inventario", icono: "inventario", clave: "nav.inventario" },
       { href: "/herramientas", icono: "herramientas", clave: "nav.herramientas" },
+      { href: "/estimaciones", icono: "estimaciones", clave: "nav.estimaciones" },
       { href: "/compras", icono: "compras", clave: "nav.compras" },
     ],
   },
