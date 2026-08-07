@@ -384,6 +384,17 @@ export interface ResultadoIngesta {
   avisos: string[];
   /** Cierto cuando los renglones son simulados y no salen del archivo. */
   simulado: boolean;
+  /**
+   * Cierto cuando el schedule es uno de los modelos de muestra.
+   *
+   * NO ES LO MISMO QUE `simulado` y por eso son dos banderas. Un modelo de
+   * muestra se PROCESA de verdad —pasa por el lector de CSV, fila por fila—,
+   * solo que sus datos son inventados. Un cómputo simulado ni siquiera se leyó.
+   * Fundirlas haría que el documento dijera "no procede de un modelo real"
+   * sobre un archivo que sí se leyó, o peor, que no dijera nada sobre datos
+   * ficticios.
+   */
+  muestra?: boolean;
 }
 
 /**

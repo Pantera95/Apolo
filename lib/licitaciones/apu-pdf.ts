@@ -10,6 +10,7 @@ import {
   MARGEN,
   ROJO,
   TINTA,
+  avisoDemo,
   cabecera,
   capitulo,
   fecha,
@@ -41,6 +42,8 @@ export interface DatosApu {
   apus: Apu[];
   parametros: Parametros;
   simulado: boolean;
+  /** Cierto para los schedules de muestra: se leen de verdad, con datos ficticios. */
+  muestra?: boolean;
   preparadoPor: string;
 }
 
@@ -49,7 +52,7 @@ function membrete(d: DatosApu): Membrete {
     empresa: d.cliente,
     documento: "Análisis de Precios Unitarios",
     proyecto: d.proyecto,
-    simulado: d.simulado,
+    avisoDemo: avisoDemo(d.simulado, d.muestra),
   };
 }
 
@@ -385,6 +388,28 @@ function hoja(doc: jsPDF, apu: Apu, d: DatosApu, m: Membrete) {
   });
 }
 
+/** Hoja única cuando ningún renglón tiene composición cargada. */
+function hojaVacia(doc: jsPDF, m: Membrete) {
+  const ancho = doc.internal.pageSize.getWidth();
+  cabecera(doc, m);
+  let y = capitulo(doc, "1", "Sin análisis de precios que emitir", 34);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...TINTA);
+  for (const linea of [
+    "Ningún renglón del cómputo tiene composición de insumos cargada en la",
+    "base de precios de la empresa.",
+    "",
+    "El cómputo métrico y el informe consolidado sí se emiten: lo que falta",
+    "es el desglose por insumo, equipo y cuadrilla de cada precio unitario,",
+    "que no viene del modelo de diseño sino de la base de la empresa.",
+  ]) {
+    doc.text(linea, MARGEN, y);
+    y += 5;
+  }
+  void ancho;
+}
+
 export function generarApu(d: DatosApu): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const m = membrete(d);
@@ -396,10 +421,17 @@ export function generarApu(d: DatosApu): jsPDF {
     creator: "Apolo",
   });
 
-  d.apus.forEach((apu, i) => {
-    if (i > 0) doc.addPage();
-    hoja(doc, apu, d, m);
-  });
+  if (d.apus.length === 0) {
+    // Sin renglones con composición no hay APU que emitir. Se dice en una hoja
+    // en vez de devolver un PDF en blanco, que se leería como un fallo del
+    // sistema cuando en realidad falta cargar la base de precios.
+    hojaVacia(doc, m);
+  } else {
+    d.apus.forEach((apu, i) => {
+      if (i > 0) doc.addPage();
+      hoja(doc, apu, d, m);
+    });
+  }
 
   pie(doc, m);
   return doc;

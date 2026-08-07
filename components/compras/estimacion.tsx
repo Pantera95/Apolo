@@ -23,6 +23,7 @@ import {
   ingestaLocal,
   plantillaScheduleCsv,
 } from "@/lib/licitaciones/ingesta";
+import { archivoDeModelo, MODELOS_DEMO } from "@/lib/licitaciones/modelos-demo";
 import {
   agruparRfq,
   desempeno,
@@ -53,7 +54,7 @@ type Pestana = "mto" | "apu" | "rfq" | "benchmark";
  * proyecto.
  */
 const CLIENTE = "Multiservicios y Construcciones Global XXI, C.A.";
-const PROYECTO = "Plataforma de procesamiento y módulos civiles · Fase 1";
+const PROYECTO_POR_DEFECTO = "Plataforma de procesamiento y módulos civiles · Fase 1";
 const PREPARADO_POR = "Departamento de Estimaciones y Costos";
 
 function tono(css: string): string {
@@ -80,6 +81,9 @@ export function EstimacionLicitacion() {
   const [arrastrando, setArrastrando] = useState(false);
   const [pestana, setPestana] = useState<Pestana>("mto");
   const [parametros, setParametros] = useState<Parametros>(PARAMETROS_INICIALES);
+  // Qué modelo de muestra se cargó, si fue alguno. Da el nombre del proyecto y
+  // el sello de "datos ficticios" que llevan los documentos.
+  const [muestra, setMuestra] = useState<(typeof MODELOS_DEMO)[number] | null>(null);
   const entrada = useRef<HTMLInputElement>(null);
 
   const estimacion = useMemo(
@@ -87,7 +91,8 @@ export function EstimacionLicitacion() {
     [ingesta, parametros],
   );
 
-  async function procesar(archivo: File) {
+  async function procesar(archivo: File, deMuestra: (typeof MODELOS_DEMO)[number] | null = null) {
+    setMuestra(deMuestra);
     setProcesando(true);
     try {
       // Pausa deliberada: procesar 25 renglones es instantáneo, y un resultado
@@ -127,6 +132,7 @@ export function EstimacionLicitacion() {
 
       {!ingesta ? (
         <Ingesta
+          onModelo={(m) => void procesar(archivoDeModelo(m), m)}
           origen={origen}
           onOrigen={setOrigen}
           arrastrando={arrastrando}
@@ -155,7 +161,7 @@ export function EstimacionLicitacion() {
 
               <PanelTelegramEstimacion
                 ctx={{
-                  proyecto: PROYECTO,
+                  proyecto: muestra?.nombre ?? PROYECTO_POR_DEFECTO,
                   cliente: CLIENTE,
                   origen: ORIGENES.find((o) => o.id === ingesta.origen)?.nombre ?? ingesta.origen,
                   archivo: ingesta.archivo,
@@ -163,10 +169,11 @@ export function EstimacionLicitacion() {
                   parametros,
                   historico: HISTORICO_DEMO,
                   simulado: ingesta.simulado,
+                  muestra: Boolean(muestra),
                   preparadoPor: PREPARADO_POR,
                 }}
                 informe={{
-                  proyecto: PROYECTO,
+                  proyecto: muestra?.nombre ?? PROYECTO_POR_DEFECTO,
                   cliente: CLIENTE,
                   origen: ORIGENES.find((o) => o.id === ingesta.origen)?.nombre ?? ingesta.origen,
                   archivo: ingesta.archivo,
@@ -174,10 +181,11 @@ export function EstimacionLicitacion() {
                   parametros,
                   historico: HISTORICO_DEMO,
                   simulado: ingesta.simulado,
+                  muestra: Boolean(muestra),
                   preparadoPor: PREPARADO_POR,
                 }}
                 apu={{
-                  proyecto: PROYECTO,
+                  proyecto: muestra?.nombre ?? PROYECTO_POR_DEFECTO,
                   cliente: CLIENTE,
                   // Solo los renglones con composición cargada: emitir 25 hojas
                   // donde 19 dicen "desglose agregado" no es un entregable, es
@@ -185,6 +193,7 @@ export function EstimacionLicitacion() {
                   apus: estimacion.apus.filter((a) => a.desglose.detallado),
                   parametros,
                   simulado: ingesta.simulado,
+                  muestra: Boolean(muestra),
                   preparadoPor: PREPARADO_POR,
                 }}
               />
@@ -234,6 +243,7 @@ export function EstimacionLicitacion() {
 // ---------------------------------------------------------------------------
 
 function Ingesta({
+  onModelo,
   origen,
   onOrigen,
   arrastrando,
@@ -242,6 +252,7 @@ function Ingesta({
   onArchivo,
   entrada,
 }: {
+  onModelo: (m: (typeof MODELOS_DEMO)[number]) => void;
   origen: OrigenModelo;
   onOrigen: (o: OrigenModelo) => void;
   arrastrando: boolean;
@@ -316,6 +327,41 @@ function Ingesta({
               <Boton variante="suave" onClick={descargarPlantilla}>
                 Descargar plantilla CSV
               </Boton>
+            </div>
+
+            {/*
+              Los modelos de muestra van AQUÍ, dentro de la zona de carga, y no
+              en una barra aparte: es lo primero que hace falta en una
+              demostración, y esconderlo obliga a buscarlo delante del cliente.
+
+              Son schedules CSV de verdad y pasan por el mismo lector que un
+              export real. Una demostración que toma un atajo prueba el atajo.
+            */}
+            <div className="mt-6 w-full border-t border-borde pt-4">
+              <p className="mono mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-texto-3">
+                O carga un modelo de muestra
+              </p>
+              <p className="mb-3 text-[11px] text-texto-3">
+                Schedules completos con datos ficticios. Se procesan de verdad.
+              </p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {MODELOS_DEMO.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => onModelo(m)}
+                    className="min-h-11 rounded-control border border-borde-fuerte bg-superficie p-3 text-left transition-colors hover:border-marca"
+                  >
+                    <span className="block text-xs font-bold text-texto">{m.nombre}</span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-texto-3">
+                      {m.gancho}
+                    </span>
+                    <span className="mono mt-1 block text-[10px] text-texto-3">
+                      {m.filas.length} renglones · {m.archivo}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         )}

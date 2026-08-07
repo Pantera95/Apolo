@@ -35,8 +35,13 @@ export interface Membrete {
   empresa: string;
   documento: string;
   proyecto: string;
-  /** Se estampa en TODAS las páginas cuando el cómputo es de demostración. */
-  simulado: boolean;
+  /**
+   * Aviso que se estampa en TODAS las páginas, o `null` si el cómputo procede
+   * de un modelo real del cliente. Es texto y no un booleano porque hay dos
+   * avisos distintos —cómputo simulado y modelo de muestra— y decir el que no
+   * toca es peor que no decir nada.
+   */
+  avisoDemo: string | null;
 }
 
 const fmt = (dec: number) =>
@@ -48,6 +53,16 @@ export const pct = (n: number, dec = 1) => `${fmt(dec).format(n * 100)}%`;
 
 export function fecha(d = new Date()): string {
   return d.toLocaleDateString("es-VE", { day: "2-digit", month: "long", year: "numeric" });
+}
+
+
+/** Texto del sello de demostración, o `null` si el cómputo es real. */
+export function avisoDemo(simulado: boolean, muestra?: boolean): string | null {
+  if (simulado) return "CÓMPUTO DE DEMOSTRACIÓN · no procede de un modelo real";
+  // Se leyó de verdad, pero los datos son inventados. Decirlo importa: estos
+  // documentos salen por Telegram y pueden acabar reenviados fuera del demo.
+  if (muestra) return "MODELO DE MUESTRA · datos ficticios para demostración";
+  return null;
 }
 
 /** Ancho impreso del logotipo, en mm. Fija los 310 DPI del PNG incrustado. */
@@ -123,7 +138,7 @@ export function pie(doc: jsPDF, m: Membrete) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
 
-    if (m.simulado) {
+    if (m.avisoDemo) {
       // El aviso va en TODAS las páginas y no solo en la portada: una hoja
       // suelta fotocopiada perdería la advertencia.
       //
@@ -132,9 +147,7 @@ export function pie(doc: jsPDF, m: Membrete) {
       // es siempre: los proyectos EPC se llaman "Plataforma de procesamiento y
       // módulos civiles · Fase 1".
       doc.setTextColor(...ROJO);
-      doc.text("CÓMPUTO DE DEMOSTRACIÓN · no procede de un modelo real", ancho / 2, alto - 11.5, {
-        align: "center",
-      });
+      doc.text(m.avisoDemo, ancho / 2, alto - 11.5, { align: "center" });
     }
 
     doc.setTextColor(...GRIS);

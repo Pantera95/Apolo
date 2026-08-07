@@ -98,7 +98,7 @@ export function leerScheduleCsv(texto: string, archivo: string): ResultadoIngest
     avisos.push("No se reconoció ningún renglón. Comprueba el orden de las columnas.");
   }
 
-  return { renglones, origen: "csv", archivo, avisos, simulado: false };
+  return { renglones: renglones.map(conComposicion), origen: "csv", archivo, avisos, simulado: false };
 }
 
 /**
@@ -166,7 +166,7 @@ export function leerReporteXml(texto: string, archivo: string): ResultadoIngesta
     avisos.push(e instanceof Error ? e.message : "Error al leer el XML.");
   }
 
-  return { renglones, origen: "smartplant", archivo, avisos, simulado: false };
+  return { renglones: renglones.map(conComposicion), origen: "smartplant", archivo, avisos, simulado: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -259,11 +259,13 @@ export function computoSimulado(archivo: string, origen: OrigenModelo): Resultad
 /**
  * Adjunta la composición de la base de precios, cuando existe para ese código.
  *
- * Se hace aquí y no dentro de `r()` porque la composición NO viene del modelo:
- * viene de la base de la empresa, y mezclarlas en el mismo sitio haría pensar
- * que el archivo BIM trae la cuadrilla tipo. No la trae.
+ * SE APLICA EN TODAS LAS RUTAS DE INGESTA, no solo en la simulada, y ese es el
+ * comportamiento real: la composición no viene del modelo —viene de la base de
+ * precios de la empresa, indexada por código—, así que da igual si el renglón
+ * llegó por CSV, por XML o simulado. Aplicarla solo en una ruta hacía que un
+ * schedule real produjera un APU sin desglose teniendo el análisis cargado.
  */
-function conComposicion(renglon: RenglonMto): RenglonMto {
+export function conComposicion(renglon: RenglonMto): RenglonMto {
   const c = COMPOSICIONES_DEMO[renglon.codigo];
   return c ? { ...renglon, composicion: c } : renglon;
 }

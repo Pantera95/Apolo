@@ -12,6 +12,7 @@ import {
   MARGEN,
   ROJO,
   TINTA,
+  avisoDemo,
   cabecera,
   capitulo,
   espacio,
@@ -48,6 +49,8 @@ export interface DatosInforme {
   parametros: Parametros;
   historico: ObraHistorica[];
   simulado: boolean;
+  /** Cierto para los schedules de muestra: se leen de verdad, con datos ficticios. */
+  muestra?: boolean;
   preparadoPor: string;
 }
 
@@ -56,7 +59,7 @@ function membrete(d: DatosInforme): Membrete {
     empresa: d.cliente,
     documento: "Panel de control · Estimación y cálculo EPC",
     proyecto: d.proyecto,
-    simulado: d.simulado,
+    avisoDemo: avisoDemo(d.simulado, d.muestra),
   };
 }
 

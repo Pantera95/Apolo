@@ -53,6 +53,8 @@ export interface CtxPlantilla {
   parametros: Parametros;
   historico: ObraHistorica[];
   simulado: boolean;
+  /** Cierto para los modelos de muestra: se leen de verdad, con datos ficticios. */
+  muestra?: boolean;
   preparadoPor: string;
 }
 
@@ -85,10 +87,14 @@ const cabecera = (c: CtxPlantilla, titulo: string) =>
 
 const firma = (c: CtxPlantilla) => {
   const l = ["", `<i>${esc(c.preparadoPor)} · Apolo</i>`];
+  // Va en TODOS los mensajes, no solo en el PDF: quien lee el aviso en el
+  // teléfono decide con él, y a menudo sin abrir el adjunto. Se distingue el
+  // cómputo simulado —que ni se leyó— del modelo de muestra, que sí se procesó
+  // pero con datos inventados.
   if (c.simulado) {
-    // Va en TODOS los mensajes, no solo en el PDF: quien lee el aviso en el
-    // teléfono decide con él, y a menudo sin abrir el adjunto.
     l.splice(1, 0, "<i>Cómputo de demostración: no procede de un modelo real.</i>");
+  } else if (c.muestra) {
+    l.splice(1, 0, "<i>Modelo de muestra: datos ficticios para demostración.</i>");
   }
   return l.join("\n");
 };
