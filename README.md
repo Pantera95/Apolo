@@ -22,7 +22,7 @@ se imputa a una obra.
 (seguimiento de flota sobre callejero real, con enlaces de navegación a Google
 Maps e informes por Telegram).
 
-**Almacén** — Inventario, Herramientas, Estimaciones y Compras.
+**Almacén** — Inventario, Herramientas, Estimaciones, Compras y Procura.
 
 **Datos** — Importación y Reportes.
 
@@ -57,6 +57,23 @@ contrario haría que un PDF dijera "Schedule en CSV" sobre un cómputo simulado.
 **Dos entregables en PDF**, generados en el cliente y enviables por Telegram:
 el informe consolidado (seis capítulos) y el APU, en el formato de planilla que
 audita la operadora — una hoja por renglón, con firmas.
+
+### Procura
+
+El ciclo de compra por etapas del EDT: requisición, licitación, evaluación,
+adjudicación y cierre. Dos reglas lo sostienen:
+
+**Las etapas son puertas, no etiquetas.** Un expediente no sale de licitación
+sin tres ofertas y las aclaratorias cerradas, ni de evaluación sin dictamen
+técnico en todas. Un tablero donde todo se arrastra a cualquier sitio produce
+compras que ningún auditor puede justificar.
+
+**Se compara por costo desembarcado, no por precio de oferta.** Un FOB excluye
+flete, seguro y aranceles; un DDP los incluye. Poner las dos cifras en la misma
+columna y quedarse con la menor adjudica al proveedor equivocado de forma
+sistemática, y el sobrecosto aparece cuando la mercancía ya está en puerto. En
+los datos de muestra, una oferta de 392.000 FOB desembarca en 475.800 y pierde
+contra una de 448.000 DDP.
 
 ## Decisiones que definen el producto
 
@@ -130,7 +147,7 @@ de un demo, no una avería.
 ```bash
 npm install
 npm run dev          # http://localhost:3100
-npm test             # 487 pruebas del dominio
+npm test             # 511 pruebas del dominio
 npx tsc --noEmit     # typecheck estricto
 npm run build
 ```

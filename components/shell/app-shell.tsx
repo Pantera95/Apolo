@@ -13,6 +13,8 @@ interface Enlace {
   href: string;
   icono: NombreIcono;
   clave: ClaveTexto;
+  /** Sub-ruta de la entrada anterior: se sangra y baja un peso. */
+  sub?: boolean;
 }
 
 interface Seccion {
@@ -43,6 +45,9 @@ const SECCIONES: Seccion[] = [
       { href: "/herramientas", icono: "herramientas", clave: "nav.herramientas" },
       { href: "/estimaciones", icono: "estimaciones", clave: "nav.estimaciones" },
       { href: "/compras", icono: "compras", clave: "nav.compras" },
+      // Sub-ruta de Compras: Procura lleva cómo se decidió a quién comprarle;
+      // Compras lleva las órdenes ya emitidas y su recepción.
+      { href: "/compras/procura", icono: "compras", clave: "nav.procura", sub: true },
     ],
   },
   {
@@ -53,6 +58,24 @@ const SECCIONES: Seccion[] = [
     ],
   },
 ];
+
+/**
+ * Qué entrada del menú se marca como activa.
+ *
+ * GANA LA COINCIDENCIA MÁS LARGA. Un `startsWith` a secas encendía a la vez
+ * `/compras` y `/compras/procura` al entrar en la sub-ruta: dos entradas
+ * resaltadas no dicen dónde estás, dicen que el menú está roto.
+ */
+function esActivo(ruta: string, href: string): boolean {
+  if (href === "/") return ruta === "/";
+  if (ruta !== href && !ruta.startsWith(href + "/")) return false;
+
+  // Si otra entrada casa con un prefijo más largo, esta no es la activa.
+  const candidatos = SECCIONES.flatMap((s) => s.enlaces.map((e) => e.href)).filter(
+    (h) => h !== "/" && (ruta === h || ruta.startsWith(h + "/")),
+  );
+  return href.length === Math.max(...candidatos.map((h) => h.length));
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, tema, idioma, alternarTema, alternarIdioma } = usePreferencias();
@@ -89,8 +112,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </p>
             <ul className="flex flex-col gap-1">
               {seccion.enlaces.map((enlace) => {
-                const activo =
-                  enlace.href === "/" ? ruta === "/" : ruta.startsWith(enlace.href);
+                const activo = esActivo(ruta, enlace.href);
                 return (
                   <li key={enlace.href}>
                     <Link
@@ -102,12 +124,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                       onClick={() => setMenuAbierto(false)}
                       className={[
                         "flex min-h-11 items-center gap-3 rounded-pildora px-3.5 text-sm font-bold transition-colors",
+                        // Las sub-rutas se sangran y bajan un peso: se leen
+                        // como lo que son, una parte de su padre.
+                        enlace.sub ? "ml-4 text-[13px] font-semibold" : "",
                         activo
                           ? "bg-nav-activo text-nav-texto-activo"
                           : "text-nav-texto hover:bg-white/5 hover:text-white",
                       ].join(" ")}
                     >
-                      <Icono nombre={enlace.icono} tam={18} />
+                      <Icono nombre={enlace.icono} tam={enlace.sub ? 15 : 18} />
                       {t(enlace.clave)}
                       {/* El estado activo no se comunica solo con color. */}
                       {activo && (
