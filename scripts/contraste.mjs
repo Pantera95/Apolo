@@ -102,15 +102,28 @@ const BLOQUES = [
   ["--nav-texto-activo", "--nav-activo", 4.5],
 ];
 
-/** La superficie tiene que percibirse, aunque el borde haga de limite. */
-const PERCEPTIBLE = [
-  // Umbral BAJO a proposito y con motivo: la tarjeta no tiene que delimitarse
-  // sola, para eso lleva borde. Solo tiene que notarse que hay algo. Subirlo
-  // obligaria a un fondo tan oscuro que el texto puesto sobre el —que en modo
-  // claro es casi negro— empezaria a fallar por el otro lado.
-  ["--superficie", "--fondo", 1.2],
-  ["--superficie-2", "--superficie", 1.1],
-];
+/**
+ * La superficie tiene que percibirse, y CUANTO depende del tema.
+ *
+ * No es un doble rasero: la fisica es distinta. En claro la tarjeta ya es
+ * BLANCA y no puede aclararse mas, asi que subir la separacion exigiria un
+ * fondo gris medio que dejaria el producto sucio y empezaria a romper el texto
+ * puesto sobre ese fondo. Ademas la sombra dura se ve y delimita.
+ *
+ * En oscuro la sombra no existe visualmente —una sombra negra sobre fondo casi
+ * negro no se ve—, asi que el trabajo de delimitar recae en la superficie y se
+ * le exige mas.
+ */
+const PERCEPTIBLE_POR_TEMA = {
+  CLARO: [
+    ["--superficie", "--fondo", 1.2],
+    ["--superficie-2", "--superficie", 1.1],
+  ],
+  OSCURO: [
+    ["--superficie", "--fondo", 2],
+    ["--superficie-2", "--superficie", 1.1],
+  ],
+};
 
 let fallos = 0, total = 0, sinResolver = 0;
 
@@ -122,7 +135,7 @@ for (const [nombre, tabla] of [["CLARO", claro], ["OSCURO", oscuro]]) {
     ...FONDOS.flatMap((f) => TEXTOS.map((t) => [t, f, 4.5])),
     ...NO_TEXTO,
     ...BLOQUES,
-    ...PERCEPTIBLE,
+    ...PERCEPTIBLE_POR_TEMA[nombre],
   ];
 
   for (const [t, f, min] of pares) {

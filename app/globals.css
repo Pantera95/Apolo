@@ -82,7 +82,7 @@
 }
 
 .dark {
-  --fondo: #05101f;
+  --fondo: #030910;
 
   /*
    * LA RAMPA OSCURA SE MIDIO ENTERA, no por pares elegidos a mano.
@@ -97,43 +97,47 @@
    *   1,64:1  borde sobre superficie      el limite que deberia definirlas
    *   3,37:1  texto-3 sobre hover         y otros siete pares de texto
    *
-   * EL LIMITE LO LLEVA EL BORDE, NO LA SUPERFICIE. Exigir 3:1 entre superficie
-   * y fondo obligaria a tarjetas casi blancas sobre fondo negro, que no es como
-   * se construye una interfaz oscura. La superficie separa lo justo para
-   * percibirse (1,58:1) y el borde la delimita con holgura (4,46:1).
+   * LA SEPARACION SE SUBIO DESPUES DE VERLA EN PANTALLA. Un primer intento la
+   * dejo en 1,58:1 razonando que el borde ya delimitaba, y sobre un panel
+   * lleno de tarjetas grandes seguia leyendose como una sola mancha: el ratio
+   * pasaba el umbral que yo mismo habia puesto, pero el umbral estaba mal.
+   *
+   * El fondo ya estaba casi en negro y bajarlo solo daba 1,58 → 1,70, asi que
+   * la palanca util era ACLARAR LA TARJETA. A #2e4969 la separacion sube a
+   * 2,16:1 y el texto mas debil encima aun tiene 5,04:1 de margen.
    */
-  --superficie: #1c3757;
-  --superficie-2: #24446a;
-  --superficie-hover: #2b5079;
+  --superficie: #2e4969;
+  --superficie-2: #37567a;
+  --superficie-hover: #3f608a;
 
   /* Texto secundario y terciario subidos: antes caian por debajo de 4,5:1 en
      cuanto la tarjeta era la clara o estaba en hover. */
   --texto: #f4f8fc;
   --texto-2: #cfdae8;
-  --texto-3: #b3c1d3;
-  --texto-invertido: #05101f;
+  --texto-3: #cbd9eb;
+  --texto-invertido: #030910;
 
   /* 4,46:1 sobre la tarjeta y 3,08:1 sobre la mas clara. Es el elemento que
      hace visible el recuadro, asi que se le pide el 3:1 de no-texto. */
   --borde: #7da0c7;
   --borde-fuerte: #a3bad6;
 
-  --marca: #9dc2f5;
+  --marca: #b7dcff;
   --marca-fondo: var(--apolo-azul-boton);
   --marca-tenue: #12244a;
 
-  --luz: var(--apolo-oro-claro);
+  --luz: #ffd364;
   --luz-tenue: #3a2c07;
 
   /* Aclarados hasta pasar 4,5:1 tambien sobre la superficie en hover, que era
      donde todos se caian. */
-  --ok: #62dc92;
+  --ok: #76f0a6;
   --ok-tenue: #16301f;
-  --advertencia: #f5bd5e;
+  --advertencia: #ffd374;
   --advertencia-tenue: #3a2a0e;
-  --peligro: #ffa9a2;
+  --peligro: #ffcdc6;
   --peligro-tenue: #3d1d1b;
-  --info: #a4c1ff;
+  --info: #bedbff;
   --info-tenue: #17244a;
 
   --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 20px rgb(0 0 0 / 0.35);
