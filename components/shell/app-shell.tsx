@@ -89,16 +89,26 @@ export function AppShell({ children }: { children: ReactNode }) {
    */
   const panelNavegacion = (
     <div className="flex h-full flex-col overflow-hidden rounded-tarjeta bg-nav-fondo">
-      <div className="flex items-center gap-3 px-5 pb-4 pt-6">
-        <MarcaApolo tam={32} />
-        <div className="min-w-0">
-          <p className="text-lg font-extrabold leading-none tracking-tight text-white">
+      {/*
+        El lema se partía en dos líneas que llenaban los 159 px de ancho de
+        punta a punta, y un bloque de marca sin aire alrededor se lee como un
+        error de maquetación, no como una identidad.
+
+        Se corrige por los dos lados: menos tracking y menos cuerpo en el lema
+        —que es apoyo, no titular— y una regla debajo que cierra el bloque y lo
+        separa de la navegación.
+      */}
+      <div className="px-5 pb-4 pt-6">
+        <div className="flex items-center gap-2.5">
+          <MarcaApolo tam={38} />
+          <p className="text-xl font-extrabold leading-none tracking-[-0.02em] text-white">
             {t("app.nombre")}
           </p>
-          <p className="mt-1.5 text-[10px] font-bold uppercase leading-tight tracking-[0.1em] text-nav-texto">
-            {t("app.lema")}
-          </p>
         </div>
+        <p className="mt-2 text-[9px] font-bold uppercase leading-[1.5] tracking-[0.07em] text-nav-texto">
+          {t("app.lema")}
+        </p>
+        <div className="mt-4 h-px bg-white/10" />
       </div>
 
       <nav

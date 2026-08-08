@@ -164,26 +164,47 @@ export function MarcaApolo({ tam = 28 }: { tam?: number }) {
       focusable="false"
     >
       {/*
-        El hexágono del logotipo, con la "A" dorada dentro.
+        El isotipo: un cubo isométrico con la "A" recortada en la cara frontal.
 
         Se dibuja en SVG y no se usa el PNG original por tres razones: pesa
-        1,3MB, se ve borroso en pantallas densas al escalarlo, y un vector puede
-        heredar los tokens de marca. Las proporciones siguen al logotipo.
+        1,3 MB, se ve borroso en pantallas densas al escalarlo, y un vector
+        hereda los tokens de marca.
 
-        Usa los tokens FIJOS de bloque, no los del tema: la marca tiene que
-        verse igual sobre el panel oscuro de la nav y sobre el lienzo claro.
+        LO QUE HACE QUE SE LEA COMO UN CUBO SON LAS TRES CARAS, no el contorno.
+        Un hexágono con un hexágono dorado dentro es un hexágono; el volumen
+        aparece cuando las tres caras que concurren en el centro llevan tonos
+        distintos, como la luz real sobre un sólido. Por eso el oro va en tres
+        valores y no en uno.
+
+        Usa tonos FIJOS de marca y no los del tema: el isotipo tiene que verse
+        igual sobre el panel oscuro de la navegación y sobre el lienzo claro.
+      */}
+      <path d="M32 3 58 18v28L32 61 6 46V18z" fill="var(--bloque-marca)" />
+
+      {/* Cara superior: la que recibe la luz. */}
+      <path d="M32 12 50 22.5 32 33 14 22.5z" fill="var(--apolo-oro-claro)" />
+      {/* Cara izquierda, en el oro base. */}
+      <path d="M14 22.5 32 33v19L14 41.5z" fill="var(--apolo-oro-bloque)" />
+      {/* Cara derecha, en sombra: es la que cierra el volumen. */}
+      <path d="M50 22.5v19L32 52V33z" fill="var(--apolo-oro-sombra)" />
+
+      {/*
+        La "A", en el azul de la marca para que recorte sobre el oro. Se dibuja
+        sobre las tres caras a la vez, que es lo que la ata al sólido en vez de
+        dejarla flotando encima.
+
+        VA GRANDE Y PESADA A PROPÓSITO. Un primer trazo más fino se leía bien a
+        240 px y se convertía en un borrón a los 28 px de la barra lateral, que
+        es el único tamaño al que este isotipo se ve de verdad. Ocupa casi todo
+        el hexágono interior, como en el logotipo original, y el contrapunzón
+        es lo bastante ancho para no cerrarse al reducir.
       */}
       <path
-        d="M32 3 58 18v28L32 61 6 46V18z"
+        d="M32 13.5 49.5 50.5h-8l-2.9-6.8H25.4l-2.9 6.8h-8zm0 13.2-4 9.9h8z"
         fill="var(--bloque-marca)"
-      />
-      {/* Cara interior en oro: es la que da el volumen del isotipo. */}
-      <path d="M32 12 50 22.5v19L32 52 14 41.5v-19z" fill="var(--bloque-luz)" />
-      {/* La A, en el azul de la marca para que recorte sobre el oro. */}
-      <path
-        d="M32 19 43 45h-6.2l-1.9-4.8h-5.8L27.2 45H21zm0 10.8-2 5.2h4z"
-        fill="var(--bloque-marca)"
+        fillRule="evenodd"
       />
     </svg>
   );
 }
+

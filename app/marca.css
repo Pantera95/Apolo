@@ -38,6 +38,7 @@
   --apolo-oro-bloque: #f2b01e; /* bloques grandes, bajo texto tinta */
   --apolo-oro-texto: #7f5900; /* legible como texto sobre fondo claro */
   --apolo-oro-claro: #f7c556; /* texto sobre oscuro y acento de la nav */
+  --apolo-oro-sombra: #c98c0c; /* cara en sombra del isotipo; da el volumen */
 
   /* Acentos de apoyo */
   --apolo-ambar: #ff6b00;
