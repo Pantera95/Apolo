@@ -11,6 +11,14 @@ import {
 } from "@/lib/logistica/enlaces";
 import { debeEnviar, type EnvioRegistrado } from "@/lib/logistica/nucleo";
 import {
+  aptitud,
+  componer,
+  PLANTILLAS,
+  textoPlano,
+  type CtxLogistica,
+  type IdPlantilla,
+} from "@/lib/logistica/plantillas";
+import {
   CHOFERES_DEMO,
   LUGARES_DEMO,
   SUSCRIPCIONES_DEMO,
@@ -18,7 +26,7 @@ import {
   etaDeRuta,
   eventosDeRuta,
 } from "@/lib/logistica/simulado";
-import type { PlanRuta, PosicionVehiculo, Severidad } from "@/lib/logistica/tipos";
+import type { PlanRuta, PosicionVehiculo } from "@/lib/logistica/tipos";
 import { usePreferencias } from "@/lib/preferencias";
 
 /**
@@ -32,19 +40,6 @@ import { usePreferencias } from "@/lib/preferencias";
  * sin vista previa manda a ciegas a un grupo de la empresa, y de ahí no se
  * vuelve.
  */
-
-type IdPlantilla = "salida" | "en_ruta" | "alerta" | "entrega" | "resumen";
-
-const PLANTILLAS: { id: IdPlantilla; nombre: string; severidad: Severidad }[] = [
-  { id: "salida", nombre: "Salida del almacén", severidad: "informativa" },
-  { id: "en_ruta", nombre: "En ruta con ETA", severidad: "informativa" },
-  { id: "alerta", nombre: "Alerta de retraso o desvío", severidad: "alta" },
-  { id: "entrega", nombre: "Entrega completada", severidad: "informativa" },
-  { id: "resumen", nombre: "Resumen de la jornada", severidad: "informativa" },
-];
-
-const esc = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export function PanelTelegram({
   rutas,
@@ -95,22 +90,35 @@ export function PanelTelegram({
   const rutaMaps = enlaceRutaCompleta(ruta, LUGARES_DEMO);
   const siguienteMaps = enlaceSiguienteParada(ruta, LUGARES_DEMO);
 
-  const html = componer(plantilla, {
+  const nombreLugar = (id: string) =>
+    LUGARES_DEMO.find((l) => l.id === id)?.nombre ?? "—";
+
+  const contexto: CtxLogistica = {
     ruta,
-    vehiculo: vehiculo?.descripcion ?? ruta.vehiculoId,
-    chofer: CHOFERES_DEMO[ruta.vehiculoId] ?? "—",
-    destino: info ? (LUGARES_DEMO.find((l) => l.id === info.parada.lugarId)?.nombre ?? "—") : "—",
-    eta: info ? hora(info.eta.llegadaEstimada) : "—",
-    desvioMin: info ? Math.round(info.eta.desviacionMin) : 0,
-    evento: eventos[0]?.detalle ?? "Sin eventos abiertos",
     rutas,
+    vehiculo: vehiculo?.descripcion ?? ruta.vehiculoId,
+    capacidad: vehiculo?.capacidad ?? null,
+    chofer: CHOFERES_DEMO[ruta.vehiculoId] ?? "—",
+    destino: info ? nombreLugar(info.parada.lugarId) : "—",
+    eta: info?.eta ?? null,
+    eventos,
+    velocidadKmh: pos?.velocidadKmh ?? null,
     hora,
+    nombreLugar,
     urlRuta: rutaMaps?.url ?? null,
     urlSiguiente: siguienteMaps?.url ?? null,
     nombreSiguiente: siguienteMaps?.destino.nombre ?? null,
     paradasEnEnlace: rutaMaps?.paradas ?? 0,
     omitidas: rutaMaps?.omitidas ?? [],
-  });
+  };
+
+  /*
+    LA APTITUD SE CONSULTA ANTES DE COMPONER, y el resultado se enseña en
+    pantalla. El riesgo de este panel nunca fue que fallara el envío —Telegram
+    acepta cualquier texto— sino que enviara algo FALSO delante de un cliente.
+  */
+  const apta = aptitud(plantilla, contexto);
+  const html = apta.apto ? componer(plantilla, contexto) : "";
 
   // Se comprueba el anti-spam ANTES de enviar y se enseña el veredicto: así el
   // operador entiende por qué un mensaje no sale, en vez de pulsar tres veces.
@@ -242,13 +250,36 @@ export function PanelTelegram({
             </label>
           </div>
 
+          {/*
+            Por qué esta plantilla no aplica a este viaje. Va ANTES de los
+            botones y no como error tras pulsar: en una demostración en vivo,
+            enterarse de que el mensaje no procede después de haberlo enviado
+            no sirve de nada.
+          */}
+          {!apta.apto && (
+            <div
+              data-mov="aviso"
+              className="rounded-control border border-advertencia bg-advertencia-tenue p-3 text-xs"
+            >
+              <p className="font-bold text-advertencia">
+                Esta plantilla no aplica a {ruta.codigo}
+              </p>
+              <p className="mt-1 text-texto-2">{apta.motivo}</p>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
-            <Boton variante="primario" onClick={enviar} disabled={enviando}>
+            <Boton
+              variante="primario"
+              onClick={enviar}
+              disabled={enviando || !apta.apto}
+            >
               {enviando ? t("tg.enviando") : t("tg.enviarAhora")}
             </Boton>
             <Boton
               variante="suave"
               onClick={() => void navigator.clipboard?.writeText(textoPlano(html))}
+              disabled={!apta.apto}
             >
               {t("tg.copiar")}
             </Boton>
@@ -339,121 +370,12 @@ export function PanelTelegram({
             {t("tg.vistaPrevia")}
           </p>
           <pre className="mono max-h-[22rem] overflow-auto whitespace-pre-wrap rounded-control border border-borde bg-superficie-2 p-3 text-[11px] leading-relaxed text-texto-2">
-            {textoPlano(html)}
+            {apta.apto
+              ? textoPlano(html)
+              : "— Sin mensaje: esta plantilla no aplica al viaje seleccionado —"}
           </pre>
         </div>
       </div>
     </section>
   );
-}
-
-interface Ctx {
-  ruta: PlanRuta;
-  vehiculo: string;
-  chofer: string;
-  destino: string;
-  eta: string;
-  desvioMin: number;
-  evento: string;
-  rutas: PlanRuta[];
-  hora: (iso: string) => string;
-  /** Ruta completa planificada en Google Maps. `null` si no se pudo componer. */
-  urlRuta: string | null;
-  /** Navegación directa a la siguiente parada. */
-  urlSiguiente: string | null;
-  nombreSiguiente: string | null;
-  paradasEnEnlace: number;
-  omitidas: string[];
-}
-
-/**
- * Bloque de navegación que se añade a los mensajes de viaje.
- *
- * Van los DOS enlaces porque sirven a dos personas: el supervisor quiere ver la
- * ruta planificada completa, y el chofer solo necesita llegar a la siguiente
- * parada. Mandar solo uno obliga a la otra persona a reconstruirlo a mano.
- *
- * Las paradas que no caben en el enlace se declaran: Google descarta por encima
- * de nueve waypoints EN SILENCIO, y un chofer navegando una ruta recortada sin
- * saberlo es peor que no darle enlace.
- */
-function bloqueNavegacion(c: Ctx): string {
-  const partes: string[] = [];
-  if (c.urlSiguiente && c.nombreSiguiente) {
-    partes.push(`🧭 <a href="${c.urlSiguiente}">Ir a ${esc(c.nombreSiguiente)}</a>`);
-  }
-  if (c.urlRuta) {
-    partes.push(
-      `🗺 <a href="${c.urlRuta}">Ruta completa (${c.paradasEnEnlace} paradas)</a>`,
-    );
-  }
-  if (c.omitidas.length > 0) {
-    partes.push(
-      `⚠️ No caben en el enlace: ${esc(c.omitidas.join(", "))}. Google admite 9 paradas.`,
-    );
-  }
-  return partes.length > 0 ? "\n" + partes.join("\n") : "";
-}
-
-function componer(id: IdPlantilla, c: Ctx): string {
-  const base = [
-    `Despacho: ${esc(c.ruta.paradas[0]?.despachoId ?? "—")}`,
-    `Vehículo: ${esc(c.vehiculo)}`,
-    `Conductor: ${esc(c.chofer)}`,
-    `Ruta: ${esc(c.ruta.codigo)}`,
-  ].join("\n");
-
-  switch (id) {
-    case "salida":
-      return [
-        `<b>🚚 Vehículo salió del almacén</b>`,
-        base,
-        `Destino: ${esc(c.destino)}`,
-        `ETA: ${esc(c.eta)}`,
-      ].join("\n") + bloqueNavegacion(c);
-    case "en_ruta":
-      return [
-        `<b>📍 En ruta</b>`,
-        base,
-        `Destino: ${esc(c.destino)}`,
-        `ETA actual: ${esc(c.eta)}`,
-        `Estado: ${c.desvioMin > 10 ? `Retraso de ${c.desvioMin} min` : "En tiempo"}`,
-      ].join("\n") + bloqueNavegacion(c);
-    case "alerta":
-      return [
-        `<b>⚠️ Alerta en el viaje</b>`,
-        base,
-        `Motivo detectado: ${esc(c.evento)}`,
-        `Retraso estimado: ${Math.max(0, c.desvioMin)} min`,
-        ``,
-        `Acción recomendada:`,
-        `Contactar al conductor y avisar a la obra.`,
-      ].join("\n") + bloqueNavegacion(c);
-    case "entrega":
-      return [
-        `<b>✅ Entrega completada</b>`,
-        base,
-        `Obra: ${esc(c.destino)}`,
-        `Paradas completadas: ${c.ruta.paradas.filter((p) => p.estado === "completada").length} de ${c.ruta.paradas.length}`,
-      ].join("\n") + bloqueNavegacion(c);
-    case "resumen": {
-      const filas = c.rutas
-        .map(
-          (r) =>
-            `• ${esc(r.codigo)} — ${r.paradas.filter((p) => p.estado === "completada").length}/${r.paradas.length} paradas · ${esc(r.estado.replace(/_/g, " "))}`,
-        )
-        .join("\n");
-      return [`<b>📋 Resumen de la jornada</b>`, `Viajes activos: ${c.rutas.length}`, ``, filas].join(
-        "\n",
-      );
-    }
-  }
-}
-
-function textoPlano(html: string): string {
-  return html
-    .replace(/<[^>]+>/g, "")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
 }
