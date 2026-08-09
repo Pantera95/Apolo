@@ -157,7 +157,10 @@ export function TableroProcura() {
       </div>
 
       {rechazo && (
-        <div className="rounded-control border border-advertencia bg-advertencia-tenue p-3 text-xs">
+        <div
+          data-mov="aviso"
+          className="rounded-control border border-advertencia bg-advertencia-tenue p-3 text-xs"
+        >
           <p className="font-bold text-advertencia">
             {rechazo.codigo} no puede avanzar todavía
           </p>

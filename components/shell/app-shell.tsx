@@ -168,19 +168,43 @@ export function AppShell({ children }: { children: ReactNode }) {
         {panelNavegacion}
       </aside>
 
-      {menuAbierto && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label={t("acc.cerrarMenu")}
-            onClick={() => setMenuAbierto(false)}
-            className="absolute inset-0 bg-black/60"
-          />
-          <div className="absolute inset-y-3 left-3 w-64 max-w-[80vw]">
-            {panelNavegacion}
-          </div>
+      {/*
+        El cajón entra deslizando desde el borde IZQUIERDO, que es de donde
+        viene: el botón que lo abre está a la izquierda de la cabecera y el
+        panel vive ahí en escritorio. Aparecer sin recorrido rompe esa relación
+        y obliga a reconstruirla mentalmente cada vez.
+
+        Se monta siempre y se oculta con `translateX`, en lugar de montarse y
+        desmontarse: un elemento que se desmonta no puede animar su salida.
+        `pointer-events` y `aria-hidden` lo sacan del alcance del ratón y del
+        lector de pantalla mientras está cerrado.
+
+        `translateX(-105%)` y no `-100%`: el panel lleva sombra, y al 100%
+        justo la sombra sigue asomando por el borde.
+      */}
+      <div
+        className={`fixed inset-0 z-40 lg:hidden ${
+          menuAbierto ? "" : "pointer-events-none"
+        }`}
+        aria-hidden={!menuAbierto}
+      >
+        <button
+          type="button"
+          tabIndex={menuAbierto ? 0 : -1}
+          aria-label={t("acc.cerrarMenu")}
+          onClick={() => setMenuAbierto(false)}
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-[220ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            menuAbierto ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        <div
+          className={`absolute inset-y-3 left-3 w-64 max-w-[80vw] transition-transform duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            menuAbierto ? "translate-x-0" : "-translate-x-[105%]"
+          }`}
+        >
+          {panelNavegacion}
         </div>
-      )}
+      </div>
 
       <div className="lg:pl-[16.5rem]">
         <header className="sticky top-0 z-20 flex min-h-16 items-center gap-3 bg-fondo/85 px-4 backdrop-blur-md sm:px-6">

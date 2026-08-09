@@ -307,12 +307,14 @@ export function PanelTelegramEstimacion({ ctx, informe, apu }: Props) {
           )}
 
           {resultado && (
-            <Alerta
-              tono={resultado.ok ? "luz" : "advertencia"}
-              titulo={resultado.ok ? "Enviado" : "No enviado"}
-            >
-              {resultado.motivo}
-            </Alerta>
+            <div data-mov="aviso">
+              <Alerta
+                tono={resultado.ok ? "luz" : "advertencia"}
+                titulo={resultado.ok ? "Enviado" : "No enviado"}
+              >
+                {resultado.motivo}
+              </Alerta>
+            </div>
           )}
 
           <div>

@@ -233,6 +233,10 @@
   --color-nav-activo: var(--nav-activo);
   --color-nav-borde: var(--nav-borde);
 
+  --ease-out: var(--mov-ease-out);
+  --ease-in-out: var(--mov-ease-in-out);
+  --ease-drawer: var(--mov-ease-drawer);
+
   --font-sans: var(--fuente-sans);
   --font-titular: var(--fuente-titular);
   --font-mono: var(--fuente-mono);
@@ -302,14 +306,152 @@
   }
 }
 
+/**
+ * Vocabulario de movimiento.
+ *
+ * Las curvas nativas de CSS son demasiado débiles para que una animación de
+ * interfaz se lea como intencionada; estas son las de referencia y no se
+ * aproximan a ojo. Se declaran una vez para que nadie escriba un
+ * `cubic-bezier` suelto en un componente.
+ *
+ * NUNCA `ease-in` EN INTERFAZ: arranca lento justo en el instante que el
+ * usuario está mirando. Un `ease-out` de 200 ms se siente más rápido que un
+ * `ease-in` de 200 ms aunque duren lo mismo.
+ */
+:root {
+  --mov-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --mov-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Curva de cajón tipo iOS. */
+  --mov-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/**
+ * Movimiento reducido: MENOS Y MÁS SUAVE, no cero.
+ *
+ * Antes esto anulaba todo a 0,01 ms con `!important`, y eso hace dos daños.
+ * El primero es de criterio: quien pide movimiento reducido pide que no le
+ * desplacen cosas por la pantalla, no quedarse sin las transiciones que le
+ * explican qué acaba de cambiar. Un cambio de color instantáneo informa peor
+ * que uno atenuado.
+ *
+ * El segundo es un fallo real: con `transition-behavior: allow-discrete`, una
+ * duración de 0,01 ms puede impedir que el `<dialog>` complete su salida y
+ * dejarlo enganchado en `display: none` a mitad de camino.
+ *
+ * Lo que se conserva es la opacidad y el color; lo que se elimina es el
+ * DESPLAZAMIENTO. La regla `:where()` no añade especificidad, así que cada
+ * componente puede seguir afinando lo suyo.
+ */
+/**
+ * Entrada y salida del diálogo modal.
+ *
+ * NO HACE FALTA TOCAR EL JAVASCRIPT, y esa es la gracia de hacerlo así. El
+ * componente ya llama a `.close()` en cuanto se cierra; al meter `overlay` y
+ * `display` en la transición con `allow-discrete`, el navegador retrasa el
+ * `display: none` hasta que la animación de salida termina. Con la técnica
+ * antigua habría que escuchar `transitionend` y coordinar estado en React.
+ *
+ * `@starting-style` da el estado del que parte al aparecer. Sin él el
+ * elemento no tiene "antes" desde el que transicionar y aparecería de golpe.
+ *
+ * ESCALA DESDE 0,96 Y NO DESDE 0: nada en el mundo real aparece de la nada, y
+ * un `scale(0)` se lee como un truco. El origen se queda en el centro —los
+ * modales están exentos de anclarse a su disparador porque no salen de él.
+ *
+ * Salida más corta que la entrada (180 contra 220): al abrir el usuario está
+ * esperando a ver algo, al cerrar ya decidió y lo que quiere es quitarlo de en
+ * medio.
+ */
+dialog {
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity 180ms var(--mov-ease-out),
+    transform 180ms var(--mov-ease-out),
+    overlay 180ms allow-discrete,
+    display 180ms allow-discrete;
+}
+
+dialog[open] {
+  opacity: 1;
+  transform: scale(1);
+  transition-duration: 220ms;
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+/* El fondo acompaña al panel para que se lean como una sola superficie. */
+dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity 180ms var(--mov-ease-out),
+    overlay 180ms allow-discrete,
+    display 180ms allow-discrete;
+}
+
+dialog[open]::backdrop {
+  opacity: 1;
+  transition-duration: 220ms;
+}
+
+@starting-style {
+  dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/**
+ * Avisos que aparecen tras una acción: el bloqueo de etapa en Procura, el
+ * resultado de un envío por Telegram.
+ *
+ * Solo `opacity` y `transform`. LA ALTURA NO SE ANIMA a propósito: animarla
+ * arrastraría el tablero entero durante 200 ms, que es justo el defecto que
+ * esto viene a arreglar. El desplazamiento es de 4 px — lo justo para que el
+ * ojo registre que algo entró, sin que parezca que el bloque cae.
+ */
+[data-mov="aviso"] {
+  transition:
+    opacity 200ms var(--mov-ease-out),
+    transform 200ms var(--mov-ease-out);
+}
+
+@starting-style {
+  [data-mov="aviso"] {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Sin traslados ni escalados: el fundido se queda y basta. */
+  :where(dialog, [data-mov]) {
+    transition-duration: 120ms !important;
+    transition-property: opacity, overlay, display !important;
+    transform: none !important;
+    translate: none !important;
+  }
+
+  /*
+   * El backdrop va en su PROPIA regla y no dentro del `:where()` de arriba:
+   * un pseudo-elemento no es válido dentro de `:where()` y el navegador
+   * descarta esa parte del selector EN SILENCIO — la regla sigue aplicándose
+   * al resto y parece que funciona. Se detectó comprobando en el navegador que
+   * ninguna regla de movimiento reducido mencionaba el backdrop.
+   */
+  dialog::backdrop {
+    transition-duration: 120ms !important;
   }
 }
 
