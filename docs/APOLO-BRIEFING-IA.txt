@@ -1,0 +1,502 @@
+================================================================================
+APOLO — DOCUMENTO DE CONTEXTO PARA UNA IA
+================================================================================
+
+Para quién es este archivo
+--------------------------
+Para un modelo de lenguaje (Gemini, Claude, GPT) al que se le va a pedir que
+razone sobre Apolo: proponer integraciones, diseñar automatizaciones, o ayudar
+a explicar el producto a un cliente.
+
+NO es documentación para programar sobre el repositorio. Si la tarea es
+escribir código, el contexto correcto está en `README.md`, `CLAUDE.md` y
+`docs/decisions/` dentro del propio proyecto.
+
+Fecha del documento: agosto de 2026.
+Repositorio: github.com/Pantera95/Apolo
+Demostración en línea: https://apolo-swift.vercel.app
+
+
+================================================================================
+1. LO PRIMERO: EL ESTADO REAL
+================================================================================
+
+Se dice al principio y sin adornos, porque casi todos los errores que comete
+una IA razonando sobre Apolo vienen de suponer que existe algo que no existe.
+
+  · NO HAY BACKEND. Los datos viven en el `localStorage` del navegador de quien
+    mira la demostración. No hay base de datos, ni servidor de aplicación, ni
+    persistencia compartida entre dos personas.
+
+  · NO HAY AUTENTICACIÓN. No hay usuarios, ni sesiones, ni contraseñas. El
+    conmutador "Plan Premium" que se ve en pantalla es un interruptor local: no
+    es un control de acceso y no protege nada. Los roles y permisos que aparecen
+    en la interfaz son ESTRUCTURA, no seguridad.
+
+  · TODOS LOS DATOS SON FICTICIOS. Proveedores, obras, choferes, precios y
+    cantidades están inventados con órdenes de magnitud realistas. La aplicación
+    lo declara en pantalla y lo estampa en los PDF que genera.
+
+  · LO ÚNICO QUE SALE DE VERDAD A INTERNET es el envío por Telegram, que pasa
+    por rutas de servidor de Next.js con un token real. Eso funciona de verdad
+    hoy.
+
+Qué SÍ es sólido, y es mucho:
+
+  · 568 pruebas automatizadas sobre las reglas de negocio.
+  · Toda la lógica de negocio está escrita como FUNCIONES PURAS, separada de la
+    interfaz y del almacenamiento. Cuando entre una base de datos, cambia quién
+    llama a esas funciones, no lo que hacen.
+  · Las integraciones externas entran por PUERTOS (interfaces) ya definidos.
+    Hoy los cumplen adaptadores locales; mañana, servicios reales sin tocar el
+    motor de cálculo ni las pantallas.
+
+En resumen: Apolo es un PROTOTIPO DE ALTA FIDELIDAD con el dominio resuelto y
+probado, y la infraestructura pendiente. No es un producto en producción, y
+proponer cosas como si lo fuera produce planes que no se pueden ejecutar.
+
+
+================================================================================
+2. QUÉ ES APOLO Y QUÉ PROBLEMA RESUELVE
+================================================================================
+
+Apolo es un sistema de control de inventario, almacén, obras, despacho,
+estimación y procura para una constructora industrial del sector petrolero
+(Oil & Gas).
+
+El problema que ataca no es vender poco. Es este:
+
+    Una constructora grande pierde dinero porque NO SABE DÓNDE ESTÁN SUS
+    PROPIAS COSAS. El material sale hacia una obra y nadie sabe cuánto queda.
+    Una herramienta se presta y nadie sabe quién la tiene. Se compra de nuevo
+    algo que ya estaba en el almacén.
+
+La decisión de diseño que define el producto:
+
+    APOLO GIRA ALREDEDOR DE LA OBRA, NO DEL PEDIDO.
+
+    Todo material se asigna a una obra. Toda herramienta se presta a una obra y
+    debe volver. Todo consumo se imputa a una obra. Esto lo diferencia de un
+    ERP genérico o de un sistema de inventario de comercio, donde el centro es
+    el producto o la venta.
+
+
+================================================================================
+3. REGLAS IRREVOCABLES — LEER ANTES DE PROPONER NADA
+================================================================================
+
+Estas restricciones NO son negociables y NO son preferencias estéticas. Una
+propuesta que las viole es inservible, por buena que sea técnicamente.
+
+3.1 APOLO NUNCA GENERA FACTURAS NI DOCUMENTOS FISCALES
+    El documento fiscal sale de otro sistema. No se implementa NADA que roce el
+    cumplimiento tributario (en Venezuela, el SENIAT). Esto excluye: facturación
+    electrónica, notas de crédito/débito, libros de compra y venta, retenciones,
+    declaraciones. Sin excepciones y sin "solo un borrador".
+
+3.2 APOLO NUNCA ESCRIBE EN EL ERP DEL CLIENTE
+    La integración es de UN SOLO SENTIDO: se consumen sus exports, no se les
+    modifica nada. Cualquier propuesta de "sincronización bidireccional" con
+    SAP, Profit u otro ERP está fuera.
+
+3.3 SUMIGASES, SUDEMATIN Y SUMICONTROL NO EXISTEN PARA APOLO
+    Son empresas ajenas al proyecto. Ni datos, ni clientes, ni módulos, ni
+    referencias de ningún tipo.
+
+3.4 SIN MARKETPLACES NI INTEGRACIÓN DE TRANSPORTISTAS
+    Nada de UPS, FedEx, DHL ni plataformas de compra tipo marketplace. La
+    logística de Apolo es de FLOTA PROPIA a obras propias.
+
+3.5 EL KARDEX ES INMUTABLE
+    Un error se corrige con un asiento contrario, nunca editando ni borrando. Es
+    un requisito de auditoría, no una elección de implementación.
+
+
+================================================================================
+4. LOS MÓDULOS QUE EXISTEN HOY
+================================================================================
+
+La aplicación se organiza en tres grupos.
+
+--------------------------------------------------------------------------------
+GRUPO "OPERACIÓN"
+--------------------------------------------------------------------------------
+
+PANEL
+  Cuadro de mando con indicadores de la operación: valor de material en obra,
+  herramienta sin retornar, solicitudes por aprobar, existencia disponible.
+  Incluye un bloque de "insights" que redacta en lenguaje natural lo que dicen
+  los datos ("47% del material en obra está concentrado en OBR-2402").
+  Con el plan Premium se amplía con una capa de dirección: situación
+  financiera con gráficos, ventanas comparables, umbrales y centro de alertas.
+
+OBRAS
+  Ficha de cada obra: material asignado, consumo, herramienta prestada, deuda
+  abierta. En Premium añade avance contra presupuesto, una lista de verificación
+  BLOQUEANTE para poder cerrar la obra, y deuda de herramienta escalada por
+  antigüedad (30/60/90 días).
+
+SOLICITUDES
+  Pedidos de material desde obra hacia almacén.
+  REGLA CENTRAL: la aprobación es BLOQUEANTE. No existe transición directa de
+  "solicitada" a "en preparación". Ese hueco en la máquina de estados ES la
+  regla de negocio.
+
+DESPACHO
+  Preparación y salida de material hacia las obras, con firma de recepción.
+
+CENTRO DE CONTROL (Premium)
+  Seguimiento de flota sobre callejero real (MapLibre + OpenStreetMap).
+  Calcula ETA, detecta desvíos de la ruta planificada y entradas en geocercas.
+  Genera enlaces de navegación de Google Maps (esquema universal, sin API key
+  ni facturación).
+  Incluye el PANEL DE INFORMES POR TELEGRAM con cinco plantillas:
+  salida del almacén, en ruta con ETA, alerta de retraso o desvío, entrega
+  completada, y resumen de la jornada.
+
+--------------------------------------------------------------------------------
+GRUPO "ALMACÉN"
+--------------------------------------------------------------------------------
+
+INVENTARIO
+  Existencias por almacén, con TRES CLASES DE ARTÍCULO de comportamiento
+  distinto:
+    - Consumible: no vuelve.
+    - Retornable: genera deuda contra una obra Y una persona.
+    - Certificado: exige trazabilidad de colada (requisito de la industria
+      petrolera: hay que poder decir de qué lote de acero salió una pieza).
+
+HERRAMIENTAS
+  Préstamo y retorno, con estado (disponible, prestada, averiada) y responsable.
+
+ESTIMACIONES (Premium)
+  El módulo más grande. Convierte un modelo de diseño en una oferta.
+  Flujo: archivo BIM/CAD → ingesta → motor de reglas y rendimientos →
+  cómputo métrico (MTO/BOM) + matriz de cotización (RFQ) + análisis de precios
+  unitarios (APU) → comparación contra obras históricas → dos PDF enviables por
+  Telegram.
+
+  FRONTERA DECLARADA, importante para no proponer imposibles: un archivo `.rvt`
+  de Revit NO se puede leer en un navegador (es un contenedor propietario que
+  exige Autodesk Platform Services, de pago). Los `.mac` de AVEVA son macros de
+  su propio motor. Lo que SÍ se procesa de verdad son los EXPORTS: CSV y XML.
+  La pantalla lo dice ANTES de subir el archivo, con una etiqueta por formato.
+
+  Reglas de cálculo que definen la calidad del módulo:
+    - El FAS (Factor de Ajuste Salarial) carga SOLO la mano de obra. Aplicarlo
+      también al material inflaría la oferta un 30-40%.
+    - Los recargos (indirectos, contingencia, utilidad) se SUMAN sobre el costo
+      directo, no se encadenan, porque así lo hace la planilla que audita la
+      operadora.
+    - El plazo del proyecto es la RUTA MÁS LARGA, no la suma: las disciplinas
+      avanzan en paralelo.
+    - Compara el rendimiento estimado contra el histórico de la empresa y ALERTA
+      cuando la oferta es más optimista de lo que la empresa ha logrado nunca.
+
+COMPRAS
+  Órdenes de compra emitidas y su recepción (total o parcial).
+
+PROCURA DASHBOARD (Premium)
+  El ciclo completo de compra por etapas del EDT: requisición → licitación →
+  evaluación → adjudicación → cierre financiero.
+  Dos reglas lo sostienen:
+    - LAS ETAPAS SON PUERTAS, NO ETIQUETAS. Un expediente no sale de licitación
+      sin tres ofertas y las aclaratorias cerradas, ni de evaluación sin
+      dictamen técnico en todas.
+    - SE COMPARA POR COSTO DESEMBARCADO, NO POR PRECIO DE OFERTA. Un precio FOB
+      excluye flete, seguro y aranceles; un DDP los incluye. Comparar las dos
+      cifras en la misma columna adjudica al proveedor equivocado de forma
+      sistemática, y el sobrecosto aparece cuando la mercancía ya está en
+      puerto.
+
+--------------------------------------------------------------------------------
+GRUPO "DATOS"
+--------------------------------------------------------------------------------
+
+IMPORTACIÓN
+  Carga de archivos CSV del cliente (existencias, artículos, estados
+  financieros). Es el único camino de entrada de datos externos hoy.
+
+REPORTES
+  Exportación a CSV y PDF.
+
+
+================================================================================
+5. STACK TÉCNICO
+================================================================================
+
+  Next.js 16 (App Router) · React 19 · TypeScript estricto · Tailwind CSS v4
+  Vitest (568 pruebas) · Recharts (gráficos) · MapLibre GL (mapas)
+  jsPDF + jspdf-autotable (documentos) · Desplegado en Vercel
+
+Sin librerías de componentes: los primitivos de interfaz son propios.
+
+PUERTOS DE INTEGRACIÓN YA DEFINIDOS (interfaces listas para recibir un servicio
+real sin tocar el resto del sistema):
+
+  ProveedorTracking      posición de vehículos (hoy simulado; destino: Traccar,
+                         Wialon, o el GPS que ya tenga la empresa)
+  ProveedorOptimizacion  orden óptimo de paradas (hoy heurística propia;
+                         destino: VROOM, OR-Tools)
+  ProveedorNotificacion  envío de avisos (hoy Telegram real)
+  ProveedorIngesta       lectura de modelos BIM/CAD (hoy CSV/XML reales +
+                         simulador; destino: Autodesk Platform Services, web-ifc)
+  FuenteDashboard        origen de los indicadores
+
+Este es el punto más importante para quien proponga integraciones: EL SITIO
+DONDE ENCHUFAR UN SERVICIO EXTERNO YA ESTÁ HECHO.
+
+
+================================================================================
+6. INTEGRACIONES — BLOQUE A: ACCIONABLE SOBRE LO QUE HAY
+================================================================================
+
+Ordenado por relación impacto/esfuerzo. "Requiere backend" significa que hace
+falta antes una base de datos y autenticación reales.
+
+--------------------------------------------------------------------------------
+A.1 CORREO ELECTRÓNICO TRANSACCIONAL  ← lo que preguntaste explícitamente
+--------------------------------------------------------------------------------
+Esfuerzo: bajo. Requiere backend: no (solo una clave de API en el servidor).
+
+Telegram sirve para el equipo interno de campo. El correo sirve para lo que
+Telegram no puede: PROVEEDORES EXTERNOS y documentos que deben quedar en un
+archivo formal.
+
+Servicio sugerido: Resend, SendGrid o Amazon SES, por una ruta de servidor de
+Next.js, exactamente igual que la ruta de Telegram que ya existe.
+
+DIFERENCIA CLAVE FRENTE A TELEGRAM, y hay que respetarla: un correo a un
+proveedor es un DOCUMENTO CONTRACTUAL, no un aviso. Necesita asunto,
+identificación de la empresa, referencia del expediente, y un pie con datos
+fiscales y de contacto. No se puede reutilizar el texto de Telegram tal cual.
+
+PLANTILLAS DE CORREO PROPUESTAS
+...............................................................................
+
+(1) SOLICITUD DE COTIZACIÓN (RFQ) → al proveedor
+    Disparo: al pasar un expediente de Procura a la etapa "licitación".
+    Adjunta: matriz de partidas en Excel/CSV + fichas técnicas.
+
+    Asunto: [RFQ-2026-014] Solicitud de cotización · Válvulas de control
+
+    Estimados señores de {PROVEEDOR}:
+
+    Global XXI, C.A. les invita a cotizar el suministro descrito en el
+    expediente {CODIGO}.
+
+    Alcance:        {N} partidas · {DESCRIPCION_RESUMIDA}
+    Normas:         {NORMAS}          (ej.: API 600, ASME B16.5)
+    Incoterm:       {INCOTERM} — indicar si difiere
+    Lugar entrega:  {DESTINO}
+    Fecha límite:   {FECHA_CIERRE}
+
+    IMPORTANTE: la oferta debe indicar el INCOTERM y desglosar por separado
+    flete, seguro y aranceles cuando no estén incluidos. Las ofertas se
+    comparan por costo desembarcado, no por precio de lista.
+
+    Adjuntos: matriz de partidas, especificaciones técnicas.
+    Consultas técnicas hasta {FECHA_TQ} respondiendo a este correo.
+
+    ---
+    {FIRMA_EMPRESA} · {RIF} · {TELEFONO} · {DIRECCION}
+
+    ▸ Por qué esta plantilla y no otra: la línea del incoterm es el mensaje. Es
+      exactamente el dato que Apolo necesita para comparar bien, y pedirlo por
+      adelantado ahorra una ronda entera de aclaratorias.
+
+(2) BOLETÍN DE ACLARATORIA → a TODOS los licitantes
+    Disparo: al responder una consulta técnica marcada como "emite boletín".
+    Regla: va a todos, no solo a quien preguntó. Una respuesta que cambia el
+    alcance y solo llega a uno rompe la igualdad de la licitación.
+
+(3) NOTIFICACIÓN DE ADJUDICACIÓN → al ganador
+    Y su contraparte: (3b) CARTA DE AGRADECIMIENTO a los no adjudicados.
+    ▸ Casi nadie manda la segunda, y es la que mantiene proveedores dispuestos a
+      cotizar la próxima vez.
+
+(4) ORDEN DE COMPRA → al proveedor, con el PDF adjunto y acuse de recibo
+    Disparo: al completar las firmas de la matriz de autorización.
+
+(5) RECORDATORIO DE ENTREGA VENCIDA → al proveedor
+    Disparo: orden de compra con fecha comprometida superada.
+    Escalado: a los 3 días al vendedor, a los 10 con copia a su gerencia.
+
+(6) RESUMEN SEMANAL DE DIRECCIÓN → interno
+    Disparo: programado, lunes por la mañana.
+    Contenido: lo que ya calcula el panel Premium, en HTML.
+
+(7) AVISO DE DEUDA DE HERRAMIENTA → al responsable, con copia al jefe de obra
+    Disparo: herramienta sin retornar por encima del umbral (30/60/90 días).
+
+NOTA DE DISEÑO IMPORTANTE, aprendida construyendo las plantillas de Telegram:
+CADA PLANTILLA DEBE DECLARAR SI PUEDE COMPONERSE CON VERDAD antes de permitir
+el envío. En el módulo de logística se detectó que el botón "Entrega
+completada" componía un mensaje perfectamente formado que anunciaba "0 de 1
+paradas". El envío no fallaba: fallaba el CONTENIDO. La misma puerta hace falta
+en correo, y más aún, porque un correo a un proveedor no se puede borrar del
+buzón.
+
+--------------------------------------------------------------------------------
+A.2 RECEPCIÓN DE OFERTAS POR CORREO (lectura, no solo envío)
+--------------------------------------------------------------------------------
+Esfuerzo: medio. Requiere backend: sí.
+
+Un buzón dedicado (`cotizaciones@`) que reciba las respuestas de los
+proveedores, extraiga los adjuntos y los asocie al expediente por el código en
+el asunto. Ahorra la transcripción manual, que es donde se cuelan los errores de
+digitación en los precios.
+
+Cuidado: la extracción automática de precios desde un PDF de proveedor es
+NOTORIAMENTE poco fiable. Lo correcto es que el sistema PROPONGA los valores
+leídos y un humano los confirme, nunca que los dé por buenos.
+
+--------------------------------------------------------------------------------
+A.3 WHATSAPP BUSINESS API
+--------------------------------------------------------------------------------
+Esfuerzo: medio. Requiere backend: sí (webhooks).
+
+En Venezuela y buena parte de Latinoamérica, los choferes y jefes de obra usan
+WhatsApp, no Telegram. Telegram fue la elección correcta para construir rápido;
+WhatsApp es la correcta para el usuario final de campo.
+Complicación real: WhatsApp exige plantillas PREAPROBADAS por Meta para mensajes
+iniciados por la empresa. Hay que diseñar con esa restricción desde el principio.
+
+--------------------------------------------------------------------------------
+A.4 GPS REAL DE FLOTA
+--------------------------------------------------------------------------------
+Esfuerzo: bajo-medio. Requiere backend: sí.
+
+El puerto `ProveedorTracking` ya existe y hoy lo cumple un simulador. Conectar
+Traccar (código abierto, autoalojable) o el proveedor de GPS que la empresa ya
+tenga contratado convierte el Centro de Control de demostración en operativo sin
+tocar la interfaz.
+
+--------------------------------------------------------------------------------
+A.5 FIRMA DE RECEPCIÓN EN OBRA (móvil)
+--------------------------------------------------------------------------------
+Esfuerzo: medio. Requiere backend: sí.
+
+Una vista móvil donde el jefe de obra firma con el dedo la recepción del
+material y adjunta una foto. Cierra el hueco más grande de la trazabilidad
+actual: hoy el despacho se marca entregado en el sistema sin prueba de que
+llegó.
+
+--------------------------------------------------------------------------------
+A.6 CÓDIGOS QR / CÓDIGO DE BARRAS EN HERRAMIENTA
+--------------------------------------------------------------------------------
+Esfuerzo: medio. Requiere backend: sí.
+
+Cada herramienta retornable con su QR. Préstamo y retorno con la cámara del
+teléfono. Ataca directamente el problema que da origen al producto: 146 unidades
+de herramienta sin retornar en los datos de demostración.
+
+--------------------------------------------------------------------------------
+A.7 IMPORTACIÓN PROGRAMADA DESDE EL ERP
+--------------------------------------------------------------------------------
+Esfuerzo: medio. Requiere backend: sí.
+
+Hoy la importación es manual (subir un CSV). Automatizarla: leer periódicamente
+un archivo que el ERP deposite en una carpeta compartida o SFTP.
+RECORDATORIO: solo LECTURA. Escribir en el ERP está prohibido (regla 3.2).
+
+
+================================================================================
+7. INTEGRACIONES — BLOQUE B: VISIÓN A LARGO PLAZO
+================================================================================
+
+Esto NO es accionable hoy. Requiere infraestructura que no existe, y en varios
+casos, decisiones de negocio que no se han tomado. Se incluye para dar dirección,
+no como plan.
+
+B.1 IA APLICADA AL DOMINIO
+    - Lectura de ofertas de proveedor en PDF con extracción estructurada
+      (siempre con confirmación humana).
+    - Predicción de consumo por obra a partir del histórico, para comprar antes
+      de que falte.
+    - Detección de anomalías en el kardex: consumos fuera de patrón que hoy solo
+      se ven en una auditoría.
+    - Asistente en lenguaje natural sobre los datos ("¿cuánta cabilla queda
+      asignada a Los Pinos?").
+    - Redacción asistida de especificaciones técnicas a partir de la norma.
+
+B.2 IoT Y SENSORES
+    - Balanzas y sensores de nivel que reporten existencia sin conteo manual.
+    - Telemetría de maquinaria: horas de motor para mantenimiento preventivo.
+    - RFID de largo alcance en el portón del almacén: registro automático de lo
+      que entra y sale.
+
+B.3 FIRMA DIGITAL CERTIFICADA
+    Para las órdenes de compra y las actas de adjudicación, con validez legal.
+    Cuidado: en Venezuela esto toca el marco de SUSCERTE y hay que verificar qué
+    implica antes de prometer nada.
+
+B.4 PORTAL DE PROVEEDORES
+    Que el proveedor cargue su oferta directamente en Apolo en lugar de mandarla
+    por correo. Elimina la transcripción entera. Exige autenticación externa y
+    un modelo de seguridad serio: son terceros entrando al sistema.
+
+B.5 APLICACIÓN MÓVIL NATIVA / OFFLINE
+    Las obras petroleras están donde no hay cobertura. Una aplicación que
+    funcione sin conexión y sincronice al volver es un requisito real de este
+    sector, no una comodidad.
+
+B.6 MÓDULO DE MANTENIMIENTO DE FLOTA Y EQUIPOS
+    Extensión natural: los vehículos y equipos ya están modelados en logística.
+
+B.7 INTEGRACIÓN CONTABLE (SOLO LECTURA / EXPORTACIÓN)
+    Exportar asientos en el formato que consuma la contabilidad.
+    LÍMITE: exportar, nunca escribir; y nunca documentos fiscales (reglas 3.1
+    y 3.2).
+
+
+================================================================================
+8. CÓMO PROPONER BIEN SOBRE APOLO
+================================================================================
+
+Criterios que este proyecto ya aplica y que conviene mantener en cualquier
+propuesta:
+
+  · UNA AUTOMATIZACIÓN QUE PUEDE MENTIR ES PEOR QUE NO TENERLA. Todo aviso o
+    documento automático debe poder declarar cuándo NO tiene datos suficientes,
+    y negarse, en vez de rellenar con ceros o guiones.
+
+  · LOS AVISOS COMPITEN ENTRE SÍ. Existe un freno de anti-spam por severidad
+    precisamente porque un canal saturado se silencia, y entonces tampoco se lee
+    la alerta que importaba. Cualquier canal nuevo necesita ese mismo freno.
+
+  · SEPARAR LA REGLA DE NEGOCIO DEL CANAL. Las plantillas son funciones puras
+    con pruebas, fuera de los componentes. Un canal nuevo (correo, WhatsApp)
+    debe reutilizar la regla, no reimplementarla: si se duplica, un día se
+    arreglan distinto.
+
+  · DECLARAR LA FRONTERA EN PANTALLA, ANTES DE ACTUAR. El módulo de estimación
+    dice qué formatos lee de verdad y cuáles simula ANTES de que se suba el
+    archivo. Una propuesta que prometa "lee cualquier formato BIM" es falsa.
+
+  · LA PRIORIDAD REAL ES EL BACKEND. Casi todo lo del bloque A depende de tener
+    base de datos, autenticación y persistencia compartida. Una propuesta que
+    liste diez integraciones sin decir esto está ordenando mal el trabajo.
+
+
+================================================================================
+9. PREGUNTAS QUE UNA IA DEBERÍA HACER ANTES DE PROPONER
+================================================================================
+
+  1. ¿Qué ERP usa hoy la empresa y qué exporta exactamente? (define el formato
+     real de la importación)
+  2. ¿Tienen ya GPS contratado en la flota? ¿Cuál? (decide si A.4 es conectar o
+     comprar)
+  3. ¿Cuántos almacenes, cuántas obras simultáneas y cuántos usuarios?
+     (dimensiona el backend)
+  4. ¿El personal de campo tiene teléfono con datos y cobertura en obra?
+     (decide si A.5/A.6 son viables o hace falta B.5 offline)
+  5. ¿Qué volumen de licitaciones al mes? (justifica o no el esfuerzo de A.2 y
+     B.4)
+  6. ¿Hay ya un dominio de correo corporativo y quién lo administra?
+     (condiciona A.1: SPF, DKIM y reputación de envío)
+
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
