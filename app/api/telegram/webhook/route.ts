@@ -31,15 +31,17 @@ import { parsear, responder } from "@/lib/bot/comandos";
 export const runtime = "nodejs";
 
 /**
- * Últimas decisiones del webhook, para poder diagnosticarlo.
+ * Últimas decisiones del webhook.
  *
- * HACE FALTA PORQUE ESTE ENDPOINT CALLA POR DISEÑO: siempre responde 200 y
- * nunca escribe al chat cuando rechaza, así que "el bot no contesta" es
- * indistinguible de "Telegram no está llegando". Sin este registro, la única
- * forma de saber cuál de las dos es sería leer los registros de Vercel.
+ * AVISO: EN VERCEL ESTO ES POCO FIABLE Y HAY QUE SABERLO. Cada petición puede
+ * atenderla una instancia distinta, así que el mensaje se anota en una y la
+ * consulta puede leer otra, vacía. Sirve cuando coincide la instancia y no
+ * sirve cuando no — o sea que una bitácora vacía NO PRUEBA que Telegram no
+ * haya llegado.
  *
- * En memoria y acotado: se pierde entre despliegues, y eso está bien — sirve
- * para diagnosticar aquí y ahora, no para auditar.
+ * Para diagnosticar de verdad manda `getWebhookInfo`, que lo responde Telegram
+ * y es autoritativo: dice si el webhook está puesto, cuántos mensajes hay en
+ * cola y cuál fue el último error de entrega.
  */
 const BITACORA: { en: string; decision: string; chat?: number }[] = [];
 
@@ -52,12 +54,28 @@ export function ultimasDecisiones() {
   return BITACORA;
 }
 
+interface Mensaje {
+  text?: string;
+  chat?: { id?: number; type?: string };
+  from?: { id?: number; username?: string };
+}
+
+/**
+ * Un update de Telegram.
+ *
+ * `channel_post` NO ES OPCIONAL Y AQUÍ ESTUVO EL FALLO. Telegram entrega los
+ * mensajes de un GRUPO como `message`, pero los de un CANAL como
+ * `channel_post`. Este bot vive en un canal de la empresa, así que mirar solo
+ * `message` descartaba todos los mensajes antes de leerlos — y como la ruta
+ * responde 200 siempre y no escribe al chat cuando descarta, el síntoma era
+ * "el bot no contesta", sin ninguna pista.
+ *
+ * `edited_*` se ignoran a propósito: reejecutar un comando porque alguien
+ * corrigió una tilde no aporta nada.
+ */
 interface Update {
-  message?: {
-    text?: string;
-    chat?: { id?: number; type?: string };
-    from?: { id?: number; username?: string };
-  };
+  message?: Mensaje;
+  channel_post?: Mensaje;
 }
 
 const MAX_POR_MINUTO = 20;
@@ -129,8 +147,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ignorado: "cuerpo" });
   }
 
-  const texto = update.message?.text;
-  const chatId = update.message?.chat?.id;
+  // De un grupo llega en `message`; de un canal, en `channel_post`.
+  const mensaje = update.message ?? update.channel_post;
+  const texto = mensaje?.text;
+  const chatId = mensaje?.chat?.id;
   if (!texto || typeof chatId !== "number") {
     anotar("sin-texto");
     return NextResponse.json({ ok: true, ignorado: "sin-texto" });

@@ -101,9 +101,11 @@ export async function POST(req: Request) {
   const registro = await telegram("setWebhook", {
     url: destino,
     secret_token: secreto,
-    // Solo mensajes: sin esto Telegram empuja también ediciones, reacciones y
-    // cambios de miembros, que este bot no usa y solo gastan invocaciones.
-    allowed_updates: ["message"],
+    // LOS DOS TIPOS. Un grupo entrega `message`; un canal, `channel_post`.
+    // Pedir solo `message` dejaba al bot sordo en canales, que es donde vive.
+    // Lo demás —ediciones, reacciones, cambios de miembros— no se pide: no se
+    // usa y solo gastaría invocaciones.
+    allowed_updates: ["message", "channel_post"],
     // Los mensajes acumulados mientras no había webhook se descartan: no tiene
     // sentido responder de golpe a comandos de hace días.
     drop_pending_updates: true,
@@ -142,9 +144,10 @@ export async function GET(req: Request) {
     ok: true,
     bot: (yo.result as { username?: string } | undefined)?.username ?? null,
     estado: info.result ?? null,
-    // Qué hizo el webhook con los últimos mensajes. Es lo que convierte "no
-    // contesta" en un motivo concreto.
-    ultimasDecisiones: ultimasDecisiones(),
+    // Orientativo: en Vercel cada petición puede ir a otra instancia, así que
+    // una lista vacía NO prueba que Telegram no haya llegado. Lo autoritativo
+    // es `estado`, que lo responde Telegram.
+    ultimasDecisionesDeEstaInstancia: ultimasDecisiones(),
   });
 }
 
