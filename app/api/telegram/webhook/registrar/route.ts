@@ -27,10 +27,53 @@ interface RespuestaTelegram {
   description?: string;
 }
 
-function autorizado(req: Request): boolean {
-  const secreto = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (!secreto) return false;
-  return req.headers.get("x-apolo-secreto") === secreto;
+interface Veredicto {
+  ok: boolean;
+  /** Diagnóstico SIN revelar el secreto: solo longitudes y presencia. */
+  motivo: string;
+}
+
+/**
+ * Comprueba el secreto.
+ *
+ * SE RECORTAN LOS DOS LADOS, y no es paranoia: guardar el secreto con `echo`
+ * en vez de `printf` mete un salto de línea al final del valor almacenado, y
+ * entonces la comparación falla para siempre por un carácter invisible. Es un
+ * fallo que puede costar una tarde porque nada de lo que se ve en pantalla lo
+ * delata.
+ *
+ * El motivo distingue "no configurado" de "no coincide" y da las longitudes.
+ * Para un secreto hexadecimal de 32 bytes, saber que mide 64 caracteres no le
+ * sirve de nada a un atacante, y a quien lo está configurando le ahorra la
+ * media hora de adivinar si la variable de su terminal venía vacía.
+ */
+function autorizado(req: Request): Veredicto {
+  const secreto = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+  if (!secreto) {
+    return {
+      ok: false,
+      motivo:
+        "El servidor no tiene TELEGRAM_WEBHOOK_SECRET. Añádelo en Vercel y vuelve a desplegar.",
+    };
+  }
+
+  const recibido = req.headers.get("x-apolo-secreto")?.trim();
+  if (!recibido) {
+    return {
+      ok: false,
+      motivo:
+        "No llegó la cabecera x-apolo-secreto, o llegó vacía. Suele ser que $SECRETO no existe en esa terminal.",
+    };
+  }
+
+  if (recibido !== secreto) {
+    return {
+      ok: false,
+      motivo: `El secreto no coincide. Enviaste ${recibido.length} caracteres; el servidor guarda ${secreto.length}.`,
+    };
+  }
+
+  return { ok: true, motivo: "" };
 }
 
 async function telegram(metodo: string, cuerpo?: unknown): Promise<RespuestaTelegram> {
@@ -46,14 +89,10 @@ async function telegram(metodo: string, cuerpo?: unknown): Promise<RespuestaTele
 }
 
 export async function POST(req: Request) {
-  if (!autorizado(req)) {
-    return NextResponse.json(
-      { ok: false, motivo: "Secreto incorrecto o no configurado." },
-      { status: 401 },
-    );
-  }
+  const v = autorizado(req);
+  if (!v.ok) return NextResponse.json({ ok: false, motivo: v.motivo }, { status: 401 });
 
-  const secreto = process.env.TELEGRAM_WEBHOOK_SECRET as string;
+  const secreto = (process.env.TELEGRAM_WEBHOOK_SECRET as string).trim();
   const url = new URL(req.url);
   const destino = `${url.protocol}//${url.host}/api/telegram/webhook`;
 
@@ -92,12 +131,9 @@ export async function POST(req: Request) {
 
 /** Estado actual, sin registrar nada. Requiere el mismo secreto. */
 export async function GET(req: Request) {
-  if (!autorizado(req)) {
-    return NextResponse.json(
-      { ok: false, motivo: "Secreto incorrecto o no configurado." },
-      { status: 401 },
-    );
-  }
+  const v = autorizado(req);
+  if (!v.ok) return NextResponse.json({ ok: false, motivo: v.motivo }, { status: 401 });
+
   const info = await telegram("getWebhookInfo");
   const yo = await telegram("getMe");
   return NextResponse.json({
@@ -109,12 +145,9 @@ export async function GET(req: Request) {
 
 /** Quita el webhook. Útil para volver al modo de sondeo. */
 export async function DELETE(req: Request) {
-  if (!autorizado(req)) {
-    return NextResponse.json(
-      { ok: false, motivo: "Secreto incorrecto o no configurado." },
-      { status: 401 },
-    );
-  }
+  const v = autorizado(req);
+  if (!v.ok) return NextResponse.json({ ok: false, motivo: v.motivo }, { status: 401 });
+
   const r = await telegram("deleteWebhook", { drop_pending_updates: true });
   return NextResponse.json({ ok: Boolean(r.ok), motivo: r.description ?? null });
 }
