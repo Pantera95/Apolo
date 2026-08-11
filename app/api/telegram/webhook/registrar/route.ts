@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { ultimasDecisiones } from "@/app/api/telegram/webhook/route";
+
 /**
  * Registra el webhook del bot desde el propio servidor.
  *
@@ -140,6 +142,9 @@ export async function GET(req: Request) {
     ok: true,
     bot: (yo.result as { username?: string } | undefined)?.username ?? null,
     estado: info.result ?? null,
+    // Qué hizo el webhook con los últimos mensajes. Es lo que convierte "no
+    // contesta" en un motivo concreto.
+    ultimasDecisiones: ultimasDecisiones(),
   });
 }
 

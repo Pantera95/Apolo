@@ -30,6 +30,28 @@ import { parsear, responder } from "@/lib/bot/comandos";
 
 export const runtime = "nodejs";
 
+/**
+ * Últimas decisiones del webhook, para poder diagnosticarlo.
+ *
+ * HACE FALTA PORQUE ESTE ENDPOINT CALLA POR DISEÑO: siempre responde 200 y
+ * nunca escribe al chat cuando rechaza, así que "el bot no contesta" es
+ * indistinguible de "Telegram no está llegando". Sin este registro, la única
+ * forma de saber cuál de las dos es sería leer los registros de Vercel.
+ *
+ * En memoria y acotado: se pierde entre despliegues, y eso está bien — sirve
+ * para diagnosticar aquí y ahora, no para auditar.
+ */
+const BITACORA: { en: string; decision: string; chat?: number }[] = [];
+
+function anotar(decision: string, chat?: number) {
+  BITACORA.unshift({ en: new Date().toISOString(), decision, chat });
+  if (BITACORA.length > 20) BITACORA.pop();
+}
+
+export function ultimasDecisiones() {
+  return BITACORA;
+}
+
 interface Update {
   message?: {
     text?: string;
@@ -88,8 +110,15 @@ async function responderA(chatId: number, html: string): Promise<void> {
 
 export async function POST(req: Request) {
   // Capa 1: el secreto. Se compara antes de leer el cuerpo siquiera.
-  const secreto = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (secreto && req.headers.get("x-telegram-bot-api-secret-token") !== secreto) {
+  //
+  // SE RECORTA, y no es cosmético: la ruta de registro envía a Telegram el
+  // valor RECORTADO, así que Telegram devuelve el recortado en la cabecera.
+  // Comparar aquí contra el valor sin recortar hacía que un espacio invisible
+  // en la variable de entorno rechazara TODOS los mensajes en silencio — y el
+  // síntoma es "el bot no contesta", que no apunta a nada.
+  const secreto = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+  if (secreto && req.headers.get("x-telegram-bot-api-secret-token")?.trim() !== secreto) {
+    anotar("secreto-no-coincide");
     return NextResponse.json({ ok: true, ignorado: "secreto" });
   }
 
@@ -103,12 +132,14 @@ export async function POST(req: Request) {
   const texto = update.message?.text;
   const chatId = update.message?.chat?.id;
   if (!texto || typeof chatId !== "number") {
+    anotar("sin-texto");
     return NextResponse.json({ ok: true, ignorado: "sin-texto" });
   }
 
   // Capa 2: la lista blanca. Se contesta al intruso para que no crea que el
   // bot está roto, pero sin entregarle ni un dato.
   if (!autorizado(chatId)) {
+    anotar("chat-no-autorizado", chatId);
     await responderA(
       chatId,
       "Este bot atiende únicamente a los canales autorizados de la empresa.",
@@ -118,16 +149,21 @@ export async function POST(req: Request) {
 
   // Capa 3: el límite por chat.
   if (!permitido(String(chatId), Date.now())) {
+    anotar("limite-por-minuto", chatId);
     return NextResponse.json({ ok: true, ignorado: "limite" });
   }
 
   const peticion = parsear(texto, Date.now());
   // Texto normal en un grupo: se ignora en silencio. Un bot que contesta a
   // cada mensaje de una conversación es insoportable y acaba silenciado.
-  if (!peticion) return NextResponse.json({ ok: true, ignorado: "no-comando" });
+  if (!peticion) {
+    anotar("texto-normal-ignorado", chatId);
+    return NextResponse.json({ ok: true, ignorado: "no-comando" });
+  }
 
   const { html } = responder(peticion);
   await responderA(chatId, html);
+  anotar(`respondido /${peticion.comando}`, chatId);
 
   return NextResponse.json({ ok: true });
 }
