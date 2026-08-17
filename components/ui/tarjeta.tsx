@@ -24,9 +24,10 @@ export function Tarjeta({
   return (
     <section
       className={[
-        // borde-fuerte y no borde: el suave separa 1,29:1 sobre la tarjeta en
-        // modo oscuro, o sea que el recuadro no existe.
-        "min-w-0 rounded-tarjeta border-2 border-borde-fuerte bg-superficie",
+        // `vidrio` trae superficie, desenfoque, borde y canto de luz. El borde
+        // ya cumple 3:1 sobre las tres superficies, así que no hace falta
+        // subirlo a `borde-fuerte` ni doblar su grosor como antes.
+        "vidrio backdrop-blur-xl backdrop-saturate-150 min-w-0",
         className,
       ].join(" ")}
     >
@@ -84,9 +85,12 @@ export function TarjetaKpi({
   className?: string;
 }) {
   const estilos: Record<VarianteKpi, string> = {
+    // Los bloques macizos NO llevan vidrio: un color de marca a plena
+    // saturación detrás de un desenfoque se ensucia y pierde la fuerza que es
+    // justo su razón de existir.
     marca: "bg-bloque-marca text-bloque-marca-texto border-transparent",
     luz: "bg-bloque-luz text-bloque-luz-texto border-transparent",
-    contorno: "bg-superficie text-texto border-borde-fuerte shadow-dura",
+    contorno: "vidrio backdrop-blur-xl backdrop-saturate-150 text-texto",
   };
 
   // El texto secundario del bloque verde NO baja de opacidad: al 70% caería a
@@ -100,13 +104,15 @@ export function TarjetaKpi({
   return (
     <article
       className={[
-        "flex min-w-0 flex-col justify-between rounded-tarjeta border-2 p-6",
+        "flex min-w-0 flex-col justify-between rounded-tarjeta p-6",
+        // El borde solo lo pintan las variantes macizas; `vidrio` trae el suyo.
+        variante === "contorno" ? "" : "border",
         estilos[variante],
         className,
       ].join(" ")}
     >
       <p
-        className={`text-[11px] font-extrabold uppercase tracking-[0.12em] ${tenue[variante]}`}
+        className={`text-[11px] font-medium uppercase tracking-[0.08em] ${tenue[variante]}`}
       >
         {etiqueta}
       </p>

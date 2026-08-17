@@ -23,29 +23,32 @@
   --texto-3: #5c6576;
   --texto-invertido: #ffffff;
 
-  --borde: #b7c5d8;
+  --borde: #758396;
   /* 3:1 mínimo: un campo de formulario que no se distingue del fondo es un bug,
      no una decisión estética. */
   --borde-fuerte: #768399;
 
   --marca: var(--apolo-azul-texto);
   --marca-fondo: var(--apolo-azul-bloque);
-  --marca-tenue: #e7eefb;
+  --marca-tenue: #e6ebfd;
 
   /* La "luz" de Apolo: señala sin cansar la vista. */
-  --luz: var(--apolo-oro-texto);
-  --luz-tenue: #fdf3dc;
+  --luz: #0b6076;
+  --luz-tenue: #dcf5fa;
 
   --ok: #0d7337;
   --ok-tenue: #e2f6e9;
-  --advertencia: #92540a;
+  --advertencia: var(--apolo-ambar-texto);
   --advertencia-tenue: #fdf0dc;
-  --peligro: #bf2d23;
+  --peligro: var(--apolo-coral-texto);
   --peligro-tenue: #fdeae8;
-  --info: var(--apolo-info);
-  --info-tenue: #e7edfd;
+  --info: var(--apolo-violeta-texto);
+  --info-tenue: #ece7fd;
 
-  --sombra: 0 1px 2px rgb(11 22 34 / 0.07), 0 4px 16px rgb(11 22 34 / 0.06);
+  --sombra: 0 1px 2px rgb(10 15 34 / 0.07), 0 4px 16px rgb(10 15 34 / 0.06);
+  --vidrio-suelo: var(--apolo-vidrio-suelo-claro);
+  --vidrio-fondo: rgb(255 255 255 / 0.92);
+  --vidrio-canto: rgb(255 255 255 / 0.9);
 
   /*
     TOKENS DE GRÁFICA — separados de los de bloque a propósito.
@@ -82,7 +85,7 @@
 }
 
 .dark {
-  --fondo: #030910;
+  --fondo: var(--apolo-abismo);
 
   /*
    * LA RAMPA OSCURA SE MIDIO ENTERA, no por pares elegidos a mano.
@@ -106,28 +109,45 @@
    * la palanca util era ACLARAR LA TARJETA. A #2e4969 la separacion sube a
    * 2,16:1 y el texto mas debil encima aun tiene 5,04:1 de margen.
    */
-  --superficie: #2e4969;
-  --superficie-2: #37567a;
-  --superficie-hover: #3f608a;
+  /*
+   * SUPERFICIES DE VIDRIO. El suelo es casi opaco (alfa 0,92 en `--vidrio`)
+   * justamente para que estos valores sigan siendo medibles: con translucidez
+   * alta el color real dependería del fondo y el contraste dejaría de poder
+   * verificarse. Medido: a 0,92 la superficie oscila 1,16× según lo que haya
+   * detrás; a 0,78 oscilaba 1,95×.
+   */
+  --superficie: #16224e;
+  --superficie-2: #1d2c60;
+  --superficie-hover: #243671;
 
   /* Texto secundario y terciario subidos: antes caian por debajo de 4,5:1 en
      cuanto la tarjeta era la clara o estaba en hover. */
-  --texto: #f4f8fc;
-  --texto-2: #cfdae8;
-  --texto-3: #cbd9eb;
-  --texto-invertido: #030910;
+  --texto: #f2f6ff;
+  --texto-2: #c7d4f0;
+  --texto-3: #a9bbe4;
+  --texto-invertido: var(--apolo-abismo);
 
   /* 4,46:1 sobre la tarjeta y 3,08:1 sobre la mas clara. Es el elemento que
      hace visible el recuadro, asi que se le pide el 3:1 de no-texto. */
-  --borde: #7da0c7;
-  --borde-fuerte: #a3bad6;
+  /* EL BORDE ES LO QUE DELIMITA, no la superficie: la tarjeta queda a 1,30:1
+     del fondo —poco, y es inevitable con vidrio— pero el canto va a 3,70:1
+     sobre ella. Es el borde de luz del cristal, y hace todo el trabajo. */
+  --borde: #7082c2;
+  --borde-fuerte: #9fb2e4;
 
-  --marca: #b7dcff;
+  --marca: var(--apolo-azul-claro);
   --marca-fondo: var(--apolo-azul-boton);
-  --marca-tenue: #12244a;
+  --marca-tenue: #16255e;
 
-  --luz: #ffd364;
-  --luz-tenue: #3a2c07;
+  --luz: var(--apolo-cian-claro);
+  --luz-tenue: #0d3a45;
+
+  --vidrio-suelo: var(--apolo-vidrio-suelo-oscuro);
+  /* 22,34,78 es #16224E. Literal y no `color-mix`, por lo dicho arriba. */
+  --vidrio-fondo: rgb(22 34 78 / 0.92);
+  /* El canto en oscuro es luz, no blanco puro: un blanco al 90% sobre una
+     superficie tan oscura se lee como un filo cortado, no como cristal. */
+  --vidrio-canto: rgb(143 176 255 / 0.28);
 
   /* Aclarados hasta pasar 4,5:1 tambien sobre la superficie en hover, que era
      donde todos se caian. */
@@ -168,7 +188,7 @@
      Fijarlos garantiza el contraste del texto secundario al 70% (medido: 5.91
      y 4.63) y hace que el panel se vea igual con luz y en oscuro. */
   --bloque-marca: var(--apolo-azul-bloque);
-  --bloque-luz: var(--apolo-oro-bloque);
+  --bloque-luz: var(--apolo-cian-bloque);
   /* Cada bloque declara el color de su propio texto: el violeta es oscuro y
      lleva blanco, el verde es medio y lleva tinta. */
   --bloque-marca-texto: #ffffff;
@@ -181,7 +201,7 @@
   --nav-borde: #1a3050;
   /* El acento de la nav es siempre el verde claro: el oliva oscuro
      desaparecería sobre un panel negro. */
-  --nav-acento: var(--apolo-oro-claro);
+  --nav-acento: var(--apolo-cian-claro);
 }
 
 @theme inline {
@@ -303,6 +323,104 @@
   ::selection {
     background: var(--luz-tenue);
     color: var(--texto);
+  }
+}
+
+/**
+ * VIDRIO — la superficie que define la identidad.
+ *
+ * `.vidrio` no es una clase decorativa: es el sustituto de la tarjeta opaca, y
+ * lleva tres capas que hacen tres trabajos distintos.
+ *
+ *   1. EL SUELO, casi opaco. Es lo que hace el contraste MEDIBLE. Con
+ *      translucidez alta el color de la tarjeta dependería de lo que tenga
+ *      detrás y ninguna verificación de contraste valdría.
+ *   2. EL DESENFOQUE, que deja pasar el halo y da la sensación de cristal.
+ *   3. EL CANTO DE LUZ, un degradado sutil arriba más el borde. ES LO QUE
+ *      DELIMITA la tarjeta: la superficie queda a 1,30:1 del fondo y sola no
+ *      basta.
+ *
+ * `backdrop-filter` obliga al navegador a componer una capa por elemento, así
+ * que se aplica a CONTENEDORES —tarjetas, paneles, cabeceras— y nunca a filas
+ * de tabla ni a elementos que se repiten decenas de veces.
+ */
+.vidrio {
+  /*
+   * DOS COSAS QUE SE DESCUBRIERON INSPECCIONANDO LA REGLA YA COMPILADA, no
+   * leyendo el fuente, donde parecía correcta:
+   *
+   *   1. El fondo va como literal por tema. Escrito como `color-mix` con un
+   *      `calc()` dentro, Lightning CSS descartaba la declaración en silencio.
+   *   2. EL DESENFOQUE NO VIVE AQUÍ. Escrito como `backdrop-filter` a mano en
+   *      esta hoja, el compilador lo eliminaba igualmente y el vidrio salía
+   *      como una caja plana. Se aplica con las utilidades de Tailwind
+   *      —`backdrop-blur-xl backdrop-saturate-150`— que sí se emiten.
+   *
+   * Ninguna de las dos se ve en el código fuente: las dos exigían mirar el CSS
+   * que llega al navegador.
+   */
+  background-color: var(--vidrio-fondo);
+  border: 1px solid var(--borde);
+  border-radius: var(--apolo-radio-tarjeta);
+  /* El canto superior recoge la luz, como el borde de un cristal real. */
+  box-shadow:
+    inset 0 1px 0 0 var(--vidrio-canto),
+    var(--sombra);
+}
+
+.vidrio-panel {
+  border-radius: var(--apolo-radio-panel);
+}
+
+/**
+ * HALO — el resplandor de fondo de la referencia.
+ *
+ * Va en un pseudo-elemento fijo y NO en el `body`: como capa aparte no
+ * repinta cuando la página se desplaza, y puede llevar `will-change` sin
+ * afectar al contenido.
+ *
+ * `pointer-events: none` porque cubre toda la pantalla y sin eso se comería
+ * cada clic de la aplicación.
+ */
+.dark body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 80% at 50% -10%,
+      color-mix(in srgb, var(--apolo-azul-halo) 22%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      70% 50% at 85% 15%,
+      color-mix(in srgb, var(--apolo-violeta-bloque) 14%, transparent),
+      transparent 65%
+    );
+}
+
+/* En claro el halo es mucho más tenue: sobre fondo luminoso, el mismo valor
+   ensuciaría la pantalla en vez de dar profundidad. */
+:root:not(.dark) body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 80% at 50% -10%,
+    color-mix(in srgb, var(--apolo-azul-halo) 9%, transparent),
+    transparent 60%
+  );
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  /* Quien pide menos transparencia recibe una superficie sólida, no un vidrio
+     más débil: el efecto desaparece y la legibilidad sube. */
+  .vidrio {
+    background-color: var(--vidrio-suelo);
   }
 }
 
@@ -478,7 +596,7 @@ dialog[open]::backdrop {
     --texto: #0b1622;
     --texto-2: #35414f;
     --texto-3: #5c6576;
-    --borde: #b7c5d8;
+    --borde: #758396;
     --borde-fuerte: #768399;
     --sombra: none;
     --sombra-dura: none;

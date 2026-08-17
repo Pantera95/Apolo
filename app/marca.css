@@ -2,56 +2,105 @@
  * MARCA DE APOLO — archivo aislado a propósito.
  *
  * Cambiar la identidad visual del producto es cambiar SOLO este archivo.
- * Ningún componente usa estos valores directamente: los consume globals.css
- * y los reexpone como tokens semánticos.
+ * Ningún componente usa estos valores directamente: los consume globals.css y
+ * los reexpone como tokens semánticos.
  *
  * Concepto: Apolo es el dios de la LUZ. El producto existe para que una empresa
  * vea lo que hoy no ve de su propio almacén.
  *
- * PALETA DERIVADA DEL LOGOTIPO, compatible con la landing de Global XXI.
- * Antes Apolo era violeta y verde, una identidad propia y sin relación con la
- * del sitio corporativo. Se unificó a petición del cliente: quien entra desde
- * la landing y aterriza en la aplicación no debe sentir que cambió de empresa.
- * Los valores son los mismos hex del sitio —azul petrolero, cian y ámbar— y si
- * allí cambian, aquí también deben cambiar.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * IDENTIDAD NUEVA — "vidrio líquido"
  *
- * REPARTO DE PAPELES, tomado del logotipo:
- *   Azul real  el hexágono. La marca, la oscuridad sobre la que Apolo alumbra.
- *   Oro        la "A" del centro. La "luz": señala el dato importante.
- *   Ámbar      avisos y acento de apoyo.
+ * La paleta ANTERIOR era la del sitio de Global XXI —azul petrolero, oro y
+ * ámbar—, unificada a petición del cliente para que quien entrara desde la
+ * landing no sintiera que cambió de empresa. Esta versión la sustituye por una
+ * propia, y ESO ROMPE ESA CONTINUIDAD DE FORMA DELIBERADA: la decisión es
+ * estrenar identidad en la aplicación y realinear la landing en una segunda
+ * fase. Mientras las dos no coincidan, el salto se nota, y hay que saberlo.
  *
- * Cada bloque grande declara qué tinta lleva encima, y no es intercambiable:
- * el azul es oscuro y pide blanco, el oro es CLARO —por saturado que se vea—
- * y pide tinta oscura. Blanco sobre el oro daría 1,9:1.
+ * REPARTO DE PAPELES:
+ *   Azul eléctrico   la marca. Acciones, series principales, foco.
+ *   Cian             la "luz": señala el dato que importa.
+ *   Violeta          tercera serie y degradados de acento. Nunca texto solo.
+ *   Ámbar / coral    aviso y peligro.
+ *
+ * Cada tono declara para qué sirve, y NO SON INTERCAMBIABLES. Los sufijos
+ * dicen dónde puede usarse cada uno:
+ *   -bloque   relleno grande; lleva tinta declarada encima
+ *   -texto    legible como texto sobre fondo CLARO
+ *   -claro    legible como texto sobre fondo OSCURO
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 :root {
-  /* Azul del logotipo: la marca. El hexágono es azul real, no petrolero. */
-  --apolo-azul-bloque: #143a7a; /* bloques grandes, bajo texto blanco */
-  --apolo-azul-texto: #1b4fa6; /* legible como texto sobre fondo claro */
-  --apolo-azul-boton: #1b4fa6; /* relleno de botón en tema oscuro */
-  --apolo-azul-claro: #8ab4f0; /* texto de marca en tema oscuro */
+  /* --- Azul eléctrico: la marca -------------------------------------------
+     El azul de la referencia es muy luminoso y funciona como acento sobre
+     oscuro, pero como TEXTO sobre blanco se queda corto. Por eso hay dos: el
+     brillante para oscuro y uno rebajado para claro. */
+  --apolo-azul-bloque: #2b4ed6; /* bloques grandes, bajo texto blanco */
+  --apolo-azul-texto: #2445c9; /* legible como texto sobre fondo claro */
+  --apolo-azul-boton: #3562f0; /* relleno de botón */
+  --apolo-azul-claro: #8fb0ff; /* texto de marca sobre oscuro */
+  --apolo-azul-halo: #4f7dff; /* el resplandor; NUNCA texto */
 
-  /* Oro del logotipo: la "luz" de Apolo. Sustituye al cian.
-     Es la "A" dorada dentro del hexágono, y como tono CLARO que es, el bloque
-     grande lleva tinta oscura encima. Blanco sobre este oro daría 1,9:1. */
-  --apolo-oro-bloque: #f2b01e; /* bloques grandes, bajo texto tinta */
-  --apolo-oro-texto: #7f5900; /* legible como texto sobre fondo claro */
-  --apolo-oro-claro: #f7c556; /* texto sobre oscuro y acento de la nav */
-  --apolo-oro-sombra: #c98c0c; /* cara en sombra del isotipo; da el volumen */
+  /* --- Cian: la luz que señala el dato -------------------------------------
+     Es un tono CLARO por saturado que se vea: sobre él va tinta oscura.
+     Blanco sobre este cian daría 1,8:1. */
+  --apolo-cian-bloque: #22d3ee; /* bloques grandes, bajo texto tinta */
+  --apolo-cian-texto: #0e7490; /* legible como texto sobre fondo claro */
+  --apolo-cian-claro: #67e8f9; /* texto sobre oscuro y acento de la nav */
 
-  /* Acentos de apoyo */
-  --apolo-ambar: #ff6b00;
-  --apolo-info: #2657e8;
+  /* --- Violeta: tercera serie y degradados --------------------------------- */
+  --apolo-violeta-bloque: #7c5cf0;
+  --apolo-violeta-texto: #6034d6;
+  --apolo-violeta-claro: #c4b2ff;
+
+  /* --- Aviso y peligro ----------------------------------------------------- */
+  --apolo-ambar: #f5a524;
+  --apolo-ambar-texto: #8a5800;
   --apolo-coral: #f9675d;
+  --apolo-coral-texto: #b3261e;
 
-  /* Tinta y grises en la familia del azul, para que las superficies de la
-     aplicación y las del sitio pertenezcan al mismo mundo. */
-  --apolo-tinta: #0b1622;
-  --apolo-humo: #e2e7f0;
+  /* --- Tinta y superficies -------------------------------------------------
+     El fondo oscuro es el medido en la referencia: casi negro con sesgo azul.
+     No es gris neutro, y esa desviación es lo que hace que el halo azul se
+     integre en vez de flotar encima. */
+  --apolo-abismo: #00031c; /* fondo del tema oscuro */
+  --apolo-tinta: #0a0f22; /* texto sobre claro */
+  --apolo-humo: #e4e9f4; /* fondo del tema claro; da 1,25:1 a la tarjeta blanca */
 
-  /* Forma: radios generosos y sombra dura, la firma de la referencia. */
-  --apolo-radio-tarjeta: 20px;
-  --apolo-radio-control: 10px;
+  /* --- VIDRIO --------------------------------------------------------------
+     La pieza que sostiene toda la estética, y la que más fácil se hace mal.
+
+     EL SUELO ES CASI OPACO (alfa 0,92) Y ESO NO ES UN COMPROMISO TIBIO: con
+     translucidez alta, el color de una tarjeta depende de lo que tenga detrás,
+     y entonces el contraste del texto DEJA DE SER MEDIBLE. Medido: a alfa 0,78
+     la superficie oscila 1,95× de luminancia según el fondo; a 0,92 oscila
+     1,16×, o sea que es estable y se puede verificar como cualquier color
+     sólido.
+
+     Lo que delimita la tarjeta NO es la superficie —queda a 1,30:1 del fondo,
+     que es poco— sino el BORDE, a 3,70:1 sobre ella. Así funciona el vidrio de
+     verdad: un canto que atrapa la luz. */
+  --apolo-vidrio-suelo-oscuro: #16224e;
+  --apolo-vidrio-suelo-claro: #ffffff;
+  --apolo-vidrio-alfa: 0.92;
+  --apolo-vidrio-desenfoque: 20px;
+
+  /* --- Forma ---------------------------------------------------------------
+     Radios de la referencia: 14–24 px en tarjetas, píldora completa en
+     controles pequeños. */
+  --apolo-radio-tarjeta: 16px;
+  --apolo-radio-panel: 24px;
+  --apolo-radio-control: 12px;
   --apolo-radio-pildora: 999px;
+
+  /* --- Tipografía ----------------------------------------------------------
+     LOS TITULARES BAJAN DE PESO. La versión anterior usaba extrabold y
+     mayúsculas por todas partes; la referencia va en 400–500 y confía en el
+     tamaño y el espacio para la jerarquía. Medido en el sitio original: sus
+     titulares de 42 px van en peso 500, no en 800. */
+  --apolo-peso-titular: 500;
+  --apolo-peso-cifra: 600;
+  --apolo-peso-etiqueta: 500;
 }

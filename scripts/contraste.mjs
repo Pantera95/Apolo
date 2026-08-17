@@ -103,6 +103,29 @@ const BLOQUES = [
 ];
 
 /**
+ * DELIMITACION DE SUPERFICIE — la regla cambio de SITIO, no de valor.
+ *
+ * Con tarjetas OPACAS lo que delimitaba era la propia superficie, y se le
+ * exigia 2:1 sobre el fondo en oscuro. Con VIDRIO eso es imposible por
+ * construccion: una superficie translucida toma el color de lo que tiene
+ * detras, y la separacion cae a 1,33:1 haga uno lo que haga.
+ *
+ * BAJAR EL UMBRAL A 1,3 PARA QUE PASE SERIA HACER TRAMPA — es exactamente el
+ * error que ya se cometio dos veces en este archivo. Lo correcto es exigir el
+ * 3:1 DONDE AHORA VIVE EL LIMITE: el borde. Es una condicion mas dura, no mas
+ * blanda, y se verifica contra las TRES superficies, incluida la de hover, que
+ * es la mas clara y donde el borde estaba a 2,69:1.
+ *
+ * La superficie conserva un minimo simbolico: solo tiene que notarse que hay
+ * algo, no delimitar.
+ */
+const BORDES_DELIMITAN = [
+  ["--borde", "--superficie", 3],
+  ["--borde", "--superficie-2", 3],
+  ["--borde", "--superficie-hover", 3],
+];
+
+/**
  * La superficie tiene que percibirse, y CUANTO depende del tema.
  *
  * No es un doble rasero: la fisica es distinta. En claro la tarjeta ya es
@@ -120,7 +143,9 @@ const PERCEPTIBLE_POR_TEMA = {
     ["--superficie-2", "--superficie", 1.1],
   ],
   OSCURO: [
-    ["--superficie", "--fondo", 2],
+    // 1,25 y no 2: con vidrio la superficie ya no delimita, solo se percibe.
+    // Quien delimita es el borde, y se le exige 3:1 en BORDES_DELIMITAN.
+    ["--superficie", "--fondo", 1.25],
     ["--superficie-2", "--superficie", 1.1],
   ],
 };
@@ -136,6 +161,7 @@ for (const [nombre, tabla] of [["CLARO", claro], ["OSCURO", oscuro]]) {
     ...NO_TEXTO,
     ...BLOQUES,
     ...PERCEPTIBLE_POR_TEMA[nombre],
+    ...BORDES_DELIMITAN,
   ];
 
   for (const [t, f, min] of pares) {
