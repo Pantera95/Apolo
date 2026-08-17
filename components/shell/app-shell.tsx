@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
    * cambia de color, solo el lienzo de trabajo.
    */
   const panelNavegacion = (
-    <div className="flex h-full flex-col overflow-hidden rounded-tarjeta bg-nav-fondo">
+    <div className="vidrio-nav backdrop-blur-2xl backdrop-saturate-150 flex h-full flex-col overflow-hidden rounded-panel">
       {/*
         El lema se partía en dos líneas que llenaban los 159 px de ancho de
         punta a punta, y un bloque de marca sin aire alrededor se lee como un

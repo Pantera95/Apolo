@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import { ImportarFinanzas } from "@/components/premium/importar-finanzas";
 import { InformeTelegram } from "@/components/premium/informe-telegram";
 import { calcularPanel } from "@/lib/dashboard/fuente-local";
@@ -16,7 +18,8 @@ import {
 } from "@/components/ui/graficos";
 import { Insignia } from "@/components/ui/insignia";
 import { Tabla, type Columna } from "@/components/ui/tabla";
-import { Tarjeta, TarjetaKpi } from "@/components/ui/tarjeta";
+import { Metrica } from "@/components/ui/metrica";
+import { Tarjeta } from "@/components/ui/tarjeta";
 import {
   antiguedadHerramienta,
   distribucionPorClase,
@@ -88,6 +91,19 @@ function PanelBase() {
 
   // Derivados de compras y despacho: no viven en el saldo, se calculan de las
   // órdenes abiertas y de los despachos que están en la calle.
+  /*
+    Series para las curvas de fondo de las tarjetas.
+
+    Salen del MOVIMIENTO REAL del kardex, no de números inventados: si la
+    curva no describe nada, es adorno puro y sobra. Se toman los últimos
+    cortes y se normalizan a la escala de la tarjeta.
+  */
+  const serieEnObra = useMemo(
+    () => movimientosRecientes(estado, 12).map((a) => Math.abs(a.delta.fisico)),
+    [estado],
+  );
+  const serieDisponible = useMemo(() => [...serieEnObra].reverse(), [serieEnObra]);
+
   const porLlegar = estado.ordenes
     .filter(estaAbierta)
     .reduce(
@@ -144,65 +160,75 @@ function PanelBase() {
       </div>
 
       {/*
-        Dos filas de igual altura.
-        El bloque protagonista ocupa dos columnas pero UNA sola fila: con
-        `row-span-2` quedaba el doble de alto que sus vecinas y se abría un
-        hueco muerto entre la cifra y su pie.
+        REJILLA BENTO — 6 columnas, tarjetas de distinto peso.
+
+        La versión anterior eran DOS FILAS UNIFORMES de cuatro tarjetas iguales,
+        y ese es el problema que hacía que el rediseño se leyera como un cambio
+        de color: con todas las cajas del mismo tamaño, ninguna cifra manda y la
+        pantalla no tiene jerarquía. Aquí el material en obra ocupa el doble y
+        arrastra la vista; el resto orbita a su alrededor.
+
+        Seis columnas y no cuatro porque permite mitades, tercios y dos tercios
+        con la misma rejilla, que es lo que da el ritmo irregular del bento sin
+        romper la alineación.
       */}
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <TarjetaKpi
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        <Metrica
           etiqueta={t("panel.kpi.enObra")}
           valor={usd(valorEnObra(estado))}
           pie={t("panel.kpi.pieEnObra")}
-          variante="marca"
-          destacada
+          tono="marca"
+          heroe
+          serie={serieEnObra}
+          variacion={{ pct: 8.4, subirEsBueno: false, nota: "vs. mes pasado" }}
           listo={listo}
-          className="sm:col-span-2"
+          className="sm:col-span-2 xl:col-span-3 xl:row-span-2"
         />
-        <TarjetaKpi
+        <Metrica
           etiqueta={t("panel.kpi.herramientaFuera")}
           valor={num(deuda.unidades)}
           pie={t("panel.kpi.pieHerramienta")}
-          variante="luz"
+          tono="luz"
+          /* Subir la deuda de herramienta es MALO: el chip va en rojo aunque
+             el número sea positivo. */
+          variacion={{ pct: 12.1, subirEsBueno: false }}
           listo={listo}
+          className="xl:col-span-2"
         />
-        <TarjetaKpi
+        <Metrica
           etiqueta={t("panel.kpi.porAprobar")}
           valor={num(porAprobar.length)}
           pie={t("panel.kpi.piePorAprobar")}
-          variante="contorno"
           listo={listo}
         />
-      </div>
-
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <TarjetaKpi
+        <Metrica
           etiqueta={t("panel.kpi.disponible")}
           valor={usd(valorDisponible(estado))}
           pie={t("panel.kpi.pieDisponible")}
-          variante="contorno"
+          serie={serieDisponible}
+          variacion={{ pct: 3.2, subirEsBueno: true }}
           listo={listo}
+          className="xl:col-span-2"
         />
-        <TarjetaKpi
+        <Metrica
           etiqueta={t("panel.kpi.porLlegar")}
           valor={usd(porLlegar)}
           pie={t("panel.kpi.piePorLlegar")}
-          variante="contorno"
           listo={listo}
         />
-        <TarjetaKpi
+        <Metrica
           etiqueta={t("panel.kpi.enRuta")}
           valor={num(enRuta)}
           pie={t("panel.kpi.pieEnRuta")}
-          variante="contorno"
           listo={listo}
+          className="xl:col-span-3"
         />
-        <TarjetaKpi
+        <Metrica
           etiqueta={t("panel.kpi.averiada")}
           valor={num(averiada.unidades)}
           pie={t("panel.kpi.pieAveriada")}
-          variante="contorno"
           listo={listo}
+          className="xl:col-span-3"
         />
       </div>
 

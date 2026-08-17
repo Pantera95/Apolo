@@ -48,6 +48,7 @@
   --sombra: 0 1px 2px rgb(10 15 34 / 0.07), 0 4px 16px rgb(10 15 34 / 0.06);
   --vidrio-suelo: var(--apolo-vidrio-suelo-claro);
   --vidrio-fondo: rgb(255 255 255 / 0.92);
+  --nav-vidrio: rgb(11 18 46 / 0.94);
   --vidrio-canto: rgb(255 255 255 / 0.9);
 
   /*
@@ -145,6 +146,7 @@
   --vidrio-suelo: var(--apolo-vidrio-suelo-oscuro);
   /* 22,34,78 es #16224E. Literal y no `color-mix`, por lo dicho arriba. */
   --vidrio-fondo: rgb(22 34 78 / 0.92);
+  --nav-vidrio: rgb(6 12 40 / 0.82);
   /* El canto en oscuro es luz, no blanco puro: un blanco al 90% sobre una
      superficie tan oscura se lee como un filo cortado, no como cristal. */
   --vidrio-canto: rgb(143 176 255 / 0.28);
@@ -262,6 +264,7 @@
   --font-mono: var(--fuente-mono);
 
   --radius-tarjeta: var(--apolo-radio-tarjeta);
+  --radius-panel: var(--apolo-radio-panel);
   --radius-control: var(--apolo-radio-control);
   --radius-pildora: var(--apolo-radio-pildora);
 
@@ -370,6 +373,21 @@
 
 .vidrio-panel {
   border-radius: var(--apolo-radio-panel);
+}
+
+/**
+ * La barra de navegación, en vidrio.
+ *
+ * Lleva su propio suelo y no el de las tarjetas: la nav está SIEMPRE sobre el
+ * fondo de la página, nunca sobre otra superficie, así que puede permitirse
+ * ser más translúcida sin que el contraste deje de ser predecible. Es el
+ * elemento donde el efecto se aprecia mejor, porque el halo pasa por detrás
+ * de punta a punta.
+ */
+.vidrio-nav {
+  background-color: var(--nav-vidrio);
+  border: 1px solid var(--nav-borde);
+  box-shadow: inset 0 1px 0 0 var(--vidrio-canto), var(--sombra);
 }
 
 /**
