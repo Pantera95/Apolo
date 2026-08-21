@@ -1,5 +1,7 @@
 "use client";
 
+import { RADIO_BARRA } from "@/components/ui/graficas-panel";
+
 /**
  * Gráficos del panel.
  *
@@ -150,15 +152,13 @@ export function GraficoMovimiento({
             dataKey="entradas"
             stroke="var(--luz)"
             strokeWidth={2}
-            fill="url(#gradEntradas)"
-          />
+            fill="url(#gradEntradas)" isAnimationActive={false} />
           <Area
             type="monotone"
             dataKey="salidas"
             stroke="var(--marca)"
             strokeWidth={2}
-            fill="url(#gradSalidas)"
-          />
+            fill="url(#gradSalidas)" isAnimationActive={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -185,7 +185,7 @@ export function GraficoObras({
           margin={{ top: 0, right: 8, bottom: 0, left: 0 }}
           barCategoryGap={10}
         >
-          <XAxis type="number" hide />
+          <XAxis axisLine={false} tickLine={false} type="number" hide />
           <YAxis
             type="category"
             dataKey="codigo"
@@ -198,7 +198,7 @@ export function GraficoObras({
             content={contenidoTooltip(formato)}
             cursor={{ fill: "var(--superficie-2)" }}
           />
-          <Bar dataKey="valorUsd" name="valorUsd" radius={[0, 6, 6, 0]}>
+          <Bar dataKey="valorUsd" name="valorUsd" radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false}>
             {datos.map((_, i) => (
               <Cell
                 key={i}
@@ -239,6 +239,7 @@ export function GraficoClases({
           <Tooltip content={contenidoTooltip(formato, etiqueta)} />
           <Pie
             data={datos.map((d) => ({ ...d, name: d.clase }))}
+            isAnimationActive={false}
             dataKey="valorUsd"
             nameKey="name"
             innerRadius="58%"
@@ -286,7 +287,7 @@ export function GraficoAntiguedad({
             content={contenidoTooltip(formato)}
             cursor={{ fill: "var(--superficie-2)" }}
           />
-          <Bar dataKey="unidades" name="unidades" radius={[6, 6, 0, 0]}>
+          <Bar dataKey="unidades" name="unidades" radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false}>
             {datos.map((_, i) => (
               <Cell key={i} fill={COLOR_TRAMO[i] ?? "var(--texto-3)"} />
             ))}

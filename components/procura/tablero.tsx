@@ -48,8 +48,24 @@ const TONO_CRITICIDAD: Record<Criticidad, TonoInsignia> = {
 };
 
 function tono(css: string): string {
-  if (typeof window === "undefined") return "#888";
-  return getComputedStyle(document.documentElement).getPropertyValue(css).trim() || "#888";
+  /*
+   * DEVUELVE `var(--token)`, NO EL VALOR RESUELTO.
+   *
+   * Antes leia la variable con `getComputedStyle` y devolvia el hex. Eso tenia
+   * dos fallos, y los dos salian en pantalla sin dar ni un error:
+   *
+   *   1. SE CONGELA. El hex se captura en el render y ahi se queda: al cambiar
+   *      de tema las graficas conservaban los colores del tema anterior. Se vio
+   *      midiendo — el DOM en `dark`, `--serie-1` valiendo #6f9bff, y los
+   *      sectores pintados con los hex del tema claro.
+   *   2. EN EL SERVIDOR NO HAY `window`, asi que el primer render devolvia
+   *      "#888" para todo y dependia de que la hidratacion lo corrigiera.
+   *
+   * SVG acepta `var()` en `fill` y `stroke`, y las propiedades de un `style`
+   * en linea tambien. Al pasar la variable sin resolver, el color lo decide el
+   * navegador en cada repintado y el cambio de tema es automatico.
+   */
+  return `var(${css})`;
 }
 
 export function TableroProcura() {
@@ -325,6 +341,22 @@ function AnilloEtapas({
                 outerRadius="88%"
                 paddingAngle={2}
                 stroke="none"
+                /*
+                  SIN ANIMACION DE ENTRADA, y no es cosmetica: el anillo se
+                  dibujaba VACIO.
+
+                  Recharts anima el sector desde radio cero con
+                  `requestAnimationFrame`, y rAF no se ejecuta mientras la
+                  pestana no esta visible. El resultado es un `<g>` de sector
+                  presente en el DOM pero sin `<path>` dentro: la tarjeta sale en
+                  blanco y no hay ningun error que lo delate.
+
+                  Ademas es lo correcto aqui aunque se vea: son cuatro sectores
+                  que dicen cuantos expedientes hay por etapa. Que se dibujen
+                  girando cada vez que cambia un filtro no aporta nada y retrasa
+                  la lectura del dato.
+                */
+                isAnimationActive={false}
               >
                 {conDatos.map((d, i) => (
                   <Cell key={d.etapa} fill={tono(colores[i % colores.length])} />

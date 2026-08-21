@@ -703,3 +703,47 @@ export function plantillaCsv(): string {
   ];
   return filas.map((f) => f.join(";")).join("\r\n");
 }
+
+
+/**
+ * Salud por familia: cuántos indicadores salen favorables, sobre los que tienen
+ * datos.
+ *
+ * EL DENOMINADOR SON LOS INDICADORES CON CIFRAS, no todos. Contar los
+ * `sin-datos` como fallos convertiría "el cliente no ha importado el balance"
+ * en "la empresa está mal", que es una acusación, no un indicador. Se devuelve
+ * `conDatos` aparte para que la pantalla pueda decir sobre cuántos se calcula.
+ *
+ * Con cero indicadores medibles el porcentaje es `null`, nunca 0: un anillo
+ * vacío afirma que nada va bien, y lo que pasa es que no se sabe.
+ */
+export function saludPorFamilia(
+  indicadores: IndicadorFinanciero[],
+): { familia: Familia; buenos: number; conDatos: number; pct: number | null }[] {
+  const familias: Familia[] = ["liquidez", "endeudamiento", "rentabilidad", "gestion"];
+
+  return familias.map((familia) => {
+    const dela = indicadores.filter((i) => i.familia === familia);
+    const conDatos = dela.filter((i) => i.veredicto !== "sin-datos");
+    const buenos = conDatos.filter((i) => i.veredicto === "bueno").length;
+    return {
+      familia,
+      buenos,
+      conDatos: conDatos.length,
+      pct: conDatos.length > 0 ? (buenos / conDatos.length) * 100 : null,
+    };
+  });
+}
+
+/** La misma lectura, sobre el conjunto: para el indicador de cabecera. */
+export function saludGlobal(
+  indicadores: IndicadorFinanciero[],
+): { buenos: number; conDatos: number; pct: number | null } {
+  const conDatos = indicadores.filter((i) => i.veredicto !== "sin-datos");
+  const buenos = conDatos.filter((i) => i.veredicto === "bueno").length;
+  return {
+    buenos,
+    conDatos: conDatos.length,
+    pct: conDatos.length > 0 ? (buenos / conDatos.length) * 100 : null,
+  };
+}

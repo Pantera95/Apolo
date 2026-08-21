@@ -1,0 +1,324 @@
+/*
+ * NO se importa `identidad.css` aquí: ya lo hace `app/globals.css`, que carga
+ * en el layout raíz y por tanto también en esta página. Importarlo dos veces
+ * duplicaba todos los primitivos y todas las reglas de movimiento reducido en
+ * la hoja compilada — se vio volcando los bloques `prefers-reduced-motion` del
+ * navegador, donde `.pildora` salía repetida.
+ */
+/*
+ * LANDING DE APOLO — lenguaje visual copiado de la referencia.
+ *
+ * Este archivo NO consume los tokens de la aplicación a propósito. La consigna
+ * fue no arrastrar nada del Apolo actual, y compartir tokens habría devuelto el
+ * resultado anterior: la misma maqueta con otros colores. Aquí todo se declara
+ * desde cero con los valores LEÍDOS del sitio de referencia, no estimados:
+ *
+ *   fondo          #00031c   (getComputedStyle del body)
+ *   titulares      Poppins 500
+ *   h1             42px / interlínea 42px (1.0) / tracking -1.97px (-0.047em)
+ *   h2             36px / interlínea 42px      / tracking -1.08px (-0.03em)
+ *   cuerpo         16px / 400 / #cac9d1
+ *   botón píldora  radio 500px, relleno 10px 28px, cuerpo 12px
+ *
+ * Las medidas de tipografía se escalan con `clamp` para que sobrevivan al
+ * móvil: la referencia se midió a un ancho concreto y clavar píxeles fijos
+ * rompería el titular en pantallas estrechas.
+ */
+
+/* Los tokens y los primitivos viven en app/identidad.css, compartidos con la
+   aplicación. Aquí queda solo lo que es propio de esta página. */
+.landing {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  background-color: var(--suelo);
+  color: var(--tinta-2);
+  font-family: var(--fuente-landing), system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.65;
+  overflow-x: clip;
+}
+
+/*
+ * LAS CINTAS DE LUZ.
+ *
+ * En la referencia son un vídeo de trazos de luz cruzando la pantalla. Aquí se
+ * reconstruyen con gradientes cónicos muy desenfocados: pesan cero, no
+ * necesitan descarga y no se quedan congelados si el navegador bloquea la
+ * reproducción automática.
+ *
+ * Van en un pseudo-elemento con `z-index: -1` y `pointer-events: none`. Cubre
+ * toda la pantalla, y sin eso se comería cada clic de la página.
+ */
+.landing::before {
+  content: "";
+  position: absolute;
+  /*
+    OFFSETS EN vh, NO EN PORCENTAJE.
+    `top: -30%` se resuelve contra la ALTURA DEL CONTENEDOR, y `.landing` mide
+    varios miles de píxeles: la capa arrancaba ~1200px por encima del viewport
+    y, con sus 130vh de alto, terminaba justo donde empieza la pantalla. Las
+    cintas se pintaban enteras fuera de vista, y el inspector las daba por
+    aplicadas — que es lo que hacía el fallo tan opaco.
+  */
+  /* Mas grande de lo necesario: sustituye al `scale` que se quito de la
+     animacion, sin coste por fotograma. */
+  top: -35vh;
+  right: -30vw;
+  left: -30vw;
+  z-index: -1;
+  height: 145vh;
+  pointer-events: none;
+  /*
+    CINTAS, NO MANCHAS. La primera versión eran cuatro `radial-gradient`
+    redondos y se leían como niebla de color: la referencia tiene trazos
+    ALARGADOS que cruzan la pantalla en diagonal, como una exposición larga de
+    unos faros.
+    La forma sale de radiales muy achatados —95% de ancho por 6% de alto— que
+    al rotar el bloque entero quedan en diagonal. El desenfoque los funde entre
+    sí sin borrar la dirección del trazo.
+  */
+  transform-origin: 50% 40%;
+  background:
+    radial-gradient(95% 5% at 22% 34%, var(--luz-azul) 0%, transparent 100%),
+    radial-gradient(80% 4% at 38% 44%, #60a5fa 0%, transparent 100%),
+    radial-gradient(90% 6% at 55% 52%, var(--luz-violeta) 0%, transparent 100%),
+    radial-gradient(75% 4% at 62% 60%, var(--luz-rosa) 0%, transparent 100%),
+    radial-gradient(85% 5% at 78% 40%, var(--luz-azul) 0%, transparent 100%);
+  /*
+    EL CENTRO SE VACÍA CON UNA MÁSCARA, y esto no es decoración: sin ella las
+    cintas bañaban la pantalla entera y el titular quedaba en blanco sobre
+    naranja claro, o sea ilegible. En la referencia pasa justo lo contrario —
+    los trazos son intensos en los bordes y el centro se mantiene oscuro, que es
+    lo que deja respirar al texto.
+
+    Se quitó también la cinta ámbar: era la que teñía media pantalla de cálido y
+    la que rompía el contraste del héroe.
+  */
+  mask-image: radial-gradient(58% 42% at 50% 34%, transparent 0%, #000 78%);
+  opacity: 0.55;
+  filter: blur(44px);
+  animation: deriva 22s ease-in-out infinite alternate;
+}
+
+/*
+ * El halo ancho que baña la mitad superior. Va aparte de las cintas porque
+ * necesita OTRO desenfoque: si comparte capa, el blur que funde el halo borra
+ * la dirección del trazo y todo vuelve a ser niebla.
+ */
+.landing .halo {
+  position: absolute;
+  /* Mismo motivo que arriba: en vh, no en porcentaje del contenedor. */
+  top: -8vh;
+  right: 0;
+  left: 0;
+  z-index: -1;
+  height: 90vh;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 45% at 30% 20%, rgb(47 107 255 / 0.35), transparent 70%),
+    radial-gradient(50% 40% at 75% 12%, rgb(124 58 237 / 0.3), transparent 72%);
+  filter: blur(20px);
+}
+
+/* La retícula fina: es lo que da lectura de plano técnico. Sin ella las cintas
+   flotan sobre un vacío liso. Se desvanece hacia abajo con una máscara para no
+   competir con el contenido de las secciones. */
+.landing::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: 120vh;
+  pointer-events: none;
+  background:
+    linear-gradient(rgb(150 175 255 / 0.06) 1px, transparent 1px) 0 0 / 54px 54px,
+    linear-gradient(90deg, rgb(150 175 255 / 0.06) 1px, transparent 1px) 0 0 / 54px 54px;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+}
+
+/*
+ * LA ROTACIÓN VA DENTRO DE LOS KEYFRAMES, y no es redundancia.
+ *
+ * Estaba declarada aparte como `transform: rotate(-24deg)` en la regla, y la
+ * animación la borraba: `transform` es UNA sola propiedad, así que un keyframe
+ * que la anima la reemplaza entera en lugar de combinarse con la declaración
+ * estática. Las cintas quedaban horizontales y el fallo no daba ninguna señal
+ * —la regla figura aplicada en el inspector, solo que el valor animado gana.
+ */
+/*
+ * SIN `scale` EN LA ANIMACION.
+ *
+ * La capa lleva `blur(44px)` a pantalla completa. Escalarla obliga al navegador
+ * a RE-RASTERIZAR el desenfoque en cada fotograma para que no salga pixelado;
+ * trasladarla y rotarla, en cambio, compone la textura ya rasterizada, que es
+ * trabajo de GPU y practicamente gratis.
+ *
+ * El escalado se compensa agrandando la capa una vez, de forma estatica, para
+ * que la deriva no descubra los bordes. El movimiento se ve igual.
+ *
+ * NOTA HONESTA: no pude medir los fotogramas. El panel del navegador de esta
+ * sesion esta oculto y ahi `requestAnimationFrame` no se ejecuta, asi que
+ * cualquier medicion habria salido plana y falsa. Esto se apoya en como
+ * funciona la composicion, no en una medida de este equipo.
+ */
+@keyframes deriva {
+  from {
+    transform: rotate(-24deg) translate3d(-3%, 0, 0);
+  }
+  to {
+    transform: rotate(-19deg) translate3d(3%, -4%, 0);
+  }
+}
+
+/*
+ * Quien pide menos movimiento recibe el fondo QUIETO, no más lento: una deriva
+ * de 22 segundos sigue siendo movimiento periférico constante, que es justo lo
+ * que dispara el malestar vestibular.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .landing::before {
+    animation: none;
+    /* Se repone aquí: al quitar la animación desaparece el único sitio donde
+       vivía la rotación, y las cintas volverían a quedar horizontales justo
+       para quien pidió menos movimiento. */
+    transform: rotate(-24deg);
+  }
+  .landing [data-revelar] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Rejilla y ritmo vertical ──────────────────────────────────────────── */
+
+.landing-ancho {
+  margin-inline: auto;
+  width: min(100% - 2.5rem, 68rem);
+}
+
+.landing-seccion {
+  padding-block: clamp(4rem, 9vw, 7.5rem);
+}
+
+/* ── Tipografía ────────────────────────────────────────────────────────── */
+
+.landing h1,
+.landing h2,
+.landing h3 {
+  color: var(--tinta);
+  font-weight: 500;
+  text-wrap: balance;
+}
+
+.landing h1 {
+  font-size: clamp(2.25rem, 6.2vw, 3.75rem);
+  /* Interlínea 1.0, medida en la referencia. Es muy cerrada y por eso el
+     titular se lee como un bloque compacto en vez de como párrafo. */
+  line-height: 1;
+  letter-spacing: -0.047em;
+}
+
+.landing h2 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.16;
+  letter-spacing: -0.03em;
+}
+
+.landing h3 {
+  font-size: 1.125rem;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+.landing p {
+  max-width: 60ch;
+}
+
+/*
+ * EL RÓTULO DE SECCIÓN CON ARCOS.
+ *
+ * Es el rasgo que más se repite en la referencia: un rótulo diminuto centrado
+ * con dos líneas curvas que salen a los lados. Se hace con dos pseudo-elementos
+ * que llevan un degradado que se apaga hacia fuera, de modo que la línea nace
+ * de la nada en vez de cortarse en seco.
+ */
+
+
+
+
+
+/* ── Píldoras ──────────────────────────────────────────────────────────── */
+
+/*
+ * El botón de la referencia: radio completo, relleno 10×28 y cuerpo de 12px.
+ * El borde luminoso NO es un `border` —un borde sólido a este radio se ve duro—
+ * sino un degradado enmascarado, que es lo que produce el canto que se enciende
+ * arriba y se apaga abajo.
+ */
+
+
+
+
+
+
+
+/* ── Paneles de vidrio ─────────────────────────────────────────────────── */
+
+
+
+/* El marco de la captura del producto: el mismo vidrio pero con un halo debajo
+   que lo levanta del fondo, como en la referencia. */
+.marco {
+  position: relative;
+  border: 1px solid var(--panel-canto);
+  border-radius: 1rem;
+  background: rgb(4 8 32 / 0.7);
+  padding: 0.5rem;
+  box-shadow:
+    0 40px 120px -30px rgb(79 70 229 / 0.55),
+    0 0 0 1px rgb(255 255 255 / 0.03);
+}
+
+/* ── Revelado al entrar en pantalla ────────────────────────────────────── */
+
+/*
+ * La referencia revela cada bloque al entrar en el viewport. Se hace con
+ * `animation-timeline: view()`, que corre en el compositor y no necesita
+ * IntersectionObserver ni JavaScript.
+ *
+ * El estado inicial va DENTRO de la consulta de soporte: si el navegador no
+ * entiende `view()`, declarar `opacity: 0` fuera dejaría el contenido invisible
+ * para siempre. Al no soportarlo, todo se ve sin animación — que es el fallo
+ * correcto.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .landing [data-revelar] {
+      animation: revelar linear both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 26%;
+    }
+  }
+}
+
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Foco ──────────────────────────────────────────────────────────────── */
+
+.landing :focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 3px;
+  border-radius: 500px;
+}

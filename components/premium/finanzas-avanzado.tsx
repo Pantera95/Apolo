@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  CartesianGrid,
   Legend,
   Line,
   LineChart,
@@ -16,11 +15,25 @@ import type { EstadosFinancieros } from "@/lib/dashboard/finanzas";
 import { etiquetaCorte } from "@/lib/dashboard/serie-finanzas";
 import { dinero, dineroCompacto, numero } from "@/lib/datos/indicadores";
 import type { EstadoApolo } from "@/lib/db/almacen";
+import { CurvaTendencia } from "@/components/ui/curva-tendencia";
 import { usePreferencias } from "@/lib/preferencias";
 
 function tono(css: string): string {
-  if (typeof window === "undefined") return "#888";
-  return getComputedStyle(document.documentElement).getPropertyValue(css).trim() || "#888";
+  /*
+   * DEVUELVE `var(--token)`, NO EL VALOR RESUELTO.
+   *
+   * Leerlo con `getComputedStyle` tenia dos fallos que salian en pantalla sin
+   * dar ni un error: el hex se CONGELA en el render —al cambiar de tema las
+   * graficas conservaban los colores del tema anterior— y en el servidor no hay
+   * `window`, asi que el primer render devolvia "#888" para todo y dependia de
+   * que la hidratacion lo corrigiera. Cuando no lo corregia, toda la grafica
+   * salia gris.
+   *
+   * SVG acepta `var()` en `fill` y `stroke`, y las propiedades de un `style` en
+   * linea tambien. Sin resolver, el color lo decide el navegador en cada
+   * repintado y el cambio de tema es automatico.
+   */
+  return `var(${css})`;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,73 +83,22 @@ export function CurvaComparada({
       <h3 className="text-base font-extrabold tracking-[-0.01em]">{titulo}</h3>
       {subtitulo && <p className="mt-0.5 text-xs text-texto-3">{subtitulo}</p>}
 
-      <ResponsiveContainer width="100%" height={alto} className="mt-4">
-        <LineChart data={filas} margin={{ left: 4, right: 16, top: 10 }}>
-          {/* Rejilla horizontal y punteada: la vertical compite con las curvas
-              y no aporta nada cuando el eje X son meses. */}
-          <CartesianGrid
-            stroke={tono("--grafico-rejilla")}
-            strokeDasharray="4 6"
-            vertical={false}
-          />
-          <XAxis
-            dataKey="etiqueta"
-            stroke={tono("--grafico-eje")}
-            fontSize={11}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            stroke={tono("--grafico-eje")}
-            fontSize={11}
-            width={58}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(v) =>
-              moneda
-                ? dineroCompacto(Number(v) || 0, idioma)
-                : numero(Number(v) || 0, idioma)
-            }
-          />
-          <Tooltip
-            cursor={{ stroke: tono("--grafico-eje"), strokeWidth: 1 }}
-            contentStyle={{
-              background: tono("--superficie"),
-              border: `1px solid ${tono("--borde-fuerte")}`,
-              borderRadius: 10,
-              color: tono("--texto"),
-              fontSize: 12,
-              boxShadow: "0 6px 20px rgb(0 0 0 / .18)",
-            }}
-            labelStyle={{ fontWeight: 800, marginBottom: 4 }}
-            formatter={(v, n) => [
-              moneda ? dinero(Number(v) || 0, idioma) : numero(Number(v) || 0, idioma),
-              series.find((s) => s.clave === n)?.nombre ?? String(n),
-            ]}
-          />
-          <Legend
-            verticalAlign="bottom"
-            height={30}
-            iconType="plainline"
-            wrapperStyle={{ fontSize: 11, color: tono("--texto-2") }}
-            formatter={(v) => series.find((s) => s.clave === v)?.nombre ?? String(v)}
-          />
-          {series.map((s) => (
-            <Line
-              key={s.clave}
-              type="monotone"
-              dataKey={s.clave}
-              name={s.clave}
-              stroke={s.color}
-              strokeWidth={2.5}
-              dot={{ r: 3.5, fill: s.color, strokeWidth: 0 }}
-              activeDot={{ r: 6, strokeWidth: 2, stroke: tono("--superficie") }}
-              isAnimationActive={false}
-              connectNulls
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+      {/* Mismo estilo de cápsulas que el resto de tendencias. Sin `indiceCorte`:
+          no hay datos de pronóstico y no se inventan. */}
+      <div className="mt-4">
+        <CurvaTendencia
+          datos={filas.map((f) => ({ ...f, etiqueta: String(f.etiqueta) }))}
+          series={series.map((s) => ({
+            clave: s.clave,
+            nombre: s.nombre,
+            color: s.color,
+          }))}
+          alto={alto}
+          formato={(v) =>
+            moneda ? dinero(v, idioma) : numero(v, idioma)
+          }
+        />
+      </div>
     </section>
   );
 }
@@ -279,7 +241,14 @@ export function HistoricoVentasCompras({
 
       <ResponsiveContainer width="100%" height={260}>
         <LineChart data={filas} margin={{ left: 4, right: 16, top: 8 }}>
-          <CartesianGrid stroke={tono("--grafico-rejilla")} strokeDasharray="4 6" vertical={false} />
+                    {/*
+            SIN REJILLA NI EJES DIBUJADOS. Quedan solo las curvas de datos.
+
+            Las reglas horizontales cruzaban la tarjeta de lado a lado con el
+            mismo grosor que la propia serie, asi que competian con lo unico que
+            hay que mirar. Los NUMEROS del eje se quedan —no son lineas, y sin
+            ellos se pierde la magnitud—, pero sin su barra ni sus marquitas.
+          */}
           <XAxis dataKey="etiqueta" stroke={tono("--grafico-eje")} fontSize={11} tickLine={false} axisLine={false} />
           <YAxis
             stroke={tono("--grafico-eje")}
@@ -304,8 +273,15 @@ export function HistoricoVentasCompras({
             align="left"
             height={28}
             iconType="circle"
-            wrapperStyle={{ fontSize: 11, color: tono("--texto-2") }}
-            formatter={(v) => etiquetaSerie(String(v), t)}
+            wrapperStyle={{ fontSize: 11 }}
+            /* El texto en `--texto-2`, no en el color de la serie: como texto
+               de 11px esos tonos daban 3,57 / 2,82 / 2,85:1. El color se queda
+               en la muestra circular que Recharts dibuja al lado. */
+            formatter={(v) => (
+              <span style={{ color: "var(--texto-2)" }}>
+                {etiquetaSerie(String(v), t)}
+              </span>
+            )}
           />
           <Line type="monotone" dataKey="ventas" stroke={tono("--serie-1")} strokeWidth={2.5} dot={false} isAnimationActive={false} />
           <Line type="monotone" dataKey="compras" stroke={tono("--serie-2")} strokeWidth={2.5} dot={false} isAnimationActive={false} />

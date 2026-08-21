@@ -65,8 +65,16 @@ function escribir(clave: string, valor: string): void {
   window.dispatchEvent(new CustomEvent(EVENTO));
 }
 
-const temaCliente = (): Tema => (leer(CLAVE_TEMA) === "oscuro" ? "oscuro" : "claro");
-const temaServidor = (): Tema => "claro";
+/*
+ * OSCURO POR DEFECTO, con tema claro disponible.
+ *
+ * El oscuro es la identidad —es la de la landing— y por eso es el valor de
+ * arranque. El claro se derivo despues del mismo lenguaje de vidrio, no del
+ * sistema antiguo: mismos velos translucidos, mismo canto, mismas cintas de luz
+ * mucho mas tenues. Vive en `app/identidad.css`.
+ */
+const temaCliente = (): Tema => (leer(CLAVE_TEMA) === "claro" ? "claro" : "oscuro");
+const temaServidor = (): Tema => "oscuro";
 
 const idiomaCliente = (): Idioma => (leer(CLAVE_IDIOMA) === "en" ? "en" : "es");
 const idiomaServidor = (): Idioma => "es";

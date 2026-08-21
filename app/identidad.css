@@ -1,0 +1,249 @@
+/*
+ * IDENTIDAD DE APOLO — una sola fuente para la landing y para la aplicación.
+ *
+ * Antes vivía sólo en `app/presentacion/landing.css` y la aplicación tenía su
+ * propio sistema con algunos colores de la landing encima. Por eso la landing se
+ * veía mejor: no era el color, era que la app conservaba otros materiales, otra
+ * tipografía, otros radios y otros bordes.
+ *
+ * Aquí están los valores de la landing, tal cual, y los consumen las dos
+ * superficies. Cambiar la identidad es cambiar este archivo.
+ */
+
+:root {
+  --tinta: #f4f7ff;
+  --tinta-2: #cac9d1;
+  --tinta-3: #8d90a8;
+  --suelo: #00031c;
+
+  /* Los tres tonos de las cintas de luz del fondo. */
+  --luz-azul: #2f6bff;
+  --luz-violeta: #7c3aed;
+  --luz-rosa: #d946a6;
+
+  /* El vidrio de los paneles: casi negro con un velo claro encima. */
+  --panel: rgb(255 255 255 / 0.04);
+  --panel-canto: rgb(255 255 255 / 0.1);
+  --panel-canto-vivo: rgb(255 255 255 / 0.22);
+  --panel-hover: rgb(255 255 255 / 0.065);
+
+  /* El azul de la acción, del botón principal de la landing. */
+  --accion-alta: #4f46e5;
+  --accion-baja: #3730a3;
+}
+
+/* ── Paneles ─────────────────────────────────────────────────────────────
+   TRANSLÚCIDOS A PROPÓSITO. El velo blanco al 4 % deja pasar las cintas de
+   luz del fondo, y eso es la mitad de por qué la landing respira. Un panel
+   opaco del mismo color medio se ve plano: la luz muere detrás. */
+
+.panel {
+  position: relative;
+  border: 1px solid var(--panel-canto);
+  border-radius: 1.25rem;
+  background: var(--panel);
+  transition:
+    border-color 240ms ease,
+    background-color 240ms ease;
+}
+
+.panel:hover {
+  border-color: var(--panel-canto-vivo);
+  background: var(--panel-hover);
+}
+
+/* ── Píldoras ────────────────────────────────────────────────────────────
+   Radio completo, relleno 10×28 y cuerpo de 13px, medidos en la referencia.
+   El alto mínimo sube a 44px: el relleno original deja el objetivo táctil por
+   debajo del mínimo y aquí se cumple sin cambiar el aspecto. */
+
+.pildora {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 1.75rem;
+  border-radius: 500px;
+  color: var(--tinta);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    color 200ms ease,
+    background-color 200ms ease,
+    transform 200ms ease;
+}
+
+.pildora--fantasma {
+  background: rgb(255 255 255 / 0.04);
+}
+
+/* El canto luminoso NO es un `border`: a este radio un borde sólido se ve
+   duro. Es un degradado enmascarado, que produce el filo que se enciende
+   arriba y se apaga abajo. */
+.pildora--fantasma::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    rgb(190 180 255 / 0.85),
+    rgb(120 130 255 / 0.15) 45%,
+    rgb(255 255 255 / 0.05)
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.pildora--fantasma:hover {
+  background: rgb(255 255 255 / 0.09);
+}
+
+.pildora--solida {
+  background: linear-gradient(180deg, var(--accion-alta), var(--accion-baja));
+  box-shadow: 0 8px 30px -8px rgb(79 70 229 / 0.8);
+}
+
+.pildora--solida:hover {
+  background: linear-gradient(180deg, #6366f1, #4338ca);
+}
+
+.pildora:active {
+  transform: translateY(1px);
+}
+
+/* ── El rótulo con arcos ─────────────────────────────────────────────────
+   El rasgo que más se repite en la referencia: un rótulo diminuto con dos
+   líneas que nacen de la nada a los lados. */
+
+.rotulo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--tinta-2);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+.rotulo::before,
+.rotulo::after {
+  content: "";
+  width: clamp(2.5rem, 12vw, 7rem);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(160 140 255 / 0.75));
+}
+
+.rotulo::after {
+  background: linear-gradient(90deg, rgb(160 140 255 / 0.75), transparent);
+}
+
+.rotulo--izq {
+  justify-content: flex-start;
+}
+
+.rotulo--izq::before {
+  display: none;
+}
+
+/* ── TEMA CLARO ──────────────────────────────────────────────────────────
+ *
+ * El mismo lenguaje, no otro producto. La landing no tiene tema claro, así que
+ * esto no se copia de ninguna parte: se DERIVA de sus reglas, que son tres.
+ *
+ *   1. Los paneles son un VELO translúcido sobre el suelo, no un color sólido.
+ *      En oscuro el velo es blanco al 4 %; aquí es blanco al 72 % sobre un
+ *      suelo azulado. La luz sigue pasando por detrás.
+ *   2. El canto es el mismo velo llevado al filo. Aquí es tinta al 10 %.
+ *   3. Las cintas de luz siguen ahí, mucho más tenues: sobre un suelo claro el
+ *      mismo valor ensucia en vez de dar profundidad.
+ *
+ * Medido, no estimado:
+ *   texto    #0b1020 sobre panel 18,29:1
+ *   texto-2  #3d4457 sobre panel  9,38:1
+ *   texto-3  #5c6478 sobre panel  5,71:1
+ *   control  #878a97 sobre panel  3,32:1   (mínimo de componente de interfaz)
+ */
+:root:not(.dark) {
+  --tinta: #0b1020;
+  --tinta-2: #3d4457;
+  --tinta-3: #5c6478;
+  --suelo: #eceff7;
+
+  --panel: rgb(255 255 255 / 0.72);
+  --panel-canto: rgb(10 15 40 / 0.1);
+  --panel-canto-vivo: rgb(10 15 40 / 0.22);
+  --panel-hover: rgb(255 255 255 / 0.92);
+}
+
+/* El canto luminoso de la píldora fantasma se invierte: en claro un filo que
+   "se enciende" no existe; lo que hay es una sombra fina en el borde. */
+:root:not(.dark) .pildora--fantasma::before {
+  background: linear-gradient(
+    160deg,
+    rgb(10 15 40 / 0.22),
+    rgb(10 15 40 / 0.08) 45%,
+    rgb(10 15 40 / 0.04)
+  );
+}
+
+:root:not(.dark) .pildora--fantasma {
+  background: rgb(255 255 255 / 0.7);
+}
+
+:root:not(.dark) .pildora--fantasma:hover {
+  background: rgb(255 255 255 / 0.95);
+}
+
+/* La sólida no cambia: el índigo es la acción, y es el mismo en los dos temas. */
+
+:root:not(.dark) .rotulo::before {
+  background: linear-gradient(90deg, transparent, rgb(79 70 229 / 0.55));
+}
+
+:root:not(.dark) .rotulo::after {
+  background: linear-gradient(90deg, rgb(79 70 229 / 0.55), transparent);
+}
+
+/* ── MOVIMIENTO REDUCIDO ──────────────────────────────────────────────────
+ *
+ * POR NIVELES, NO UN INTERRUPTOR. Quitar toda la animación es la
+ * sobre-corrección típica: un cambio de estado instantáneo teletransporta los
+ * elementos y desorienta más que la transición que se quería evitar.
+ *
+ *   Nivel 1, se elimina    desplazamientos grandes, escalados, parallax.
+ *   Nivel 2, se ablanda    el movimiento se cambia por un fundido corto.
+ *   Nivel 3, se conserva   color, opacidad y anillo de foco. No implican
+ *                          movimiento propio y no disparan náusea.
+ *
+ * Aquí casi todo es de nivel 3 y por eso SOBREVIVE: las transiciones de
+ * `.panel` y `.pildora` son de color y fondo. Lo único que se toca es el
+ * `translateY` del pulsado.
+ *
+ * DELIBERADAMENTE NO SE PONE el apagado global de `transition-duration` a
+ * 0.01ms que suele recomendarse. Un `*` con `!important` gana por especificidad
+ * a la regla de `:where(dialog, [data-mov])` de globals.css, que es la que
+ * mantiene vivo el fundido del diálogo nativo. Con `@starting-style` y
+ * `transition-behavior: allow-discrete`, matar esa duración deja el diálogo
+ * atrapado a mitad de salida. La red global de globals.css se limita a cortar
+ * las repeticiones infinitas y el desplazamiento suave, que es lo que no puede
+ * hacerse desde aquí.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .pildora {
+    /* Nivel 2: se va el desplazamiento del pulsado, se queda el cambio de
+       color. Sigue habiendo respuesta al dedo, sin que nada se mueva. */
+    transition-property: color, background-color;
+  }
+
+  .pildora:active {
+    transform: none;
+  }
+}

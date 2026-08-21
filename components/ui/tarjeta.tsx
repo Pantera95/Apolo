@@ -27,7 +27,7 @@ export function Tarjeta({
         // `vidrio` trae superficie, desenfoque, borde y canto de luz. El borde
         // ya cumple 3:1 sobre las tres superficies, así que no hace falta
         // subirlo a `borde-fuerte` ni doblar su grosor como antes.
-        "vidrio backdrop-blur-xl backdrop-saturate-150 min-w-0",
+        "caja min-w-0",
         className,
       ].join(" ")}
     >
@@ -84,29 +84,44 @@ export function TarjetaKpi({
   listo?: boolean;
   className?: string;
 }) {
+  /*
+   * UN SOLO BLOQUE SOLIDO, como en la landing.
+   *
+   * Habia dos macizos, azul y cian. El cian a plena saturacion era lo que mas
+   * desentonaba al adoptar el lenguaje nuevo, y ademas dos solidos en la misma
+   * fila no jerarquizan: compiten.
+   *
+   * Ahora `marca` es el degradado indigo con halo —el mismo del boton principal
+   * de la landing— y `luz` pasa a vidrio con la CIFRA en cian. El acento sigue
+   * estando, pero como tinta sobre el panel en vez de como fondo.
+   */
   const estilos: Record<VarianteKpi, string> = {
-    // Los bloques macizos NO llevan vidrio: un color de marca a plena
-    // saturación detrás de un desenfoque se ensucia y pierde la fuerza que es
-    // justo su razón de existir.
-    marca: "bg-bloque-marca text-bloque-marca-texto border-transparent",
-    luz: "bg-bloque-luz text-bloque-luz-texto border-transparent",
-    contorno: "vidrio backdrop-blur-xl backdrop-saturate-150 text-texto",
+    marca: "bloque-acento",
+    luz: "caja text-texto",
+    contorno: "caja text-texto",
   };
 
   // El texto secundario del bloque verde NO baja de opacidad: al 70% caería a
   // 3.89:1. Se diferencia por peso y tamaño, que es más accesible que el alfa.
   const tenue: Record<VarianteKpi, string> = {
-    marca: "text-bloque-marca-texto/70",
-    luz: "text-bloque-luz-texto/85",
+    marca: "text-white/70",
+    luz: "text-texto-3",
     contorno: "text-texto-3",
+  };
+
+  // La cifra en cian es lo que distingue ahora a `luz`, ya que perdio el fondo.
+  const cifra: Record<VarianteKpi, string> = {
+    marca: "",
+    luz: "text-luz",
+    contorno: "",
   };
 
   return (
     <article
       className={[
         "flex min-w-0 flex-col justify-between rounded-tarjeta p-6",
-        // El borde solo lo pintan las variantes macizas; `vidrio` trae el suyo.
-        variante === "contorno" ? "" : "border",
+        // El borde solo lo pinta el bloque solido; `caja` trae el suyo.
+        variante === "marca" ? "border" : "",
         estilos[variante],
         className,
       ].join(" ")}
@@ -129,7 +144,7 @@ export function TarjetaKpi({
             destacada
               ? "text-4xl sm:text-5xl xl:text-6xl"
               : "text-[clamp(1.35rem,2.1vw,1.875rem)]"
-          }`}
+          } ${cifra[variante]}`}
         >
           {valor}
         </p>
@@ -138,7 +153,7 @@ export function TarjetaKpi({
           role="status"
           aria-label="Cargando"
           className={`mt-6 rounded-lg ${destacada ? "h-16 w-40" : "h-11 w-28"} ${
-            variante === "contorno" ? "bg-superficie-2" : "bg-white/20"
+            variante === "marca" ? "bg-white/20" : "bg-superficie-2"
           }`}
         />
       )}

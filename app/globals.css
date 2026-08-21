@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./identidad.css";
 @import "./marca.css";
 
 /* El tema se conmuta por clase, no por preferencia del sistema: en un almacén
@@ -13,20 +14,36 @@
  * así que los valores CAMBIAN entre temas — no se reutiliza el mismo hex.
  */
 :root {
-  --fondo: var(--apolo-humo);
-  --superficie: #ffffff;
-  --superficie-2: #e9eef5;
-  --superficie-hover: #dfe6ef;
+  /*
+   * TEMA CLARO — el mismo lenguaje de vidrio, derivado, no el sistema antiguo.
+   *
+   * Compuestos sobre el suelo #eceff7 como literales, porque el guion de
+   * contraste lee hex y no resuelve translucidez. La tarjeta REAL usa `.panel`,
+   * que sigue siendo translucido.
+   *
+   *   blanco 72%  sobre #eceff7  ->  #fafbfd
+   *   blanco 45%  sobre #eceff7  ->  #f2f4f9
+   *   blanco 25%  sobre #eceff7  ->  #eef1f8
+   */
+  --fondo: #eceff7;
+  --superficie: #fafbfd;
+  --superficie-2: #f2f4f9;
+  --superficie-hover: #eef1f8;
 
-  --texto: var(--apolo-tinta);
-  --texto-2: #4f4f4f;
-  --texto-3: #5c6576;
+  /* Las mismas tintas que declara identidad.css para el tema claro. */
+  --texto: #0b1020;
+  --texto-2: #3d4457;
+  --texto-3: #5c6478;
   --texto-invertido: #ffffff;
 
-  --borde: #758396;
-  /* 3:1 mínimo: un campo de formulario que no se distingue del fondo es un bug,
-     no una decisión estética. */
-  --borde-fuerte: #768399;
+  /* Canto del vidrio: tinta al 10 %. Igual que en oscuro NO cumple 3:1 — es un
+     filo, no un divisor, y está escrito en scripts/contraste.mjs. */
+  --borde: #e2e3e8;
+  /* Canto de CONTROLES: tinta al 52 %. Al 48 % daba 2,99:1 contra el lienzo —
+     por un pelo, y un pelo por debajo sigue siendo por debajo. Aqui: 3,79:1
+     sobre el panel y 3,41:1 sobre el lienzo. Un campo que no se distingue del
+     fondo no se puede usar, y eso no lo negocia la identidad. */
+  --borde-fuerte: #7d808e;
 
   --marca: var(--apolo-azul-texto);
   --marca-fondo: var(--apolo-azul-bloque);
@@ -64,6 +81,11 @@
   */
   --grafico-rejilla: #dbe4ee;
   --grafico-eje: #5f6879;
+  /* La curva de un indicador SIN JUICIO. Existe porque el tono "neutro" tiraba
+     de `--serie-4`, y al pasar las series a la paleta de la landing ese slot se
+     volvió rosa fuerte: el indicador más apagado de la pantalla acababa siendo
+     el más llamativo. Un neutro tiene que ser neutro. */
+  --grafico-neutro: #6b7794;
 
   /*
     PALETA DE DATOS — deliberadamente INDEPENDIENTE de la marca.
@@ -73,11 +95,13 @@
     Estos tonos son distinguibles entre sí también en deuteranopía, que es la
     forma de daltonismo más común.
   */
-  --serie-1: #b0431a;
-  --serie-2: #b87a00; /* 3,61:1 sobre blanco; #d99000 se quedaba en 2,64 */
-  --serie-3: #1a6b4a;
-  --serie-4: #2657e8;
-  --serie-5: #7c3aed;
+  /* Mismos matices que en oscuro pero rebajados para conservar 3:1 sobre
+     blanco: ningun tono unico aguanta los dos temas. */
+  --serie-1: #2b4fd0;
+  --serie-2: #0e7490;
+  --serie-3: #6d33d6;
+  --serie-4: #b52a72;
+  --serie-5: #96650a;
   --serie-alza: #10763a;
   --serie-baja: #c8362c;
   /* Sombra dura desplazada: la firma de la dirección visual aprobada. No es
@@ -86,62 +110,71 @@
 }
 
 .dark {
-  --fondo: var(--apolo-abismo);
+  /*
+   * LOS MATERIALES SON LOS DE LA LANDING, no una version de ellos.
+   *
+   * Los valores salen de `app/identidad.css`, que es ahora la unica fuente. Aqui
+   * se declaran ademas COMPUESTOS SOBRE EL SUELO como literales, porque el
+   * guion de contraste lee hex del CSS y no puede resolver una translucidez:
+   *
+   *   blanco 4,0%  sobre #00031c  ->  #0a0d25
+   *   blanco 6,5%  sobre #00031c  ->  #11132b
+   *   blanco 10%   sobre #00031c  ->  #1a1c32   (el canto)
+   *   blanco 22%   sobre #00031c  ->  #383a4e   (el canto vivo)
+   *
+   * La tarjeta REAL no usa estos literales: usa `.panel`, que es translucido y
+   * deja pasar las cintas de luz del fondo. Eso es la mitad de por que la
+   * landing respira y la aplicacion no lo hacia.
+   */
+  --fondo: #00031c;
+  --superficie: #0a0d25;
+  --superficie-2: #11132b;
+  --superficie-hover: #171a30;
+
+  --texto: #f4f7ff;
+  --texto-2: #cac9d1;
+  --texto-3: #8d90a8;
+  --texto-invertido: #00031c;
 
   /*
-   * LA RAMPA OSCURA SE MIDIO ENTERA, no por pares elegidos a mano.
+   * EL BORDE BAJA A BLANCO 10%, el de la landing.
    *
-   * El script de contraste comprobaba 66 pares curados y daba 66/66 mientras
-   * el usuario no podia leer la pantalla: los pares rotos no estaban en la
-   * lista. Ahora `scripts/contraste.mjs` cruza TODOS los textos contra TODOS
-   * los fondos —90 combinaciones— y ademas los bordes contra sus superficies.
-   *
-   * Lo que estaba mal:
-   *   1,50:1  superficie sobre fondo      las tarjetas no se despegaban
-   *   1,64:1  borde sobre superficie      el limite que deberia definirlas
-   *   3,37:1  texto-3 sobre hover         y otros siete pares de texto
-   *
-   * LA SEPARACION SE SUBIO DESPUES DE VERLA EN PANTALLA. Un primer intento la
-   * dejo en 1,58:1 razonando que el borde ya delimitaba, y sobre un panel
-   * lleno de tarjetas grandes seguia leyendose como una sola mancha: el ratio
-   * pasaba el umbral que yo mismo habia puesto, pero el umbral estaba mal.
-   *
-   * El fondo ya estaba casi en negro y bajarlo solo daba 1,58 → 1,70, asi que
-   * la palanca util era ACLARAR LA TARJETA. A #2e4969 la separacion sube a
-   * 2,16:1 y el texto mas debil encima aun tiene 5,04:1 de margen.
+   * Estaba en #656776 porque yo le exigi 3:1 —el minimo de contraste no
+   * textual— argumentando que en una tabla densa el canto es lo unico que
+   * separa una fila de otra. El usuario autorizo expresamente cambiar esa
+   * regla: quiere la identidad de la landing sin matices. Este canto da ~1,2:1
+   * y NO cumple ese minimo; queda escrito para que sea una decision visible y
+   * no un descuido.
    */
+  --borde: #1a1c32;
+
   /*
-   * SUPERFICIES DE VIDRIO. El suelo es casi opaco (alfa 0,92 en `--vidrio`)
-   * justamente para que estos valores sigan siendo medibles: con translucidez
-   * alta el color real dependería del fondo y el contraste dejaría de poder
-   * verificarse. Medido: a 0,92 la superficie oscila 1,16× según lo que haya
-   * detrás; a 0,78 oscilaba 1,95×.
+   * `--borde-fuerte` VISTE CONTROLES, no decoracion, y por eso NO baja con el
+   * resto. Es el canto de los campos de formulario, y la norma pide 3:1 a los
+   * componentes de interfaz: un campo que no se distingue del fondo no se puede
+   * usar. La landing no tiene formularios, asi que no dicta este valor.
+   *
+   * Sigue siendo del mismo material —blanco al 40 % sobre el suelo— para que
+   * pertenezca al vidrio y no parezca un injerto. Medido: 3,47 / 3,31 / 3,70.
    */
-  --superficie: #16224e;
-  --superficie-2: #1d2c60;
-  --superficie-hover: #243671;
+  --borde-fuerte: #666877;
 
-  /* Texto secundario y terciario subidos: antes caian por debajo de 4,5:1 en
-     cuanto la tarjeta era la clara o estaba en hover. */
-  --texto: #f2f6ff;
-  --texto-2: #c7d4f0;
-  --texto-3: #a9bbe4;
-  --texto-invertido: var(--apolo-abismo);
-
-  /* 4,46:1 sobre la tarjeta y 3,08:1 sobre la mas clara. Es el elemento que
-     hace visible el recuadro, asi que se le pide el 3:1 de no-texto. */
-  /* EL BORDE ES LO QUE DELIMITA, no la superficie: la tarjeta queda a 1,30:1
-     del fondo —poco, y es inevitable con vidrio— pero el canto va a 3,70:1
-     sobre ella. Es el borde de luz del cristal, y hace todo el trabajo. */
-  --borde: #7082c2;
-  --borde-fuerte: #9fb2e4;
+  /* Superficies del navegador. Medido: blanco sobre este azul da 6,64:1, y el
+     pulgar 3,08:1 contra el canal de la tarjeta. */
+  --seleccion-fondo: #2b4ed6;
+  --seleccion-texto: #ffffff;
+  --barra-pulgar: #545e8f;
+  --barra-pulgar-activo: #7b86bd;
 
   --marca: var(--apolo-azul-claro);
   --marca-fondo: var(--apolo-azul-boton);
   --marca-tenue: #16255e;
 
   --luz: var(--apolo-cian-claro);
-  --luz-tenue: #0d3a45;
+  /* Oscurecidos al adoptar la rampa de la landing: estaban calibrados contra
+     las superficies anteriores, mas claras, y el gris mas tenue encima se
+     quedaba en 3,9:1. Resueltos al primer valor que recupera 4,5:1. */
+  --luz-tenue: #022f3a;
 
   --vidrio-suelo: var(--apolo-vidrio-suelo-oscuro);
   /* 22,34,78 es #16224E. Literal y no `color-mix`, por lo dicho arriba. */
@@ -156,7 +189,7 @@
   --ok: #76f0a6;
   --ok-tenue: #16301f;
   --advertencia: #ffd374;
-  --advertencia-tenue: #3a2a0e;
+  --advertencia-tenue: #38280c;
   --peligro: #ffcdc6;
   --peligro-tenue: #3d1d1b;
   --info: #bedbff;
@@ -168,13 +201,25 @@
   /* En oscuro las series se aclaran: un azul de marca se funde con el fondo. */
   --grafico-rejilla: #2f4d75;
   --grafico-eje: #9fb3cc;
+  --grafico-neutro: #8d9bbd;
 
   /* Las mismas familias, aclaradas: sobre fondo oscuro un tono medio se apaga. */
-  --serie-1: #ff8f5e;
-  --serie-2: #f5c445;
-  --serie-3: #4ade9f;
-  --serie-4: #7fb0f0;
-  --serie-5: #c4a2fd;
+  /*
+   * LAS SERIES PASAN A LA FAMILIA DE LA LANDING.
+   *
+   * Eran naranja, amarillo y verde: una paleta calida heredada de la identidad
+   * anterior que, sobre el suelo #00031c y junto a los paneles frios, se leia
+   * como si las graficas fueran de otro producto.
+   *
+   * Se conserva UN tono calido —el ambar de la serie 5— a proposito. Cinco
+   * series en la misma franja azul-violeta son bonitas y no se distinguen entre
+   * si, que es el unico trabajo que tiene que hacer una escala categorica.
+   */
+  --serie-1: #6f9bff;
+  --serie-2: #67e8f9;
+  --serie-3: #a78bfa;
+  --serie-4: #f472b6;
+  --serie-5: #fbbf24;
   --serie-alza: #4ad07e;
   --serie-baja: #ff8b83;
 }
@@ -196,14 +241,24 @@
   --bloque-marca-texto: #ffffff;
   --bloque-luz-texto: var(--apolo-tinta);
 
-  --nav-fondo: #081729;
-  --nav-texto: #9fb1c7;
-  --nav-texto-activo: #ffffff;
-  --nav-activo: #14304e;
-  --nav-borde: #1a3050;
-  /* El acento de la nav es siempre el verde claro: el oliva oscuro
-     desaparecería sobre un panel negro. */
-  --nav-acento: var(--apolo-cian-claro);
+  /*
+   * LA NAVEGACION YA NO TIENE COLORES PROPIOS: DERIVA DEL TEMA.
+   *
+   * Eran valores fijos —#9fb1c7 sobre #081729— calibrados contra un chasis
+   * negro que existia en los dos temas. Al pasar la barra al mismo vidrio que
+   * el resto, ese gris quedo sobre un panel casi blanco en tema claro: 2,2:1,
+   * ilegible. Es el MISMO fallo que ya aparecio una vez, y volvio por la misma
+   * causa: un token fijo bajo una superficie que ahora si cambia.
+   *
+   * Atados al tema, no puede repetirse: si cambia la superficie, cambia con
+   * ella la tinta que lleva encima.
+   */
+  --nav-fondo: var(--superficie);
+  --nav-texto: var(--texto-2);
+  --nav-texto-activo: var(--texto);
+  --nav-activo: var(--marca-tenue);
+  --nav-borde: var(--borde);
+  --nav-acento: var(--marca);
 }
 
 @theme inline {
@@ -222,6 +277,7 @@
 
   --color-grafico-rejilla: var(--grafico-rejilla);
   --color-grafico-eje: var(--grafico-eje);
+  --color-grafico-neutro: var(--grafico-neutro);
   --color-serie-1: var(--serie-1);
   --color-serie-2: var(--serie-2);
   --color-serie-3: var(--serie-3);
@@ -292,15 +348,16 @@
      */
     font-weight: 500;
     -webkit-font-smoothing: antialiased;
-    /* La referencia usa peso 600 en todo. En una herramienta densa eso aplana
-       la jerarquía, así que el cuerpo baja a 500 y los títulos suben a 800:
-       se conserva el carácter y se recupera la lectura. */
-    font-weight: 500;
-    -webkit-font-smoothing: antialiased;
   }
 
+  /*
+   * LOS TITULARES BAJAN DE 800 AL TOKEN. Medido en la referencia, sus titulares
+   * grandes van en peso 500 y confian en el tamano y el aire para la jerarquia.
+   * El 800 anterior era mio y aplanaba justo lo que se queria copiar: con todo
+   * grueso, nada destaca.
+   */
   h1, h2, h3, h4 {
-    font-weight: 800;
+    font-weight: var(--apolo-peso-titular);
     letter-spacing: -0.02em;
   }
 
@@ -323,9 +380,89 @@
     outline-offset: 2px;
   }
 
+  /*
+   * LAS SUPERFICIES QUE NO DIBUJE.
+   *
+   * La seleccion, el cursor de texto, la barra de desplazamiento, el subrayado
+   * de los enlaces y los controles nativos vienen con el color por defecto del
+   * NAVEGADOR, que no pertenece a ningun sistema de diseno. Estaban asi: una
+   * seleccion azul de sistema y una barra gris de Chrome sobre un producto que
+   * por lo demas esta medido entero.
+   *
+   * Todo lo de aqui se midio, no se estimo:
+   *   seleccion oscuro   texto blanco sobre #2b4ed6   6,64:1
+   *   seleccion claro    tinta sobre #c7d6ff         13,12:1
+   *   pulgar oscuro      #545e8f sobre #0a0d25        3,08:1
+   *   pulgar claro       #7c8596 sobre #e4e9f4        3,05:1
+   *
+   * El pulgar se resolvio a 3:1 porque es un CONTROL: se arrastra, y un control
+   * que no se distingue de su canal no se puede agarrar. #4a5480 se quedaba en
+   * 2,62 y se descarto en vez de aceptarlo.
+   */
   ::selection {
-    background: var(--luz-tenue);
-    color: var(--texto);
+    background: var(--seleccion-fondo);
+    color: var(--seleccion-texto);
+  }
+
+  /* El cursor de texto en el color de marca: aparece en cada campo del producto
+     y en gris de sistema delata que nadie lo miro. */
+  input,
+  textarea,
+  [contenteditable] {
+    caret-color: var(--marca);
+  }
+
+  /*
+   * Controles nativos, en la RAIZ y no por selector.
+   *
+   * La primera version apuntaba a `input[type=checkbox]`, `radio` y `range`, y
+   * al comprobarlo NO EXISTE NINGUNO en la aplicacion: la regla no seleccionaba
+   * nada. Declarado aqui, `accent-color` se hereda, asi que cubre cualquier
+   * control nativo que entre despues sin volver a tocar esto.
+   */
+  :root {
+    accent-color: var(--marca-fondo);
+  }
+
+  /* Firefox y los navegadores que ya implementan el estandar. */
+  * {
+    scrollbar-color: var(--barra-pulgar) transparent;
+    scrollbar-width: thin;
+  }
+
+  /* WebKit. `transparent` en el canal deja ver la superficie de debajo, asi que
+     la barra pertenece a la tarjeta en la que vive y no flota sobre ella. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--barra-pulgar);
+    border: 2px solid transparent;
+    border-radius: 999px;
+    /* El borde transparente adelgaza el pulgar sin reducir el area de agarre:
+       el objetivo del raton sigue midiendo los 10px completos. */
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--barra-pulgar-activo);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* El subrayado por defecto corta las descendentes de la g y la p. */
+  a:not([class*="pildora"]) {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
   }
 }
 
@@ -347,7 +484,7 @@
  * que se aplica a CONTENEDORES —tarjetas, paneles, cabeceras— y nunca a filas
  * de tabla ni a elementos que se repiten decenas de veces.
  */
-.vidrio {
+.caja {
   /*
    * DOS COSAS QUE SE DESCUBRIERON INSPECCIONANDO LA REGLA YA COMPILADA, no
    * leyendo el fuente, donde parecía correcta:
@@ -362,16 +499,42 @@
    * Ninguna de las dos se ve en el código fuente: las dos exigían mirar el CSS
    * que llega al navegador.
    */
-  background-color: var(--vidrio-fondo);
-  border: 1px solid var(--borde);
-  border-radius: var(--apolo-radio-tarjeta);
-  /* El canto superior recoge la luz, como el borde de un cristal real. */
-  box-shadow:
-    inset 0 1px 0 0 var(--vidrio-canto),
-    var(--sombra);
+  /* IDENTICA a `.panel` de la landing: velo blanco al 4 %, canto al 10 % y
+     radio de 1,25rem. Translucida a proposito — un panel opaco del mismo color
+     medio se ve plano porque la luz del fondo muere detras. */
+  background: var(--panel);
+  border: 1px solid var(--panel-canto);
+  border-radius: 1.25rem;
+  /* El levantamiento al pasar por encima viene de la landing. Solo la sombra y
+     el canto: mover la tarjeta con `translateY` en una rejilla densa hace que
+     la fila entera parezca temblar cuando el raton la cruza. */
+  transition:
+    border-color 240ms ease,
+    background-color 240ms ease;
 }
 
-.vidrio-panel {
+.caja:hover {
+  border-color: var(--panel-canto-vivo);
+  background: var(--panel-hover);
+}
+
+/*
+ * EL UNICO BLOQUE SOLIDO QUE QUEDA, copiado del boton principal de la landing:
+ * degradado indigo con halo propio debajo.
+ *
+ * Antes habia dos —azul macizo y cian macizo— y el cian a plena saturacion era
+ * lo que mas desentonaba de toda la pantalla. En la landing el patron es claro:
+ * TODO es vidrio menos una pieza, y esa pieza es la que manda. Dos solidos
+ * compitiendo no jerarquizan nada.
+ */
+.bloque-acento {
+  background: linear-gradient(180deg, #4f46e5, #3730a3);
+  box-shadow: 0 10px 34px -12px rgb(79 70 229 / 0.75);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.caja-panel {
   border-radius: var(--apolo-radio-panel);
 }
 
@@ -384,14 +547,51 @@
  * elemento donde el efecto se aprecia mejor, porque el halo pasa por detrás
  * de punta a punta.
  */
-.vidrio-nav {
-  background-color: var(--nav-vidrio);
-  border: 1px solid var(--nav-borde);
-  box-shadow: inset 0 1px 0 0 var(--vidrio-canto), var(--sombra);
+/*
+ * Bloques DENTRO de la lateral: la tarjeta de saludo y, en la referencia, el
+ * recuadro de navegación.
+ *
+ * VAN AL REVÉS QUE EL CONTENIDO. Medido en la referencia, la columna lateral
+ * es #0a0a18 y sus bloques #0f1018: aquí la caja es MÁS CLARA que su fondo,
+ * mientras que en el área de trabajo la tarjeta es más oscura que el lienzo.
+ * No es un descuido de quien lo diseñó: la lateral no tiene el resplandor
+ * detrás, así que no puede recortarse contra la luz y necesita levantarse.
+ */
+/*
+ * Bloques anidados dentro de la lateral. SIGUEN AL TEMA: tenian un token fijo
+ * (#11132b) que en claro dejaba una caja negra flotando sobre vidrio blanco.
+ */
+.caja-interna {
+  background-color: var(--superficie-2);
+  border: 1px solid var(--panel-canto);
+}
+
+/*
+ * La tarjeta de acento del pie. El azul medido es OSCURO —#001c5f—, no el azul
+ * brillante de los botones: es un bloque grande, y a ese tamaño el azul vivo
+ * tira de la vista más que el propio contenido de la pantalla.
+ */
+.caja-acento {
+  background-color: var(--apolo-azul-profundo);
+}
+
+/*
+ * LA LATERAL ES EL MISMO VIDRIO QUE TODO LO DEMAS.
+ *
+ * CAE LA REGLA DEL CHASIS APARTE, con autorizacion expresa del usuario. Decia
+ * "el chasis no cambia de color, solo el lienzo", y sostenia una columna negra
+ * con su propio token. En la landing no hay dos materiales: todos los paneles
+ * son el mismo vidrio sobre el mismo suelo, y esa unidad es buena parte de por
+ * que se ve limpia.
+ */
+.caja-nav {
+  background: var(--panel);
+  border: 1px solid var(--panel-canto);
+  border-radius: 1.25rem;
 }
 
 /**
- * HALO — el resplandor de fondo de la referencia.
+ * EL FONDO — cintas de luz y retícula, los de la landing.
  *
  * Va en un pseudo-elemento fijo y NO en el `body`: como capa aparte no
  * repinta cuando la página se desplaza, y puede llevar `will-change` sin
@@ -402,21 +602,36 @@
  */
 .dark body::before {
   content: "";
+  /* Las cintas de la landing, con sus mismos valores. `fixed` en vez de
+     `absolute` para que los porcentajes sean del viewport y no del documento. */
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(
-      120% 80% at 50% -10%,
-      color-mix(in srgb, var(--apolo-azul-halo) 22%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      70% 50% at 85% 15%,
-      color-mix(in srgb, var(--apolo-violeta-bloque) 14%, transparent),
-      transparent 65%
-    );
+    radial-gradient(95% 5% at 22% 24%, var(--luz-azul) 0%, transparent 100%),
+    radial-gradient(80% 4% at 40% 34%, #60a5fa 0%, transparent 100%),
+    radial-gradient(90% 6% at 58% 42%, var(--luz-violeta) 0%, transparent 100%),
+    radial-gradient(75% 4% at 66% 52%, var(--luz-rosa) 0%, transparent 100%),
+    radial-gradient(85% 5% at 80% 30%, var(--luz-azul) 0%, transparent 100%);
+  /* Quieto. Una deriva perpetua detras de una tabla es ruido periferico durante
+     toda la jornada; en la landing dura lo que dura una visita. */
+  transform: rotate(-24deg) scale(1.6);
+  opacity: 0.55;
+  filter: blur(44px);
+  mask-image: radial-gradient(42% 32% at 34% 16%, transparent 0%, #000 70%);
+}
+
+.dark body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(rgb(150 175 255 / 0.06) 1px, transparent 1px) 0 0 / 54px 54px,
+    linear-gradient(90deg, rgb(150 175 255 / 0.06) 1px, transparent 1px) 0 0 / 54px 54px;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
 }
 
 /* En claro el halo es mucho más tenue: sobre fondo luminoso, el mismo valor
@@ -437,7 +652,7 @@
 @media (prefers-reduced-transparency: reduce) {
   /* Quien pide menos transparencia recibe una superficie sólida, no un vidrio
      más débil: el efecto desaparece y la legibilidad sube. */
-  .vidrio {
+  .caja {
     background-color: var(--vidrio-suelo);
   }
 }
@@ -666,9 +881,17 @@ dialog[open]::backdrop {
   h2,
   h3,
   h4 {
-    font-family: var(--fuente-titular), var(--fuente-sans), system-ui, sans-serif;
-    font-stretch: 125%;
-    font-weight: 800;
+    font-family: var(--fuente-landing), system-ui, sans-serif;
+    /*
+     * BAJA DE 800 AL TOKEN (500). El 800 era anterior al rediseño y aplanaba
+     * justo lo que se quiere copiar: medidos en la referencia, sus titulares
+     * grandes van en peso 500 y dejan que el tamaño y el aire hagan la
+     * jerarquía. Con todo grueso, nada destaca.
+     *
+     * La FAMILIA expandida se mantiene: es la identidad de Apolo y se eligió a
+     * propósito. Lo que cambia es el peso, y se cambia desde un solo token.
+     */
+    font-weight: var(--apolo-peso-titular);
     letter-spacing: -0.01em;
   }
 

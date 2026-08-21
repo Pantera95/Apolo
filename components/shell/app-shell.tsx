@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { usePremium } from "@/lib/dashboard/premium";
 import { useState, type ReactNode } from "react";
 
 import { usePreferencias } from "@/lib/preferencias";
@@ -80,6 +82,7 @@ function esActivo(ruta: string, href: string): boolean {
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, tema, idioma, alternarTema, alternarIdioma } = usePreferencias();
   const ruta = usePathname();
+  const premium = usePremium();
   const [menuAbierto, setMenuAbierto] = useState(false);
 
   /**
@@ -88,36 +91,98 @@ export function AppShell({ children }: { children: ReactNode }) {
    * cambia de color, solo el lienzo de trabajo.
    */
   const panelNavegacion = (
-    <div className="vidrio-nav backdrop-blur-2xl backdrop-saturate-150 flex h-full flex-col overflow-hidden rounded-panel">
-      {/*
-        El lema se partía en dos líneas que llenaban los 159 px de ancho de
-        punta a punta, y un bloque de marca sin aire alrededor se lee como un
-        error de maquetación, no como una identidad.
+    /*
+      CUATRO BLOQUES APILADOS, NO UNA COLUMNA ÚNICA.
+      Medida en la referencia, la lateral no es un panel continuo: es una pila
+      de cajas separadas —marca suelta, tarjeta de saludo, caja de navegación y
+      tarjeta de acento al pie—, cada una con su propio radio y su propio
+      fondo. La versión anterior era un solo bloque con una regla dentro, que
+      es la convención clásica y justo lo que la referencia evita.
 
-        Se corrige por los dos lados: menos tracking y menos cuerpo en el lema
-        —que es apoyo, no titular— y una regla debajo que cierra el bloque y lo
-        separa de la navegación.
-      */}
-      <div className="px-5 pb-4 pt-6">
-        <div className="flex items-center gap-2.5">
-          <MarcaApolo tam={38} />
-          <p className="text-xl font-extrabold leading-none tracking-[-0.02em] text-white">
-            {t("app.nombre")}
-          </p>
-        </div>
-        <p className="mt-2 text-[9px] font-bold uppercase leading-[1.5] tracking-[0.07em] text-nav-texto">
+      Y va al revés que el contenido: aquí los bloques son MÁS CLAROS que la
+      columna (#0f1018 sobre #0a0a18 en la referencia), mientras que en el área
+      de trabajo las tarjetas son más oscuras que el lienzo.
+    */
+    <div className="flex h-full flex-col gap-2.5 overflow-hidden">
+      {/* 1 · La marca va suelta sobre el lienzo, sin caja que la encierre. */}
+      <div className="flex shrink-0 items-center gap-2.5 px-1.5 pt-1">
+        <MarcaApolo tam={34} />
+        {/*
+          `text-texto`, NO `text-white`. Al sacar la marca de su caja quedó
+          apoyada en el lienzo, y el lienzo sí cambia con el tema: en claro,
+          blanco sobre blanco la dejaba ilegible. Los bloques de abajo pueden
+          seguir en blanco porque llevan su propio fondo oscuro en los dos
+          temas; este no.
+        */}
+        <p className="text-lg leading-none tracking-[-0.02em] text-texto">
+          {t("app.nombre")}
+        </p>
+
+        {/*
+          Salida a la landing.
+
+          VA EN LA FILA DE LA MARCA Y NO EN EL LOGO. Hacer que el logo lleve a la
+          web pública es la convención de un sitio, no de una aplicación: aquí
+          quien lo pulsa espera el panel, y mandarlo fuera es perder el sitio sin
+          haberlo pedido. Un control aparte declara a dónde va.
+
+          Los tonos son los del tema —`borde`, `texto-3`— y no blancos: esta fila
+          se apoya en el lienzo, que sí cambia con el tema. Es el mismo fallo que
+          dejó el rótulo "Apolo" ilegible en claro cuando iba en `text-white`.
+
+          32px de dibujo con el área táctil extendida a 44 por `before`: agrandar
+          la caja rompería la proporción de la fila, y un objetivo de 32 incumple
+          el mínimo.
+        */}
+        {/*
+          PÍLDORA, y la flecha APUNTA A LA IZQUIERDA: se sale del producto hacia
+          atrás, hacia donde se entró. Una flecha a la derecha diría "avanzar",
+          que es lo contrario de lo que hace.
+
+          Es `.pildora--fantasma` de la identidad compartida, la misma que usa la
+          landing para "Entrar a la aplicación". El viaje de ida y el de vuelta
+          se ven como el mismo control, que es lo que son.
+
+          El icono se refleja con `scale-x-[-1]` en vez de dibujar un segundo
+          trazo: es exactamente la misma flecha, y dos archivos para una simetría
+          se desincronizan a la primera.
+        */}
+        <Link
+          href="/presentacion"
+          aria-label={t("nav.verPresentacion")}
+          title={t("nav.verPresentacion")}
+          className="pildora pildora--fantasma ml-auto shrink-0 !px-3.5"
+        >
+          <span aria-hidden="true" className="inline-flex scale-x-[-1]">
+            <Icono nombre="flecha" tam={15} />
+          </span>
+        </Link>
+      </div>
+
+      {/* 2 · Tarjeta de saludo: rótulo diminuto en versalitas y debajo una línea
+             grande. Es la anatomía exacta de "MONDAY, MARCH 24 / Welcome back,
+             George!", con el contenido que Apolo sí tiene. */}
+      <div className="caja-interna shrink-0 rounded-panel px-4 py-3.5">
+        <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-nav-texto/80">
           {t("app.lema")}
         </p>
-        <div className="mt-4 h-px bg-white/10" />
+        {/* `text-texto`, no `text-white`: esta tarjeta ya no tiene fondo oscuro
+            fijo, sigue al tema como el resto del vidrio. */}
+        <p className="mt-1.5 text-[15px] leading-snug text-texto">
+          {t("app.saludo")}
+        </p>
       </div>
 
       <nav
-        className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 pb-5"
+        className="caja-nav flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto rounded-panel px-3 py-4"
         aria-label={t("app.nombre")}
       >
         {SECCIONES.map((seccion) => (
           <div key={seccion.clave}>
-            <p className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-nav-texto/60">
+            {/* /70 y no /60: a 60 el rótulo daba 3,83:1 sobre el chasis, por
+                debajo del 4,5:1 que exige un texto de 10px. A 70 sube a 4,87:1
+                y sigue leyéndose como lo que es, un rótulo secundario. */}
+            <p className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-nav-texto/80">
               {t(seccion.clave)}
             </p>
             <ul className="flex flex-col gap-1">
@@ -139,7 +204,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         enlace.sub ? "ml-4 text-[13px] font-semibold" : "",
                         activo
                           ? "bg-nav-activo text-nav-texto-activo"
-                          : "text-nav-texto hover:bg-white/5 hover:text-white",
+                          : "text-nav-texto hover:bg-superficie-hover hover:text-texto",
                       ].join(" ")}
                     >
                       <Icono nombre={enlace.icono} tam={enlace.sub ? 15 : 18} />
@@ -159,11 +224,56 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ))}
       </nav>
+
+      {/*
+        4 · La tarjeta azul del pie.
+
+        NO LLEVA ACCIÓN, y esa es la diferencia con la referencia: allí es un
+        botón que vende el plan de pago. Aquí sería inventar función, así que
+        ocupa el mismo sitio con el estado que Apolo ya conoce —qué plan está
+        activo—, en modo lectura.
+      */}
+      {/*
+        DICE EL PLAN QUE HAY, no uno fijo.
+
+        La primera version rotulaba "Plan Premium activo" como texto constante, y
+        con Premium apagado la barra afirmaba lo contrario de lo que decia el
+        modulo dos centimetros a la derecha. Un adorno que miente sobre el estado
+        del producto es peor que no tener adorno.
+
+        Sin fondo de acento cuando esta apagado: el bloque indigo es el unico
+        solido de la pantalla y solo se gana cuando hay algo activo que anunciar.
+      */}
+      <div
+        className={`shrink-0 rounded-panel px-4 py-3 ${
+          premium ? "caja-acento" : "caja-interna"
+        }`}
+      >
+        <p
+          className={`text-[13px] font-bold leading-tight ${
+            premium ? "text-white" : "text-nav-texto"
+          }`}
+        >
+          {premium ? t("app.planTitulo") : t("app.planTituloBase")}
+        </p>
+        <p
+          className={`mt-0.5 text-[11px] leading-snug ${
+            premium ? "text-white/70" : "text-nav-texto/80"
+          }`}
+        >
+          {premium ? t("app.planPie") : t("app.planPieBase")}
+        </p>
+      </div>
     </div>
   );
 
+  // SIN FONDO PROPIO, y esto no es un descuido. El resplandor y la retícula
+  // viven en `body::before` con `z-index: -1`, que pinta por encima del fondo
+  // del `body` pero por DEBAJO del contenido en flujo. Un `bg-fondo` opaco aquí
+  // es contenido en flujo: tapaba el halo entero, y el síntoma era un fondo
+  // negro liso sin ninguna pista de por qué.
   return (
-    <div className="min-h-dvh bg-fondo">
+    <div className="min-h-dvh">
       <aside className="fixed inset-y-3 left-3 z-30 hidden w-60 lg:block">
         {panelNavegacion}
       </aside>

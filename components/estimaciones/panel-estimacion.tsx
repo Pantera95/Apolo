@@ -1,10 +1,11 @@
 "use client";
 
+import { RADIO_BARRA } from "@/components/ui/graficas-panel";
+
 import { useMemo, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   Cell,
   ResponsiveContainer,
   Tooltip,
@@ -58,8 +59,24 @@ const PROYECTO_POR_DEFECTO = "Plataforma de procesamiento y módulos civiles · 
 const PREPARADO_POR = "Departamento de Estimaciones y Costos";
 
 function tono(css: string): string {
-  if (typeof window === "undefined") return "#888";
-  return getComputedStyle(document.documentElement).getPropertyValue(css).trim() || "#888";
+  /*
+   * DEVUELVE `var(--token)`, NO EL VALOR RESUELTO.
+   *
+   * Antes leia la variable con `getComputedStyle` y devolvia el hex. Eso tenia
+   * dos fallos, y los dos salian en pantalla sin dar ni un error:
+   *
+   *   1. SE CONGELA. El hex se captura en el render y ahi se queda: al cambiar
+   *      de tema las graficas conservaban los colores del tema anterior. Se vio
+   *      midiendo — el DOM en `dark`, `--serie-1` valiendo #6f9bff, y los
+   *      sectores pintados con los hex del tema claro.
+   *   2. EN EL SERVIDOR NO HAY `window`, asi que el primer render devolvia
+   *      "#888" para todo y dependia de que la hidratacion lo corrigiera.
+   *
+   * SVG acepta `var()` en `fill` y `stroke`, y las propiedades de un `style`
+   * en linea tambien. Al pasar la variable sin resolver, el color lo decide el
+   * navegador en cada repintado y el cambio de tema es automatico.
+   */
+  return `var(${css})`;
 }
 
 /**
@@ -965,9 +982,16 @@ function Benchmark({
         </p>
         <ResponsiveContainer width="100%" height={220} className="mt-4">
           <BarChart data={filas} margin={{ left: 4, right: 12, top: 8 }}>
-            <CartesianGrid vertical={false} stroke={tono("--grafico-rejilla")} />
-            <XAxis dataKey="nombre" stroke={tono("--grafico-eje")} fontSize={11} />
-            <YAxis stroke={tono("--grafico-eje")} fontSize={11} width={42} domain={[0, 1.3]} />
+                      {/*
+            SIN REJILLA NI EJES DIBUJADOS. Quedan solo las curvas de datos.
+
+            Las reglas horizontales cruzaban la tarjeta de lado a lado con el
+            mismo grosor que la propia serie, asi que competian con lo unico que
+            hay que mirar. Los NUMEROS del eje se quedan —no son lineas, y sin
+            ellos se pierde la magnitud—, pero sin su barra ni sus marquitas.
+          */}
+            <XAxis axisLine={false} tickLine={false} dataKey="nombre" stroke={tono("--grafico-eje")} fontSize={11} />
+            <YAxis axisLine={false} tickLine={false} stroke={tono("--grafico-eje")} fontSize={11} width={42} domain={[0, 1.3]} />
             <Tooltip
               cursor={{ fill: tono("--superficie-2") }}
               contentStyle={{
@@ -979,7 +1003,7 @@ function Benchmark({
               }}
               formatter={(v, n) => [numero(Number(v) || 0, idioma), String(n).toUpperCase()]}
             />
-            <Bar dataKey="spi" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="spi" radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false}>
               {filas.map((f) => (
                 <Cell
                   key={`spi-${f.nombre}`}
@@ -989,7 +1013,7 @@ function Benchmark({
                 />
               ))}
             </Bar>
-            <Bar dataKey="cpi" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="cpi" radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false}>
               {filas.map((f) => (
                 <Cell
                   key={`cpi-${f.nombre}`}

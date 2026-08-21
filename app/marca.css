@@ -69,28 +69,26 @@
   --apolo-tinta: #0a0f22; /* texto sobre claro */
   --apolo-humo: #e4e9f4; /* fondo del tema claro; da 1,25:1 a la tarjeta blanca */
 
-  /* --- VIDRIO --------------------------------------------------------------
-     La pieza que sostiene toda la estética, y la que más fácil se hace mal.
+  /* --- SUPERFICIES DE LA REFERENCIA ---------------------------------------
+     LA TARJETA ES MÁS OSCURA QUE EL FONDO, y esto es lo contrario de lo que
+     hice en la primera pasada. En la referencia el lienzo lleva un resplandor
+     azul y las tarjetas son cajas casi negras que se recortan CONTRA esa luz:
+     el contraste va del fondo hacia dentro, no al revés.
 
-     EL SUELO ES CASI OPACO (alfa 0,92) Y ESO NO ES UN COMPROMISO TIBIO: con
-     translucidez alta, el color de una tarjeta depende de lo que tenga detrás,
-     y entonces el contraste del texto DEJA DE SER MEDIBLE. Medido: a alfa 0,78
-     la superficie oscila 1,95× de luminancia según el fondo; a 0,92 oscila
-     1,16×, o sea que es estable y se puede verificar como cualquier color
-     sólido.
-
-     Lo que delimita la tarjeta NO es la superficie —queda a 1,30:1 del fondo,
-     que es poco— sino el BORDE, a 3,70:1 sobre ella. Así funciona el vidrio de
-     verdad: un canto que atrapa la luz. */
-  --apolo-vidrio-suelo-oscuro: #16224e;
-  --apolo-vidrio-suelo-claro: #ffffff;
-  --apolo-vidrio-alfa: 0.92;
-  --apolo-vidrio-desenfoque: 20px;
+     No hay translucidez. Probé con vidrio y era una lectura equivocada de las
+     imágenes: lo que parece cristal es el resplandor del fondo pasando POR
+     FUERA de las tarjetas, no a través de ellas. Solo el resplandor y la
+     retícula viven detrás. */
+  --apolo-lienzo-oscuro: #0a0e1a; /* el fondo, con el halo encima */
+  --apolo-caja-oscura: #070a12; /* la tarjeta: más oscura que el lienzo */
+  --apolo-caja-nav: #05070e; /* la columna lateral, la más oscura */
+  --apolo-caja-interna: #11132b; /* el mismo vidrio anidado de la landing */
+  --apolo-azul-profundo: #001c5f; /* la tarjeta de acento del pie de la nav */
 
   /* --- Forma ---------------------------------------------------------------
-     Radios de la referencia: 14–24 px en tarjetas, píldora completa en
-     controles pequeños. */
-  --apolo-radio-tarjeta: 16px;
+     Radios de la referencia: 14–16 px en tarjetas, píldora en controles. */
+  /* 1,25rem, el radio de los paneles de la landing. */
+  --apolo-radio-tarjeta: 20px;
   --apolo-radio-panel: 24px;
   --apolo-radio-control: 12px;
   --apolo-radio-pildora: 999px;
@@ -103,4 +101,8 @@
   --apolo-peso-titular: 500;
   --apolo-peso-cifra: 600;
   --apolo-peso-etiqueta: 500;
+
+  /* El título DENTRO de una tarjeta va en frase normal a 17 px, no en
+     mayúsculas diminutas. "Income Breakdown", no "INCOME BREAKDOWN". */
+  --apolo-titulo-tarjeta: 1.0625rem;
 }

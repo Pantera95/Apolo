@@ -1,9 +1,10 @@
 "use client";
 
+import { RADIO_BARRA } from "@/components/ui/graficas-panel";
+
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   Cell,
   ResponsiveContainer,
   Tooltip,
@@ -31,8 +32,21 @@ import type { ClaveTexto } from "@/lib/i18n/textos";
  */
 
 function tono(css: string): string {
-  if (typeof window === "undefined") return "#888";
-  return getComputedStyle(document.documentElement).getPropertyValue(css).trim() || "#888";
+  /*
+   * DEVUELVE `var(--token)`, NO EL VALOR RESUELTO.
+   *
+   * Leerlo con `getComputedStyle` tenia dos fallos que salian en pantalla sin
+   * dar ni un error: el hex se CONGELA en el render —al cambiar de tema las
+   * graficas conservaban los colores del tema anterior— y en el servidor no hay
+   * `window`, asi que el primer render devolvia "#888" para todo y dependia de
+   * que la hidratacion lo corrigiera. Cuando no lo corregia, toda la grafica
+   * salia gris.
+   *
+   * SVG acepta `var()` en `fill` y `stroke`, y las propiedades de un `style` en
+   * linea tambien. Sin resolver, el color lo decide el navegador en cada
+   * repintado y el cambio de tema es automatico.
+   */
+  return `var(${css})`;
 }
 
 /** Barras horizontales para distribuciones por estado. */
@@ -63,14 +77,15 @@ export function BarrasEstado({
     <Marco titulo={titulo}>
       <ResponsiveContainer width="100%" height={Math.max(180, filas.length * 42)}>
         <BarChart data={filas} layout="vertical" margin={{ left: 4, right: 24 }}>
-          <CartesianGrid horizontal={false} stroke={tono("--borde")} />
-          <XAxis
+          {/* Sin rejilla: quedan solo las lineas de datos. Las referencias de
+              escala las dan los numeros del eje, que no dibujan nada. */}
+          <XAxis axisLine={false} tickLine={false}
             type="number"
             allowDecimals={false}
             stroke={tono("--texto-3")}
             fontSize={11}
           />
-          <YAxis
+          <YAxis axisLine={false} tickLine={false}
             type="category"
             dataKey="etiqueta"
             width={128}
@@ -88,7 +103,7 @@ export function BarrasEstado({
             }}
             formatter={(v) => [numero(Number(v) || 0, idioma), ""]}
           />
-          <Bar dataKey="valor" radius={[0, 6, 6, 0]}>
+          <Bar dataKey="valor" radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false}>
             {filas.map((f) => (
               <Cell
                 key={f.clave}
@@ -134,9 +149,10 @@ export function BarrasAvance({
     <Marco titulo={titulo} nota={nota}>
       <ResponsiveContainer width="100%" height={Math.max(200, datos.length * 46)}>
         <BarChart data={datos} layout="vertical" margin={{ left: 4, right: 24 }}>
-          <CartesianGrid horizontal={false} stroke={tono("--borde")} />
-          <XAxis type="number" stroke={tono("--texto-3")} fontSize={11} />
-          <YAxis
+          {/* Sin rejilla: quedan solo las lineas de datos. Las referencias de
+              escala las dan los numeros del eje, que no dibujan nada. */}
+          <XAxis axisLine={false} tickLine={false} type="number" stroke={tono("--texto-3")} fontSize={11} />
+          <YAxis axisLine={false} tickLine={false}
             type="category"
             dataKey="codigo"
             width={96}
@@ -154,8 +170,8 @@ export function BarrasAvance({
             }}
             formatter={(v) => numero(Number(v) || 0, idioma)}
           />
-          <Bar dataKey="solicitado" fill={tono("--borde-fuerte")} radius={[0, 6, 6, 0]} />
-          <Bar dataKey="entregado" fill={tono("--bloque-luz")} radius={[0, 6, 6, 0]} />
+          <Bar dataKey="solicitado" fill={tono("--borde-fuerte")} radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false} />
+          <Bar dataKey="entregado" fill={tono("--bloque-luz")} radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
     </Marco>

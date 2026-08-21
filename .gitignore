@@ -55,3 +55,10 @@ next-env.d.ts
 
 # Carpeta con el token del bot en claro. NUNCA se versiona.
 /token_telegram/
+
+# Herramienta local del agente, no código de Apolo.
+# `settings.local.json` son permisos de ESTA máquina, y `skills/` son 3,4 MB de
+# skills de terceros que se reinstalan con un comando. Ninguna de las dos cosas
+# pertenece al historial del producto.
+/.claude/settings.local.json
+/.claude/skills/

@@ -1,7 +1,18 @@
 /**
- * Set de iconos propio. Trazo de 1.75 sobre lienzo de 24 para que se lean a
- * 18px en la barra lateral sin emborronarse. Sin librería externa: son doce
- * iconos, no vale la pena una dependencia que se rompa en la próxima versión.
+ * Set de iconos propio. Sin librería externa: son diecisiete iconos, no vale la
+ * pena una dependencia que se rompa en la próxima versión.
+ *
+ * TRAZO DE 1.5, bajado desde 1.75 al adoptar el lenguaje de la landing. Con
+ * Poppins 500 y paneles de canto fino, un icono a 1.75 pesa más que el texto que
+ * etiqueta y tira de la vista hacia la barra lateral en vez de hacia el dato.
+ *
+ * Tres se redibujaron porque no se leían a 18 px, que es su tamaño real:
+ *   obras         la casita de tejado decía "inicio" y competía con Panel;
+ *                 ahora es un edificio industrial con vanos.
+ *   inventario    el cubo isométrico se volvía una mancha hexagonal; ahora son
+ *                 cajas apiladas.
+ *   estimaciones  el compás se confundía con una "A" de texto; ahora es la
+ *                 escuadra graduada, que es lo que hace el módulo: medir.
  */
 
 export type NombreIcono =
@@ -26,99 +37,106 @@ export type NombreIcono =
 const TRAZOS: Record<NombreIcono, React.ReactNode> = {
   panel: (
     <>
-      <rect x="3" y="3" width="7.5" height="8.5" rx="2" />
-      <rect x="13.5" y="3" width="7.5" height="5" rx="2" />
-      <rect x="3" y="14.5" width="7.5" height="6.5" rx="2" />
-      <rect x="13.5" y="11" width="7.5" height="10" rx="2" />
+      <rect x="3" y="3" width="7" height="8" rx="1.8" />
+      <rect x="14" y="3" width="7" height="5" rx="1.8" />
+      <rect x="3" y="14" width="7" height="7" rx="1.8" />
+      <rect x="14" y="11" width="7" height="10" rx="1.8" />
     </>
   ),
+  // Edificio con vanos, no una casa: el modulo son obras de construccion
+  // industrial. La casita de tejado se leia como "inicio" y competia con Panel.
   obras: (
     <>
       <path d="M3 21h18" />
-      <path d="M5 21V8l7-5 7 5v13" />
-      <path d="M10 21v-6h4v6" />
+      <path d="M5 21V6.5a1.5 1.5 0 0 1 1.5-1.5h7a1.5 1.5 0 0 1 1.5 1.5V21" />
+      <path d="M15 21V11h3.5A1.5 1.5 0 0 1 20 12.5V21" />
+      <path d="M8 9h1.5M11.5 9H13M8 13h1.5M11.5 13H13" />
     </>
   ),
+  // Cajas apiladas. El cubo isometrico anterior a 18px se convertia en una
+  // mancha hexagonal indescifrable.
   inventario: (
     <>
-      <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z" />
-      <path d="M3 7.5 12 12l9-4.5" />
-      <path d="M12 12v9" />
+      <rect x="3" y="12.5" width="8" height="8" rx="1.4" />
+      <rect x="13" y="12.5" width="8" height="8" rx="1.4" />
+      <rect x="8" y="3.5" width="8" height="8" rx="1.4" />
+      <path d="M10.2 3.5v2.6M15.2 12.5v2.6M5.2 12.5v2.6" />
     </>
   ),
   solicitudes: (
     <>
-      <rect x="4.5" y="3" width="15" height="18" rx="2.5" />
-      <path d="M8.5 8.5h7M8.5 12.5h7M8.5 16.5h4" />
+      <path d="M6 3.5h8.5L19 8v12.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1z" />
+      <path d="M14 3.5V8h5" />
+      <path d="M8.5 12.5h7M8.5 16.5h4.5" />
     </>
   ),
   despacho: (
     <>
-      <path d="M2.5 7h10v9h-10z" />
-      <path d="M12.5 10.5h4l3 3V16h-7z" />
-      <circle cx="6.5" cy="18.5" r="2" />
-      <circle cx="16.5" cy="18.5" r="2" />
+      <path d="M2.5 6.5h10.5v10H2.5z" />
+      <path d="M13 10h3.6l2.9 3v3.5H13z" />
+      <circle cx="6.5" cy="18.5" r="1.9" />
+      <circle cx="16.5" cy="18.5" r="1.9" />
+      <path d="M8.4 18.5h6.2" />
     </>
   ),
   herramientas: (
     <>
-      <path d="M14.5 6.5a4 4 0 0 0 5.2 5.2l-8.4 8.4a2.4 2.4 0 0 1-3.4-3.4z" />
-      <path d="M14.5 6.5 17 4l3 3-2.5 2.5" />
+      <path d="M14.8 6.6a4 4 0 0 0 5.1 5.1l-8.3 8.3a2.35 2.35 0 0 1-3.3-3.3z" />
+      <path d="m14.8 6.6 2.4-2.4 3.1 3.1-2.4 2.4" />
     </>
   ),
   compras: (
     <>
-      <path d="M3 4h2.2l2 11.5h10.4L20 7H6" />
-      <circle cx="9" cy="19.5" r="1.6" />
-      <circle cx="17" cy="19.5" r="1.6" />
+      <path d="M2.5 4h2.3l2.1 10.8h9.7l1.9-7.6H6" />
+      <circle cx="9" cy="19.3" r="1.5" />
+      <circle cx="16.4" cy="19.3" r="1.5" />
     </>
   ),
   importacion: (
     <>
-      <path d="M12 3v11" />
-      <path d="m7.5 9.5 4.5 4.5 4.5-4.5" />
-      <path d="M4 17v2.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V17" />
+      <path d="M12 3.5v10.5" />
+      <path d="m7.8 9.8 4.2 4.2 4.2-4.2" />
+      <path d="M4.5 16.5v3a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-3" />
     </>
   ),
-  // Compas de dibujo: mide y traza, que es lo que hace el modulo. No se
-  // reutiliza el carrito de compras — dos entradas del mismo grupo con el
-  // mismo icono se confunden a 18 px de alto.
+  // Escuadra y lapiz: el modulo MIDE sobre un modelo y de ahi saca un precio.
+  // El compas anterior se confundia con la "A" de un icono de texto.
   estimaciones: (
     <>
-      <circle cx="12" cy="4" r="1.5" />
-      <path d="m10.8 5.3-5.3 14.2M13.2 5.3l5.3 14.2" />
-      <path d="M8.4 13.2a7 7 0 0 0 7.2 0" />
+      <path d="M3.5 20.5 20.5 3.5" />
+      <path d="M3.5 20.5v-6.2M3.5 20.5h6.2" />
+      <path d="m7.2 16.8 2.1 2.1M10.4 13.6l2.1 2.1M13.6 10.4l2.1 2.1M16.8 7.2l2.1 2.1" />
     </>
   ),
   reportes: (
     <>
-      <path d="M3 20.5h18" />
-      <path d="M6.5 20.5V12M12 20.5V5M17.5 20.5v-6" />
+      <path d="M3.5 20.5h17" />
+      <path d="M7 20.5v-6M12 20.5V5.5M17 20.5v-9" />
     </>
   ),
   sol: (
     <>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" />
+      <circle cx="12" cy="12" r="3.8" />
+      <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6" />
     </>
   ),
-  luna: <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />,
+  luna: <path d="M20 14.6A8.4 8.4 0 0 1 9.4 4a8.4 8.4 0 1 0 10.6 10.6z" />,
   idioma: (
     <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3.5 9.5h17M3.5 14.5h17" />
-      <path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z" />
+      <circle cx="12" cy="12" r="8.7" />
+      <path d="M3.6 9.4h16.8M3.6 14.6h16.8" />
+      <path d="M12 3.3a14.5 14.5 0 0 1 0 17.4a14.5 14.5 0 0 1 0-17.4z" />
     </>
   ),
-  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
-  cerrar: <path d="M6 6l12 12M18 6L6 18" />,
+  menu: <path d="M4 7.5h16M4 12h16M4 16.5h16" />,
+  cerrar: <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />,
   alerta: (
     <>
-      <path d="M12 3.5 21 19.5H3z" />
-      <path d="M12 9.5v4.5M12 17h.01" />
+      <path d="M10.7 4.2 2.8 18a1.5 1.5 0 0 0 1.3 2.3h15.8a1.5 1.5 0 0 0 1.3-2.3L13.3 4.2a1.5 1.5 0 0 0-2.6 0z" />
+      <path d="M12 9.5v4M12 17h.01" />
     </>
   ),
-  flecha: <path d="M5 12h14M13 6l6 6-6 6" />,
+  flecha: <path d="M4.5 12h15M13.5 6l6 6-6 6" />,
 };
 
 export function Icono({
@@ -137,7 +155,7 @@ export function Icono({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.75}
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

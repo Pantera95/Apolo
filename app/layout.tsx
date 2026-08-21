@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, JetBrains_Mono, Manrope } from "next/font/google";
+import { Archivo, JetBrains_Mono, Manrope, Poppins } from "next/font/google";
 import Script from "next/script";
 
-import { AppShell } from "@/components/shell/app-shell";
 import { ProveedorPreferencias } from "@/lib/preferencias";
 import "./globals.css";
 
@@ -33,6 +32,23 @@ const manrope = Manrope({
   display: "swap",
 });
 
+/**
+ * Poppins para la landing.
+ *
+ * Es la fuente REAL del sitio de referencia, medida en su CSS: sus titulares
+ * van en Poppins 500 con interlinea 1.0 y un tracking muy cerrado (-0,047em en
+ * el h1). No se dedujo mirando, se leyo del `getComputedStyle` de la pagina.
+ *
+ * Solo se cargan 400 y 500: la landing no usa ningun otro peso, y cada peso de
+ * mas es una descarga que paga quien entra.
+ */
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--fuente-landing",
+  display: "swap",
+});
+
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--fuente-mono",
@@ -58,8 +74,10 @@ export const viewport: Viewport = {
  */
 const SIN_PARPADEO = `
 try {
-  var t = localStorage.getItem("apolo:tema");
-  if (t === "oscuro") document.documentElement.classList.add("dark");
+  // OSCURO POR DEFECTO: es la identidad. Solo se quita si hay preferencia
+  // guardada de claro, y se hace ANTES de la hidratacion para que no parpadee.
+  if (localStorage.getItem("apolo:tema") !== "claro")
+    document.documentElement.classList.add("dark");
   var i = localStorage.getItem("apolo:idioma");
   if (i === "en" || i === "es") document.documentElement.lang = i;
 } catch (e) {}
@@ -70,7 +88,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className="h-full" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${jetbrains.variable} ${archivo.variable} min-h-full`}>
+      <body className={`${manrope.variable} ${jetbrains.variable} ${archivo.variable} ${poppins.variable} min-h-full`}>
         {/* beforeInteractive lo inyecta el servidor en el HTML inicial, así que
             corre antes de la hidratación. Un <script> suelto también acaba en
             el HTML, pero React 19 avisa de que nunca se ejecutaría en un
@@ -78,9 +96,9 @@ export default function RootLayout({
         <Script id="apolo-tema" strategy="beforeInteractive">
           {SIN_PARPADEO}
         </Script>
-        <ProveedorPreferencias>
-          <AppShell>{children}</AppShell>
-        </ProveedorPreferencias>
+        {/* Sin AppShell: el chasis vive en app/(app)/layout.tsx, porque la
+            landing no lo lleva. Aquí queda solo lo común a las dos. */}
+        <ProveedorPreferencias>{children}</ProveedorPreferencias>
       </body>
     </html>
   );

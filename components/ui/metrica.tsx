@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { Icono } from "@/components/ui/icono";
 
@@ -32,7 +32,10 @@ export type TonoMetrica = "marca" | "luz" | "neutro";
 const RELLENO: Record<TonoMetrica, string> = {
   marca: "var(--serie-1)",
   luz: "var(--serie-2)",
-  neutro: "var(--serie-4)",
+  /* NO `--serie-4`: al reordenar las series a la paleta de la landing ese slot
+     pasó a ser rosa, y el tono llamado "neutro" quedó pintado del color más
+     saturado del conjunto. Ahora tira de su propio token apagado. */
+  neutro: "var(--grafico-neutro)",
 };
 
 export interface Variacion {
@@ -81,29 +84,67 @@ export function Metrica({
   const datos = (serie ?? []).map((v, i) => ({ i, v }));
   const hayCurva = datos.length >= 3;
 
+  /*
+   * DOMINIO CON AIRE, calculado a mano.
+   *
+   * Con el dominio automatico de Recharts el minimo se apoya EXACTAMENTE en el
+   * borde inferior y el maximo en el superior: la curva se pega al suelo en los
+   * tramos bajos y el pico se corta contra el canto de la tarjeta. Es la causa
+   * de que estas chispas se vieran aplastadas.
+   *
+   * Se reserva un 18% del recorrido por arriba y por abajo. Cuando la serie es
+   * PLANA el recorrido es cero y el porcentaje no daria margen ninguno —la
+   * division dejaria la linea clavada en el borde—, asi que ahi se usa un margen
+   * absoluto y la recta queda centrada, que es lo que corresponde: no hubo
+   * variacion.
+   */
+  const valores = datos.map((d) => d.v);
+  const min = Math.min(...valores, 0);
+  const max = Math.max(...valores, 0);
+  const recorrido = max - min;
+  const aire = recorrido === 0 ? 1 : recorrido * 0.18;
+  const dominio: [number, number] = [min - aire, max + aire];
+
   return (
     <article
-      className={`vidrio backdrop-blur-xl backdrop-saturate-150 relative flex min-w-0 flex-col overflow-hidden [container-type:inline-size] ${className}`}
+      className={`caja relative flex min-w-0 flex-col overflow-hidden [container-type:inline-size] ${className}`}
     >
+      {/*
+        TÍTULO EN FRASE NORMAL, no en mayúsculas diminutas. En la referencia
+        dice "Income Breakdown" a 17 px y peso medio, con el mismo tamaño que
+        leerías en un documento. La versión anterior lo ponía en versalitas de
+        10 px, que es la convención de un panel de control clásico y justo lo
+        que la referencia evita.
+      */}
       <div className="flex items-start justify-between gap-3 px-5 pt-5">
-        <p className="mono min-w-0 text-[10px] font-medium uppercase tracking-[0.14em] text-texto-3">
+        <h3
+          className="min-w-0 leading-snug text-texto"
+          style={{
+            fontSize: "var(--apolo-titulo-tarjeta)",
+            fontWeight: "var(--apolo-peso-titular)",
+          }}
+        >
           {etiqueta}
-        </p>
+        </h3>
         {destino && onAbrir && (
           <button
             type="button"
             onClick={onAbrir}
             aria-label={destino}
-            /* 44px de área táctil aunque el icono mida 14: el objetivo se
-               extiende con padding negativo, no agrandando el dibujo. */
-            className="-m-2.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-control text-texto-3 transition-colors hover:bg-superficie-2 hover:text-texto"
+            /*
+              CAJA CON BORDE, como en la referencia: un cuadrado redondeado de
+              32 px con el borde de la tarjeta. El área táctil se extiende a 44
+              con `before`, sin agrandar el dibujo — un objetivo de 32 px
+              incumple el mínimo y agrandar la caja rompería la proporción.
+            */
+            className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-borde text-texto-3 transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:border-borde-fuerte hover:text-texto"
           >
-            <Icono nombre="flecha" tam={14} />
+            <Icono nombre="flecha" tam={13} />
           </button>
         )}
       </div>
 
-      <div className="flex flex-wrap items-end gap-x-3 gap-y-1 px-5 pt-2">
+      <div className="flex flex-wrap items-end gap-x-3 gap-y-1 px-5 pt-3">
         {/*
           El cuerpo se acota con `clamp` al ANCHO DE LA TARJETA, no a la del
           viewport: en la rejilla bento conviven columnas de 1 y de 3, y un
@@ -136,9 +177,21 @@ export function Metrica({
         texto ocupe distinto.
       */}
       {hayCurva && (
-        <div className="mt-auto h-16 w-full pt-3" aria-hidden="true">
+        /*
+          LA TARJETA HÉROE OCUPA DOS FILAS, y con una altura fija de 80 px el
+          gráfico quedaba como un hilo al fondo de un rectángulo casi vacío. Ahí
+          la curva crece con la tarjeta; en las normales se queda fija, porque
+          son bajas y estirarla se comería el pie.
+        */
+        <div
+          className={`mt-auto w-full pt-3 ${heroe ? "min-h-[7rem] flex-1" : "h-20"}`}
+          aria-hidden="true"
+        >
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={datos} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+            {/* El margen superior deja pasar el grosor del trazo: a 0, la mitad
+                del stroke del pico queda fuera del lienzo y se ve cortado. */}
+            <AreaChart data={datos} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+              <YAxis hide domain={dominio} />
               <defs>
                 <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={RELLENO[tono]} stopOpacity={0.45} />

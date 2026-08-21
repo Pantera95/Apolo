@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   Cell,
   Line,
   LineChart,
@@ -24,6 +23,9 @@ import type {
   Origen,
   Veredicto,
 } from "@/lib/dashboard/finanzas";
+// Funciones, no tipos: el import de arriba es `import type` y no puede
+// traerlas como valor.
+import { saludGlobal, saludPorFamilia } from "@/lib/dashboard/finanzas";
 import {
   CurvaComparada,
   HistoricoVentasCompras,
@@ -45,6 +47,8 @@ import {
 import type { DatosPanel, Filtros, Rebanada } from "@/lib/dashboard/tipos";
 import type { EstadoApolo } from "@/lib/db/almacen";
 import { dinero, dineroCompacto, numero } from "@/lib/datos/indicadores";
+import { CurvaTendencia } from "@/components/ui/curva-tendencia";
+import { BarraProgreso, MedidorAnillo, RADIO_BARRA } from "@/components/ui/graficas-panel";
 import { usePreferencias } from "@/lib/preferencias";
 
 const FAMILIAS: { id: Familia; clave: string }[] = [
@@ -62,8 +66,21 @@ const TONO_VEREDICTO: Record<Veredicto, TonoInsignia> = {
 };
 
 function tono(css: string): string {
-  if (typeof window === "undefined") return "#888";
-  return getComputedStyle(document.documentElement).getPropertyValue(css).trim() || "#888";
+  /*
+   * DEVUELVE `var(--token)`, NO EL VALOR RESUELTO.
+   *
+   * Leerlo con `getComputedStyle` tenia dos fallos que salian en pantalla sin
+   * dar ni un error: el hex se CONGELA en el render —al cambiar de tema las
+   * graficas conservaban los colores del tema anterior— y en el servidor no hay
+   * `window`, asi que el primer render devolvia "#888" para todo y dependia de
+   * que la hidratacion lo corrigiera. Cuando no lo corregia, toda la grafica
+   * salia gris.
+   *
+   * SVG acepta `var()` en `fill` y `stroke`, y las propiedades de un `style` en
+   * linea tambien. Sin resolver, el color lo decide el navegador en cada
+   * repintado y el cambio de tema es automatico.
+   */
+  return `var(${css})`;
 }
 
 /**
@@ -141,6 +158,8 @@ export function SeccionFinanciera({
           {t("fin.formatoDetalle")}
         </Alerta>
       )}
+
+      <TarjetaSalud indicadores={indicadores} />
 
       {FAMILIAS.map((f) => {
         const grupo = indicadores.filter((i) => i.familia === f.id);
@@ -376,11 +395,26 @@ function TarjetaFinanciera({
                 formatter={(v) => formatear(Number(v) || 0, indicador.unidad, idioma)}
                 labelFormatter={(l) => String(l)}
               />
-              <Bar dataKey="valor" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+              {/*
+                REMATE REDONDEADO, pero NO `radius={RADIO_BARRA}`.
+
+                Con radio completo, una columna corta se convierte en un círculo
+                y deja de poder compararse con las altas: el remate se come la
+                altura, que es el dato. Un radio fijo de 6 da el mismo lenguaje
+                que el resto de la familia sin distorsionar la magnitud.
+
+                LAS BARRAS GRISES SON DATOS, no fondo, y por eso llevan
+                `--borde-fuerte`. Medido sobre el vidrio de la tarjeta:
+                `--superficie-2` daba 1,05:1 y `--superficie-hover` 1,12:1 —
+                invisibles—, mientras que `--borde-fuerte` da 3,47:1, el mínimo
+                de un elemento no textual que hay que poder ver. La columna
+                vigente se distingue por COLOR, no por ser la única visible.
+              */}
+              <Bar dataKey="valor" radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false}>
                 {puntos.map((_, i) => (
                   <Cell
                     key={i}
-                    fill={i === puntos.length - 1 ? colorLinea : tono("--grafico-rejilla")}
+                    fill={i === puntos.length - 1 ? colorLinea : tono("--borde-fuerte")}
                   />
                 ))}
               </Bar>
@@ -499,52 +533,30 @@ function GraficaFamilia({
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={180} className="mt-3">
-        <LineChart data={filas} margin={{ left: 4, right: 12, top: 6 }}>
-          <CartesianGrid stroke={tono("--grafico-rejilla")} vertical={false} />
-          <XAxis dataKey="etiqueta" stroke={tono("--grafico-eje")} fontSize={11} />
-          <YAxis
-            stroke={tono("--grafico-eje")}
-            fontSize={11}
-            width={54}
-            tickFormatter={(v) =>
-              unidad === "usd"
-                ? dineroCompacto(Number(v) || 0, idioma)
-                : numero(Number(v) || 0, idioma)
-            }
-          />
-          <Tooltip
-            contentStyle={{
-              background: tono("--superficie"),
-              border: `1px solid ${tono("--borde-fuerte")}`,
-              borderRadius: 10,
-              color: tono("--texto"),
-              fontSize: 12,
-            }}
-            formatter={(v, n) => [
-              formatear(Number(v) || 0, unidad, idioma),
-              elegidos.find((i) => i.id === n)?.nombre ?? String(n),
-            ]}
-          />
-          {elegidos.map((i, n) => (
-            <Line
-              key={i.id}
-              type="monotone"
-              dataKey={i.id}
-              stroke={colores[n % colores.length]}
-              strokeWidth={3}
-              // Los puntos marcan cada cierre: sin ellos no se sabe si la línea
-              // tiene seis cortes o sesenta.
-              dot={{ r: 3, strokeWidth: 0 }}
-              activeDot={{ r: 5 }}
-              // Sin animación: con cuatro líneas redibujándose a cada cambio de
-              // filtro, la animación se percibe como parpadeo.
-              isAnimationActive={false}
-              connectNulls
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+      {/*
+        ESTILO DE CÁPSULAS, el de la referencia que fijó el cliente.
+
+        Sustituye a la línea suelta sobre lienzo vacío. Las cápsulas hacen de
+        referencia vertical sin cruzar la tarjeta con reglas, y la resaltada más
+        la plomada marcan el corte actual sin necesidad de leyenda.
+
+        SIN `indiceCorte`: Apolo no tiene datos de pronóstico. La referencia
+        dibuja un tramo discontinuo hacia el futuro, y dibujarlo aquí sería
+        fabricar una previsión financiera con forma de gráfico. La plomada cae
+        en el último cierre real y todo el trazo va sólido.
+      */}
+      <div className="mt-3">
+        <CurvaTendencia
+          datos={filas.map((f) => ({ ...f, etiqueta: String(f.etiqueta) }))}
+          series={elegidos.map((i, n) => ({
+            clave: i.id,
+            nombre: i.nombre,
+            color: colores[n % colores.length],
+          }))}
+          alto={200}
+          formato={(v) => formatear(v, unidad, idioma)}
+        />
+      </div>
       <p className="mt-2 text-[11px] text-texto-3">{t(`fin.leyenda.${familia}` as never)}</p>
     </div>
   );
@@ -614,14 +626,15 @@ function Desgloses({ datos }: { datos: DatosPanel }) {
             className="mt-4"
           >
             <BarChart data={activa.datos} layout="vertical" margin={{ left: 4, right: 24 }}>
-              <CartesianGrid horizontal={false} stroke={tono("--grafico-rejilla")} />
-              <XAxis
+              {/* Sin rejilla: quedan solo las lineas de datos. Las referencias de
+              escala las dan los numeros del eje, que no dibujan nada. */}
+              <XAxis axisLine={false} tickLine={false}
                 type="number"
                 stroke={tono("--grafico-eje")}
                 fontSize={11}
                 tickFormatter={(v) => dineroCompacto(Number(v) || 0, idioma)}
               />
-              <YAxis
+              <YAxis axisLine={false} tickLine={false}
                 type="category"
                 dataKey="etiqueta"
                 width={120}
@@ -639,7 +652,7 @@ function Desgloses({ datos }: { datos: DatosPanel }) {
                 }}
                 formatter={(v) => dinero(Number(v) || 0, idioma)}
               />
-              <Bar dataKey="valorUsd" radius={[0, 6, 6, 0]}>
+              <Bar dataKey="valorUsd" radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false}>
                 {activa.datos.map((r, i) => (
                   <Cell
                     key={r.clave}
@@ -697,4 +710,60 @@ function formatear(
     default:
       return numero(valor, idioma);
   }
+}
+
+
+/**
+ * Salud financiera de un vistazo: anillo global y una barra por familia.
+ *
+ * Las dos formas salen de la familia de gráficas del panel, y el dato de las
+ * dos es el mismo: cuántos indicadores salen favorables sobre los que TIENEN
+ * cifras. El denominador importa — contar los que están sin datos convertiría
+ * "falta importar el balance" en "la empresa va mal".
+ *
+ * No se dibuja si no hay ni un indicador medible. Un anillo a 0 % afirma que
+ * nada va bien, y lo que ocurre es que todavía no se sabe.
+ */
+function TarjetaSalud({ indicadores }: { indicadores: IndicadorFinanciero[] }) {
+  const { t } = usePreferencias();
+  const global = saludGlobal(indicadores);
+  const porFamilia = saludPorFamilia(indicadores);
+
+  if (global.pct === null) return null;
+
+  return (
+    <section className="caja grid grid-cols-1 gap-6 p-5 sm:grid-cols-[auto_1fr] sm:items-center">
+      <div className="flex flex-col items-center">
+        <MedidorAnillo
+          pct={global.pct}
+          valor={`${Math.round(global.pct)}%`}
+          etiqueta={t("fin.salud.favorables")}
+        />
+        <p className="mt-1 text-[11px] text-texto-3">
+          {global.buenos}/{global.conDatos} {t("fin.salud.conCifras")}
+        </p>
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-3">
+        {porFamilia.map((f: (typeof porFamilia)[number]) => {
+          const familia = FAMILIAS.find((x) => x.id === f.familia);
+          const nombre = familia ? t(familia.clave as never) : f.familia;
+          return (
+            <div key={f.familia}>
+              <div className="mb-1 flex items-baseline justify-between gap-2">
+                <p className="truncate text-[11px] text-texto-2">{nombre}</p>
+                <p className="shrink-0 text-[10px] tabular-nums text-texto-3">
+                  {f.pct === null
+                    ? t("fin.salud.sinCifras")
+                    : `${f.buenos}/${f.conDatos}`}
+                </p>
+              </div>
+              {/* Sin cifras no se pinta una barra a cero: se dice que faltan. */}
+              {f.pct !== null && <BarraProgreso pct={f.pct} etiqueta={nombre} />}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
 }

@@ -36,19 +36,25 @@ se justifica citándolo.
   descuadre es una condición de negocio, no un fallo del programa.
 - El kardex es inmutable. Un error se corrige con un asiento contrario, nunca
   editando o borrando.
-- Los valores de marca (color, tipografía) viven aislados en `app/marca.css`
-  para poder cambiar la identidad sin tocar componentes.
-- **La paleta se comparte con la landing de Global XXI**: azul petrolero como
-  marca, cian como la "luz" que señala el dato, ámbar como acento de apoyo. Son
-  los mismos hex que el sitio corporativo, a petición del cliente: quien entra
-  desde la landing no debe sentir que cambió de empresa. Si cambian allí, hay
-  que cambiarlos aquí. Antes Apolo era violeta y verde.
-- **Cada bloque grande declara qué tinta lleva.** No son intercambiables: el
-  azul es oscuro y pide blanco, el cian es CLARO —por saturado que se vea— y
-  pide tinta oscura. Blanco sobre cian daría 1,7:1.
-- Ningún tono único mantiene 4,5:1 sobre fondo claro Y oscuro, así que los
-  tokens **cambian de valor** entre temas. Se mide antes de dar por bueno un
-  color, nunca se estima.
+- **La identidad vive en `app/identidad.css`**, y es UNA sola para la landing y
+  para la aplicación. Antes cada superficie tenía la suya y por eso la landing
+  se veía mejor: no era el color, era que la app conservaba otros materiales,
+  otra tipografía y otros radios.
+- **Apolo es oscuro. No hay tema claro.** Suelo `#00031c`, paneles de vidrio
+  (blanco al 4 % con canto al 10 %), Poppins, radio 1,25rem y las cintas de luz
+  de fondo. Los tokens del tema claro siguen en el archivo pero no se sirven.
+- **Los paneles son translúcidos a propósito.** El velo deja pasar las cintas
+  del fondo; uno opaco del mismo color medio se ve plano porque la luz muere
+  detrás.
+- **El canto del vidrio no cumple 3:1 y es una decisión, no un descuido.** Está
+  escrito en `scripts/contraste.mjs`. Lo que sí lo cumple es `--borde-fuerte`,
+  que viste CONTROLES: un campo de formulario que no se distingue del fondo no
+  se puede usar, y eso la identidad no lo negocia.
+- **Cada bloque grande declara qué tinta lleva.** No son intercambiables.
+- Se mide antes de dar por bueno un color, nunca se estima. Y hacen falta las
+  dos comprobaciones: `scripts/contraste.mjs` para los pares de tokens y
+  `scripts/auditor-contraste-dom.js` para lo que se pinta de verdad — un token
+  correcto en la superficie equivocada pasa la primera sin despeinarse.
 
 ## Comandos
 

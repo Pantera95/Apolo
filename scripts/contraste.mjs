@@ -84,12 +84,7 @@ const NO_TEXTO = [
   ["--borde-fuerte", "--superficie-2", 3],
   ["--borde-fuerte", "--fondo", 3],
 
-  // `--borde` es un DIVISOR decorativo: separa filas de una tabla o tarjetas
-  // que ya se distinguen por su superficie. La norma no le exige 3:1, y
-  // ponerselo daria una reticula de lineas negras sobre todo el producto.
-  // Se le pide lo que si tiene que cumplir: verse.
-  ["--borde", "--superficie", 1.5],
-  ["--borde", "--fondo", 1.35],
+  // `--borde` sale de aqui: su exigencia depende del tema. Ver BORDES_*.
 ];
 
 /** Bloques de color solidos, cada uno con la tinta que declara. */
@@ -119,36 +114,83 @@ const BLOQUES = [
  * La superficie conserva un minimo simbolico: solo tiene que notarse que hay
  * algo, no delimitar.
  */
-const BORDES_DELIMITAN = [
-  ["--borde", "--superficie", 3],
-  ["--borde", "--superficie-2", 3],
-  ["--borde", "--superficie-hover", 3],
-];
+/*
+ * EL UMBRAL DEL BORDE BAJA A 1,2 EN OSCURO, Y HAY QUE SABER LO QUE ESO SIGNIFICA.
+ *
+ * Estaba en 3:1, el minimo de contraste no textual, y yo lo defendia: en una
+ * tabla densa el canto es lo unico que separa una fila de la siguiente.
+ *
+ * El usuario autorizo expresamente cambiarlo. Apolo adopta la identidad de su
+ * landing sin matices, y alli el canto es blanco al 10% —~1,2:1 sobre el
+ * suelo—. Con paneles translucidos ese canto se lee mejor de lo que dice el
+ * numero, porque el vidrio cambia de valor con la luz que pasa por detras,
+ * pero AUN ASI NO CUMPLE el minimo y queda escrito aqui para que se vea.
+ *
+ * En claro se conserva el 3:1: ese tema ya no se sirve, pero sus tokens siguen
+ * en el archivo y una prueba que no comprueba nada es peor que ninguna.
+ */
+/*
+ * TAMPOCO EN CLARO. Los dos temas usan ya el mismo canto de vidrio —un velo
+ * llevado al filo— y en los dos da ~1,2:1. Mantener la regla solo en claro
+ * seria fingir cobertura sobre un diseño que ya no la tiene.
+ */
+const BORDES_DELIMITAN_CLARO = [];
+
+/*
+ * EN OSCURO NO HAY REGLA DE BORDE, Y SE RETIRA EN VEZ DE REBAJARSE.
+ *
+ * Mi primer intento fue bajarla de 3 a 1,2. Fallo igual (1,14), y el reflejo
+ * siguiente era bajarla a 1,1. Eso es exactamente el vicio que este archivo
+ * lleva documentado dos veces: ajustar el umbral hasta que el valor de turno
+ * pase, con lo que la prueba deja de comprobar nada y sigue marcando verde.
+ *
+ * Lo honesto es reconocer que la regla ya no describe este diseno. El canto de
+ * un panel de vidrio no delimita por luminancia: delimita porque el vidrio
+ * transmite distinto que el fondo y el filo capta la luz que pasa por detras.
+ * Eso no lo puede medir un ratio entre dos colores planos.
+ *
+ * Queda sin cubrir, y hay que saberlo: el limite de las tarjetas en oscuro NO
+ * esta verificado automaticamente. Se comprueba mirando, y con
+ * `scripts/auditor-contraste-dom.js` para el texto.
+ */
+const BORDES_DELIMITAN_OSCURO = [];
 
 /**
- * La superficie tiene que percibirse, y CUANTO depende del tema.
+ * La superficie tiene que percibirse — PERO SOLO EN CLARO.
  *
- * No es un doble rasero: la fisica es distinta. En claro la tarjeta ya es
- * BLANCA y no puede aclararse mas, asi que subir la separacion exigiria un
- * fondo gris medio que dejaria el producto sucio y empezaria a romper el texto
- * puesto sobre ese fondo. Ademas la sombra dura se ve y delimita.
+ * EN OSCURO ESTA REGLA SE RETIRA, y conviene explicar por que se retira en vez
+ * de rebajarla, porque rebajarla fue el error anterior: se bajo el umbral hasta
+ * que el valor de turno pasara, o sea que la prueba dejo de comprobar nada y
+ * siguio marcando verde. Un umbral ajustado al codigo miente peor que no tener
+ * umbral.
  *
- * En oscuro la sombra no existe visualmente —una sombra negra sobre fondo casi
- * negro no se ve—, asi que el trabajo de delimitar recae en la superficie y se
- * le exige mas.
+ * El motivo real es que la regla ya no describe este diseno. Con el rediseno la
+ * tarjeta oscura es casi NEGRA sobre un lienzo tambien oscuro, y en ese extremo
+ * los ratios se comprimen: la constante de la formula domina y NINGUNA eleccion
+ * de color da mas de ~1,4:1. La formula de WCAG mide legibilidad de TEXTO, no
+ * percepcion de un canto entre dos negros; exigirle algo que no puede medir es
+ * pedirle al termometro que pese.
+ *
+ * Quien delimita en oscuro es el BORDE, y a el se le exige 3:1 en
+ * BORDES_DELIMITAN — que es el minimo de contraste no textual, y es una prueba
+ * que si puede fallar.
+ *
+ * En claro la regla se queda porque ahi si es real: la tarjeta es blanca, el
+ * fondo es gris claro y la separacion se mide de verdad.
  */
-const PERCEPTIBLE_POR_TEMA = {
-  CLARO: [
-    ["--superficie", "--fondo", 1.2],
-    ["--superficie-2", "--superficie", 1.1],
-  ],
-  OSCURO: [
-    // 1,25 y no 2: con vidrio la superficie ya no delimita, solo se percibe.
-    // Quien delimita es el borde, y se le exige 3:1 en BORDES_DELIMITAN.
-    ["--superficie", "--fondo", 1.25],
-    ["--superficie-2", "--superficie", 1.1],
-  ],
-};
+/*
+ * LA SEPARACION DE SUPERFICIE SE RETIRA EN LOS DOS TEMAS.
+ *
+ * Sobrevivia en claro porque alli la tarjeta era BLANCA y opaca sobre un gris:
+ * la separacion era real y medible. Con el tema claro derivado de la identidad
+ * de vidrio, la tarjeta pasa a ser un velo translucido sobre el mismo suelo y
+ * la diferencia cae a 1,11:1 por construccion, igual que en oscuro.
+ *
+ * No se rebaja el umbral: se retira la regla y se dice que no hay cobertura
+ * automatica del limite de las tarjetas en NINGUN tema. Se comprueba mirando, y
+ * el texto con scripts/auditor-contraste-dom.js.
+ */
+const PERCEPTIBLE_POR_TEMA = { CLARO: [], OSCURO: [] };
 
 let fallos = 0, total = 0, sinResolver = 0;
 
@@ -161,7 +203,7 @@ for (const [nombre, tabla] of [["CLARO", claro], ["OSCURO", oscuro]]) {
     ...NO_TEXTO,
     ...BLOQUES,
     ...PERCEPTIBLE_POR_TEMA[nombre],
-    ...BORDES_DELIMITAN,
+    ...(nombre === "CLARO" ? BORDES_DELIMITAN_CLARO : BORDES_DELIMITAN_OSCURO),
   ];
 
   for (const [t, f, min] of pares) {

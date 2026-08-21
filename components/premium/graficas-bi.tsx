@@ -1,9 +1,10 @@
 "use client";
 
+import { RADIO_BARRA } from "@/components/ui/graficas-panel";
+
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   Cell,
   Legend,
   Pie,
@@ -47,8 +48,24 @@ import { usePreferencias } from "@/lib/preferencias";
 const PALETA = ["--serie-1", "--serie-2", "--serie-3", "--serie-4", "--peligro"];
 
 export function tono(css: string): string {
-  if (typeof window === "undefined") return "#888";
-  return getComputedStyle(document.documentElement).getPropertyValue(css).trim() || "#888";
+  /*
+   * DEVUELVE `var(--token)`, NO EL VALOR RESUELTO.
+   *
+   * Antes leia la variable con `getComputedStyle` y devolvia el hex. Eso tenia
+   * dos fallos, y los dos salian en pantalla sin dar ni un error:
+   *
+   *   1. SE CONGELA. El hex se captura en el render y ahi se queda: al cambiar
+   *      de tema las graficas conservaban los colores del tema anterior. Se vio
+   *      midiendo — el DOM en `dark`, `--serie-1` valiendo #6f9bff, y los
+   *      sectores pintados con los hex del tema claro.
+   *   2. EN EL SERVIDOR NO HAY `window`, asi que el primer render devolvia
+   *      "#888" para todo y dependia de que la hidratacion lo corrigiera.
+   *
+   * SVG acepta `var()` en `fill` y `stroke`, y las propiedades de un `style`
+   * en linea tambien. Al pasar la variable sin resolver, el color lo decide el
+   * navegador en cada repintado y el cambio de tema es automatico.
+   */
+  return `var(${css})`;
 }
 
 function ejeComun(idioma: "es" | "en", moneda: boolean) {
@@ -119,9 +136,10 @@ export function BarrasComparativas({
     <Marco titulo={titulo} nota={nota}>
       <ResponsiveContainer width="100%" height={Math.max(180, datos.length * 40)}>
         <BarChart data={datos} layout="vertical" margin={{ left: 4, right: 20 }}>
-          <CartesianGrid horizontal={false} stroke={tono("--grafico-rejilla")} />
-          <XAxis type="number" {...ejeComun(idioma, moneda)} />
-          <YAxis
+          {/* Sin rejilla: quedan solo las lineas de datos. Las referencias de
+              escala las dan los numeros del eje, que no dibujan nada. */}
+          <XAxis axisLine={false} tickLine={false} type="number" {...ejeComun(idioma, moneda)} />
+          <YAxis axisLine={false} tickLine={false}
             type="category"
             dataKey="etiqueta"
             width={130}
@@ -137,7 +155,7 @@ export function BarrasComparativas({
                 : numero(Number(v) || 0, idioma)
             }
           />
-          <Bar dataKey="valor" radius={[0, 6, 6, 0]}>
+          <Bar dataKey="valor" radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false}>
             {datos.map((d, i) => (
               <Cell
                 key={d.etiqueta}
@@ -189,8 +207,15 @@ export function Dispersion({
     <Marco titulo={titulo} nota={nota}>
       <ResponsiveContainer width="100%" height={240}>
         <ScatterChart margin={{ left: 4, right: 16, top: 8, bottom: 16 }}>
-          <CartesianGrid stroke={tono("--grafico-rejilla")} />
-          <XAxis
+                    {/*
+            SIN REJILLA NI EJES DIBUJADOS. Quedan solo las curvas de datos.
+
+            Las reglas horizontales cruzaban la tarjeta de lado a lado con el
+            mismo grosor que la propia serie, asi que competian con lo unico que
+            hay que mirar. Los NUMEROS del eje se quedan —no son lineas, y sin
+            ellos se pierde la magnitud—, pero sin su barra ni sus marquitas.
+          */}
+          <XAxis axisLine={false} tickLine={false}
             type="number"
             dataKey="x"
             name={ejeX}
@@ -205,7 +230,7 @@ export function Dispersion({
               fontSize: 11,
             }}
           />
-          <YAxis
+          <YAxis axisLine={false} tickLine={false}
             type="number"
             dataKey="y"
             name={ejeY}
@@ -278,15 +303,22 @@ export function Histograma({
     <Marco titulo={titulo} nota={nota}>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={tramos} margin={{ left: 4, right: 12, top: 6 }} barCategoryGap={2}>
-          <CartesianGrid vertical={false} stroke={tono("--grafico-rejilla")} />
-          <XAxis dataKey="etiqueta" stroke={tono("--grafico-eje")} fontSize={11} />
-          <YAxis allowDecimals={false} stroke={tono("--grafico-eje")} fontSize={11} width={34} />
+                    {/*
+            SIN REJILLA NI EJES DIBUJADOS. Quedan solo las curvas de datos.
+
+            Las reglas horizontales cruzaban la tarjeta de lado a lado con el
+            mismo grosor que la propia serie, asi que competian con lo unico que
+            hay que mirar. Los NUMEROS del eje se quedan —no son lineas, y sin
+            ellos se pierde la magnitud—, pero sin su barra ni sus marquitas.
+          */}
+          <XAxis axisLine={false} tickLine={false} dataKey="etiqueta" stroke={tono("--grafico-eje")} fontSize={11} />
+          <YAxis axisLine={false} tickLine={false} allowDecimals={false} stroke={tono("--grafico-eje")} fontSize={11} width={34} />
           <Tooltip
             cursor={{ fill: tono("--superficie-2") }}
             contentStyle={tooltipComun()}
             formatter={(v) => numero(Number(v) || 0, idioma)}
           />
-          <Bar dataKey="cuenta" radius={[4, 4, 0, 0]}>
+          <Bar dataKey="cuenta" radius={RADIO_BARRA} minPointSize={6} isAnimationActive={false}>
             {tramos.map((t) => (
               <Cell
                 key={t.etiqueta}
@@ -372,9 +404,25 @@ export function Torta({
               <Cell key={p.etiqueta} fill={tono(PALETA[i % PALETA.length])} />
             ))}
           </Pie>
+            /*
+              EL TEXTO DE LA LEYENDA NO LLEVA EL COLOR DE LA SERIE.
+
+              Recharts pinta cada etiqueta con el color de su serie, y esos
+              colores estan calibrados como NO-TEXTO: se les exige 3:1 porque son
+              trazos y rellenos. Como texto de 11px necesitan 4,5:1, y medido
+              sobre la tarjeta oscura daban 3,57 / 2,82 / 2,85:1.
+
+              El color sigue estando: lo lleva la muestra que Recharts dibuja al
+              lado. Separar los papeles —color en la muestra, texto legible— es
+              lo correcto, y ademas es lo unico que funciona sin desvirtuar la
+              paleta de las series para poder usarla como tinta.
+            */
           <Legend
-            wrapperStyle={{ fontSize: 11, color: tono("--texto-2") }}
+            wrapperStyle={{ fontSize: 11 }}
             iconType="square"
+            formatter={(v) => (
+              <span style={{ color: "var(--texto-2)" }}>{String(v)}</span>
+            )}
           />
           <Tooltip
             contentStyle={tooltipComun()}

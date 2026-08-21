@@ -18,6 +18,13 @@ import {
 } from "@/components/ui/graficos";
 import { Insignia } from "@/components/ui/insignia";
 import { Tabla, type Columna } from "@/components/ui/tabla";
+import {
+  AreaDentada,
+  BarraProgreso,
+  BarrasAgrupadas,
+  MedidorSemicircular,
+  TarjetaGrafica,
+} from "@/components/ui/graficas-panel";
 import { Metrica } from "@/components/ui/metrica";
 import { Tarjeta } from "@/components/ui/tarjeta";
 import {
@@ -36,14 +43,17 @@ import {
   herramientaAveriada,
   herramientaSinRetornar,
   movimientosRecientes,
+  movimientosPorMes,
+  enObraPorObra,
+  serieAcumulada,
   numero,
   solicitudesPorAprobar,
   valorDisponible,
   valorEnObra,
 } from "@/lib/datos/indicadores";
 import { construirSemilla } from "@/lib/datos/semilla";
-import { setEstado, useEstado, useListo } from "@/lib/db/almacen";
-import type { Asiento } from "@/lib/dominio/tipos";
+import { setEstado, useEstado, useListo, type EstadoApolo } from "@/lib/db/almacen";
+import { disponible, type Asiento } from "@/lib/dominio/tipos";
 import type { ClaveTexto } from "@/lib/i18n/textos";
 import { estaAbierta, pendientePorRecibir } from "@/lib/dominio/compras";
 import { usePremium } from "@/lib/dashboard/premium";
@@ -99,10 +109,13 @@ function PanelBase() {
     cortes y se normalizan a la escala de la tarjeta.
   */
   const serieEnObra = useMemo(
-    () => movimientosRecientes(estado, 12).map((a) => Math.abs(a.delta.fisico)),
+    () => serieAcumulada(estado, (s) => s.enObra, 12),
     [estado],
   );
-  const serieDisponible = useMemo(() => [...serieEnObra].reverse(), [serieEnObra]);
+  const serieDisponible = useMemo(
+    () => serieAcumulada(estado, disponible, 12),
+    [estado],
+  );
 
   const porLlegar = estado.ordenes
     .filter(estaAbierta)
@@ -233,6 +246,8 @@ function PanelBase() {
       </div>
 
       <p className="mb-6 text-sm font-semibold text-texto-3">{t("demo.aviso")}</p>
+
+      {hayDatos && <BloqueGraficas estado={estado} />}
 
       {!hayDatos ? (
         <Tarjeta>
@@ -525,4 +540,119 @@ function tonoMovimiento(tipo: Asiento["tipo"]) {
     default:
       return "neutro" as const;
   }
+}
+
+
+/**
+ * Bloque de gráficas del panel.
+ *
+ * Replica la familia de la maqueta de referencia con datos REALES del kardex:
+ * ninguna de estas cifras se inventa, todas salen de funciones puras con tests
+ * en `lib/datos/indicadores.ts`.
+ *
+ * Se monta solo cuando hay datos. Un medidor al 0 % y unas barras planas no son
+ * un panel vacío: son un panel que afirma que la operación está parada.
+ */
+function BloqueGraficas({ estado }: { estado: EstadoApolo }) {
+  const { t, idioma } = usePreferencias();
+
+  /*
+   * La etiqueta pasa de "2026-07" a "jul." aquí y no en el helper: el helper es
+   * una función pura con tests y no debe depender del idioma activo.
+   */
+  const porMes = useMemo(() => {
+    const mes = new Intl.DateTimeFormat(idioma === "en" ? "en" : "es", {
+      month: "short",
+    });
+    return movimientosPorMes(estado, 6).map((m) => ({
+      ...m,
+      etiqueta: mes.format(new Date(`${m.etiqueta}-15T12:00:00Z`)),
+    }));
+  }, [estado, idioma]);
+
+  /* Variación del último mes contra el anterior, para la fila de píldoras que
+     la referencia pone bajo las barras. Con un solo mes no hay comparación. */
+  const deltas = useMemo(() => {
+    if (porMes.length < 2) return undefined;
+    const ult = porMes[porMes.length - 1];
+    const prev = porMes[porMes.length - 2];
+    return [
+      { nombre: t("panel.g.entradas"), delta: ult.entradas - prev.entradas, formato: (n: number) => numero(n, idioma) },
+      { nombre: t("panel.g.salidas"), delta: ult.salidas - prev.salidas, formato: (n: number) => numero(n, idioma) },
+    ];
+  }, [porMes, idioma, t]);
+  const porObra = useMemo(() => enObraPorObra(estado).slice(0, 4), [estado]);
+
+  const enObra = valorEnObra(estado);
+  const disponibleUsd = valorDisponible(estado);
+  const total = enObra + disponibleUsd;
+  // Sin existencia no hay reparto: 0 es un dato, NaN es un fallo en pantalla.
+  const pctEnObra = total > 0 ? (enObra / total) * 100 : 0;
+
+  const serieDespachos = useMemo(
+    () =>
+      movimientosRecientes(estado, 16)
+        .slice()
+        .reverse()
+        .map((a, i) => ({ etiqueta: String(i), valor: Math.abs(a.delta.fisico) })),
+    [estado],
+  );
+
+  if (porMes.length === 0) return null;
+
+  return (
+    <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <TarjetaGrafica titulo={t("panel.g.reparto")}>
+        <div className="flex items-center justify-center gap-6">
+          <MedidorSemicircular
+            pct={pctEnObra}
+            etiqueta={t("panel.g.enObra")}
+            pie={t("panel.g.enObra")}
+          />
+          <MedidorSemicircular
+            pct={100 - pctEnObra}
+            etiqueta={t("panel.g.enAlmacen")}
+            pie={t("panel.g.enAlmacen")}
+            desde="var(--serie-3)"
+            hasta="var(--serie-2)"
+          />
+        </div>
+      </TarjetaGrafica>
+
+      <TarjetaGrafica titulo={t("panel.g.movimientos")}>
+        <BarrasAgrupadas
+          datos={porMes}
+          series={[
+            { clave: "entradas", nombre: t("panel.g.entradas"), color: "var(--serie-1)" },
+            { clave: "salidas", nombre: t("panel.g.salidas"), color: "var(--serie-4)" },
+          ]}
+          deltas={deltas}
+        />
+      </TarjetaGrafica>
+
+      <TarjetaGrafica titulo={t("panel.g.porObra")}>
+        {porObra.length === 0 ? (
+          <p className="text-xs text-texto-3">{t("panel.g.sinObra")}</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {porObra.map((o) => (
+              <div key={o.obraId}>
+                <p className="mb-1 truncate text-[11px] text-texto-3">{o.nombre}</p>
+                <BarraProgreso pct={o.pct} etiqueta={o.nombre} />
+              </div>
+            ))}
+          </div>
+        )}
+      </TarjetaGrafica>
+
+      <TarjetaGrafica
+        titulo={t("panel.g.pulso")}
+        valor={dineroCompacto(disponibleUsd, idioma)}
+        className="lg:col-span-3"
+        pie={t("panel.g.pulsoPie")}
+      >
+        <AreaDentada datos={serieDespachos} />
+      </TarjetaGrafica>
+    </div>
+  );
 }
